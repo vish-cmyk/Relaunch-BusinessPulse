@@ -217,11 +217,17 @@ export function calculateOverallHealth(
   const rawScore = answeredCount > 0 ? Math.round(totalScore / answeredCount) : 0;
   let finalScore = rawScore;
 
-  // Financial constraint penalty
+  // Financial constraint penalty based on proportional ratio (e.g. overdue > 30% of total receivables)
   if (financials) {
-    if (financials.overdueReceivables && financials.overdueReceivables > 40000) {
-      if (!criticalRisks.some(r => r.includes('Debtor'))) {
-        criticalRisks.push(`Working capital pressure: Significant overdue receivables reported.`);
+    const totalAR = Number(financials.accountsReceivable) || 0;
+    const overdueAR = Number(financials.overdueReceivables) || 0;
+    const overdueRatio = totalAR > 0 ? overdueAR / totalAR : 0;
+    const isProportionallyHigh = overdueRatio >= 0.30 || (totalAR === 0 && overdueAR > 0);
+
+    if (isProportionallyHigh && overdueAR > 0) {
+      if (!criticalRisks.some(r => r.includes('Debtor') || r.includes('Working capital'))) {
+        const ratioPercent = totalAR > 0 ? ` (${Math.round(overdueRatio * 100)}% of aged ledger)` : '';
+        criticalRisks.push(`Working capital pressure: Delinquent receivables${ratioPercent} impairing cash flow velocity.`);
       }
     }
   }
@@ -237,7 +243,8 @@ export function calculateOverallHealth(
 
   if (unansweredCount >= 3) {
     rating = 'Incomplete / Missing Information';
-    label = 'Assessment Incomplete (3+ Dimensions Missing)';
+    label = `Assessment Incomplete (${unansweredCount} of 8 Dimensions Missing)`;
+    finalScore = Math.min(finalScore, Math.round((answeredCount / keys.length) * 100));
   } else if (hasCriticalSolvencyRisk || hasCriticalOpsRisk || finalScore < 45 || criticalRisks.length >= 2) {
     rating = 'At Risk';
     label = hasCriticalSolvencyRisk 

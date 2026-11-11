@@ -33,43 +33,43 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   // Base reported figures (editable for any business)
   const [cash, setCash] = useState<number>(() => {
     if (caseRecord?.financials?.cashInBank != null) return caseRecord.financials.cashInBank;
-    return isDemo ? REPORTED_FINANCIALS.cashInBank : 35000;
+    return isDemo ? REPORTED_FINANCIALS.cashInBank : 0;
   });
 
   const [overdraftUsed, setOverdraftUsed] = useState<number>(() => {
     if (caseRecord?.financials?.creditFacilityUsed != null) return caseRecord.financials.creditFacilityUsed;
-    return isDemo ? REPORTED_FINANCIALS.overdraftUsed : 45000;
+    return isDemo ? REPORTED_FINANCIALS.overdraftUsed : 0;
   });
 
   const [overdraftLimit, setOverdraftLimit] = useState<number>(() => {
     if (caseRecord?.financials?.creditFacilityLimit != null) return caseRecord.financials.creditFacilityLimit;
-    return isDemo ? REPORTED_FINANCIALS.overdraftLimit : 60000;
+    return isDemo ? REPORTED_FINANCIALS.overdraftLimit : 0;
   });
 
   const [payables, setPayables] = useState<number>(() => {
     if (caseRecord?.financials?.accountsPayable != null) return caseRecord.financials.accountsPayable;
-    return isDemo ? REPORTED_FINANCIALS.supplierPayables : 55000;
+    return isDemo ? REPORTED_FINANCIALS.supplierPayables : 0;
   });
 
   const [totalAR, setTotalAR] = useState<number>(() => {
     if (caseRecord?.financials?.accountsReceivable != null) return caseRecord.financials.accountsReceivable;
-    return isDemo ? REPORTED_FINANCIALS.accountsReceivable : 120000;
+    return isDemo ? REPORTED_FINANCIALS.accountsReceivable : 0;
   });
 
   const [overdue60, setOverdue60] = useState<number>(() => {
     if (caseRecord?.financials?.overdueReceivables != null) return caseRecord.financials.overdueReceivables;
-    return isDemo ? REPORTED_FINANCIALS.overdue60Days : 38000;
+    return isDemo ? REPORTED_FINANCIALS.overdue60Days : 0;
   });
 
   const [isEditingBaseline, setIsEditingBaseline] = useState<boolean>(false);
   const [baselineSavedAlert, setBaselineSavedAlert] = useState<boolean>(false);
 
-  // Sync when active case changes
+  // Sync when active case changes (clean isolation between demo and client cases)
   useEffect(() => {
     if (caseRecord?.financials?.cashInBank != null) {
       setCash(caseRecord.financials.cashInBank);
       setOverdraftUsed(caseRecord.financials.creditFacilityUsed ?? 0);
-      setOverdraftLimit(caseRecord.financials.creditFacilityLimit ?? 50000);
+      setOverdraftLimit(caseRecord.financials.creditFacilityLimit ?? 0);
       setPayables(caseRecord.financials.accountsPayable ?? 0);
       setTotalAR(caseRecord.financials.accountsReceivable ?? 0);
       setOverdue60(caseRecord.financials.overdueReceivables ?? 0);
@@ -80,8 +80,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
       setPayables(REPORTED_FINANCIALS.supplierPayables);
       setTotalAR(REPORTED_FINANCIALS.accountsReceivable);
       setOverdue60(REPORTED_FINANCIALS.overdue60Days);
+    } else {
+      setCash(0);
+      setOverdraftUsed(0);
+      setOverdraftLimit(0);
+      setPayables(0);
+      setTotalAR(0);
+      setOverdue60(0);
     }
-  }, [caseRecord?.id]);
+  }, [caseRecord?.id, isDemo]);
 
   // Interactive recovery simulator states
   const [recoveredPercent, setRecoveredPercent] = useState<number>(65);

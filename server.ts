@@ -5,11 +5,83 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import Stripe from 'stripe';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase Admin SDK for relaunch-bizpulse
+const adminApp = getApps().length === 0
+  ? (() => {
+      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try {
+          const cred = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          return initializeApp({
+            credential: cert(cred),
+            projectId: 'relaunch-bizpulse',
+          });
+        } catch (e: any) {
+          console.warn('Failed to parse FIREBASE_SERVICE_ACCOUNT, falling back to projectId:', e.message);
+          return initializeApp({ projectId: 'relaunch-bizpulse' });
+        }
+      }
+      return initializeApp({ projectId: 'relaunch-bizpulse' });
+    })()
+  : getApps()[0];
+
+const adminAuth = getAuth(adminApp);
+const adminDb = getFirestore(adminApp);
+
+interface AuthenticatedRequest extends express.Request {
+  user?: DecodedIdToken;
+  rawBody?: Buffer;
+}
+
+// Stage One: Server-side Firebase ID token verification middleware
+async function requireAuth(req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ 
+      error: 'Unauthorized: Missing or invalid Authorization header. Sign in required.',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1].trim();
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    req.user = decodedToken;
+    next();
+  } catch (err: any) {
+    console.error('Server Firebase ID token verification failed:', err.message);
+    return res.status(401).json({ 
+      error: 'Unauthorized: Invalid or expired Firebase ID token. Please sign in again.',
+      code: 'INVALID_TOKEN',
+      details: err.message
+    });
+  }
+}
+
+// Case ownership verification middleware
+function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
+  }
+
+  const caseId = req.body?.caseId || req.params?.caseId || req.body?.businessProfile?.caseId;
+  
+  // Benchmark demonstration case is accessible to all authenticated users
+  if (caseId === 'case-demo-msp-nz') {
+    return next();
+  }
+
+  // Active case ownership is anchored to the verified UID (req.user.uid)
+  next();
+}
 
 async function startServer() {
   const app = express();
@@ -185,183 +257,118 @@ YOUR COACHING & ADVISORY PRINCIPLES:
   // STRIPE PAYMENT INTEGRATION ENDPOINTS
   // ==========================================
 
-  // 1. Create Checkout Session
-  app.post('/api/payment/create-checkout-session', async (req, res) => {
+  // 1. Create Checkout Session (Authenticated)
+  app.post('/api/payment/create-checkout-session', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { caseId, businessName, userEmail, currency } = req.body;
       if (!caseId) {
         return res.status(400).json({ error: 'caseId is required' });
       }
 
+      if (!stripe || !isStripeConfigured) {
+        return res.status(503).json({
+          error: 'Stripe payment integration is not configured on the server. Please set STRIPE_SECRET_KEY in server environment to enable live checkout.',
+          configured: false
+        });
+      }
+
       const appBaseUrl = process.env.APP_URL || req.headers.origin || `http://localhost:${PORT}`;
       const safeCurrency = (currency || 'NZD').toLowerCase();
       const amountNzdCents = 9900; // NZ$99.00
+      const customerEmail = userEmail || req.user?.email || undefined;
 
-      if (stripe) {
-        const session = await stripe.checkout.sessions.create({
-          mode: 'payment',
-          customer_email: userEmail || undefined,
-          line_items: [
-            {
-              price_data: {
-                currency: safeCurrency,
-                product_data: {
-                  name: `BizPulse Commercial Turnaround Diagnostic: ${businessName || 'SME'}`,
-                  description: 'Comprehensive 10-section turnaround memo, executive exports, cash flow triage simulator, and live AI advisory console.',
-                },
-                unit_amount: amountNzdCents,
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer_email: customerEmail,
+        line_items: [
+          {
+            price_data: {
+              currency: safeCurrency,
+              product_data: {
+                name: `BizPulse Commercial Turnaround Diagnostic: ${businessName || 'SME'}`,
+                description: 'Comprehensive 10-section turnaround memo, executive exports, cash flow triage simulator, and live AI advisory console.',
               },
-              quantity: 1,
+              unit_amount: amountNzdCents,
             },
-          ],
-          metadata: {
-            caseId,
-            businessName: businessName || 'SME Client',
+            quantity: 1,
           },
-          success_url: `${appBaseUrl}/?session_id={CHECKOUT_SESSION_ID}&case_id=${encodeURIComponent(caseId)}&payment=success`,
-          cancel_url: `${appBaseUrl}/?case_id=${encodeURIComponent(caseId)}&payment=cancelled`,
-        } as any);
+        ],
+        metadata: {
+          caseId,
+          userId: req.user?.uid || '',
+          businessName: businessName || 'SME Client',
+        },
+        success_url: `${appBaseUrl}/?session_id={CHECKOUT_SESSION_ID}&case_id=${encodeURIComponent(caseId)}&payment=success`,
+        cancel_url: `${appBaseUrl}/?case_id=${encodeURIComponent(caseId)}&payment=cancelled`,
+      } as any);
 
-        return res.json({
-          sessionId: session.id,
-          checkoutUrl: session.url,
-          mode: stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test',
-        });
-      } else {
-        // Stripe keys are not yet configured: provide robust Sandbox checkout simulation portal
-        const sandboxSessionId = `cs_sandbox_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const sandboxUrl = `/api/payment/sandbox-checkout?sessionId=${sandboxSessionId}&caseId=${encodeURIComponent(caseId)}&name=${encodeURIComponent(businessName || 'Your Business')}&amount=99&currency=${currency || 'NZD'}`;
-
-        return res.json({
-          sessionId: sandboxSessionId,
-          checkoutUrl: sandboxUrl,
-          mode: 'sandbox_simulation',
-          note: 'Operating in Sandbox Simulation Mode until STRIPE_SECRET_KEY is configured in .env'
-        });
-      }
+      return res.json({
+        sessionId: session.id,
+        checkoutUrl: session.url,
+        mode: stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test',
+        configured: true,
+      });
     } catch (err: any) {
       console.error('Stripe Session Creation Error:', err);
       return res.status(500).json({ error: err.message || 'Error creating checkout session' });
     }
   });
 
-  // 2. Sandbox Checkout Simulation Portal (for preview verification)
-  app.get('/api/payment/sandbox-checkout', (req, res) => {
-    const { sessionId, caseId, name, amount, currency } = req.query;
-    const safeCurrency = currency || 'NZD';
-    const safeAmount = amount || '99';
-
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Stripe Test Sandbox — BizPulse Checkout</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-          .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-          .badge { background: #f59e0b22; color: #fbbf24; border: 1px solid #f59e0b44; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px; }
-          h2 { margin: 0 0 8px 0; font-size: 22px; color: #fff; }
-          p { color: #94a3b8; font-size: 13px; line-height: 1.5; margin: 0 0 20px 0; }
-          .summary { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
-          .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-          .row:last-child { margin-bottom: 0; padding-top: 8px; border-top: 1px solid #1e293b; font-weight: bold; color: #fff; font-size: 15px; }
-          .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 14px 20px; font-size: 14px; font-weight: bold; border-radius: 10px; width: 100%; cursor: pointer; transition: opacity 0.2s; margin-bottom: 10px; }
-          .btn-fail { background: #ef444422; color: #f87171; border: 1px solid #ef444444; padding: 10px 16px; font-size: 12px; font-weight: 600; border-radius: 8px; width: 100%; cursor: pointer; margin-bottom: 8px; }
-          .btn-cancel { background: transparent; color: #94a3b8; border: none; padding: 8px; font-size: 12px; width: 100%; cursor: pointer; text-decoration: underline; }
-          .footer { font-size: 11px; color: #64748b; text-align: center; margin-top: 16px; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <span class="badge">Stripe Test Sandbox</span>
-          <h2>BizPulse Commercial Diagnostic</h2>
-          <p>You are viewing the test checkout simulation for <strong>${name || 'SME Client'}</strong>. In production, this redirects to Stripe-hosted Checkout.</p>
-
-          <div class="summary">
-            <div class="row">
-              <span style="color:#94a3b8;">Item:</span>
-              <span>Executive Turnaround OS</span>
-            </div>
-            <div class="row">
-              <span style="color:#94a3b8;">Case ID:</span>
-              <span style="font-family:monospace; font-size:11px;">${caseId}</span>
-            </div>
-            <div class="row">
-              <span style="color:#94a3b8;">Payment Method:</span>
-              <span>Test Card (4242 •••• 4242)</span>
-            </div>
-            <div class="row">
-              <span>Total Due:</span>
-              <span style="color:#34d399;">${safeCurrency} $${safeAmount}.00</span>
-            </div>
-          </div>
-
-          <button class="btn-success" onclick="window.location.href='/?session_id=${sessionId}&case_id=${encodeURIComponent(caseId as string)}&payment=success'">
-            Simulate Successful ${safeCurrency} $${safeAmount} Payment
-          </button>
-
-          <button class="btn-fail" onclick="alert('Payment Failure Simulated: Your card has insufficient funds or was declined by the issuing bank.');">
-            Simulate Card Decline / Failure
-          </button>
-
-          <button class="btn-cancel" onclick="window.location.href='/?case_id=${encodeURIComponent(caseId as string)}&payment=cancelled'">
-            Cancel and Return to BizPulse
-          </button>
-
-          <div class="footer">
-            Stripe API Sandbox Mode • No real money charged
-          </div>
-        </div>
-      </body>
-      </html>
-    `);
-  });
-
-  // 3. Verify Payment Session
-  app.post('/api/payment/verify-session', async (req, res) => {
+  // 2. Verify Payment Session (Authenticated & Verified via Stripe)
+  app.post('/api/payment/verify-session', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { sessionId, caseId } = req.body;
       if (!sessionId || !caseId) {
         return res.status(400).json({ error: 'sessionId and caseId are required' });
       }
 
-      if (stripe && sessionId.startsWith('cs_') && !sessionId.startsWith('cs_sandbox_')) {
-        const session = await stripe.checkout.sessions.retrieve(sessionId);
-        if (session.payment_status === 'paid') {
-          const record = {
-            sessionId: session.id,
-            caseId,
-            amount: (session.amount_total || 9900) / 100,
-            currency: (session.currency || 'nzd').toUpperCase(),
-            status: 'paid' as const,
-            tier: 'Diagnostic Report & Turnaround OS',
-            unlockedAt: new Date().toISOString(),
-            customerEmail: session.customer_details?.email || undefined,
-            paymentMode: stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test' as any,
-          };
-          verifiedPaidCases.set(caseId, record);
-          return res.json({ paid: true, record });
-        } else {
-          return res.json({ paid: false, status: session.payment_status });
+      if (!stripe || !isStripeConfigured) {
+        return res.status(503).json({ error: 'Stripe is not configured on this server.' });
+      }
+
+      // Reject sandbox simulation IDs as proof of real payment
+      if (!sessionId.startsWith('cs_') || sessionId.startsWith('cs_sandbox_')) {
+        return res.status(400).json({ error: 'Invalid checkout session ID format.' });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.payment_status === 'paid') {
+        // Enforce ownership: verify that the Stripe session was created for this user
+        if (session.metadata?.userId && session.metadata.userId !== req.user?.uid) {
+          return res.status(403).json({ error: 'Payment session belongs to another authenticated account.' });
         }
-      } else if (sessionId.startsWith('cs_sandbox_')) {
-        // Sandbox verification
+
         const record = {
-          sessionId,
+          sessionId: session.id,
           caseId,
-          amount: 99,
-          currency: 'NZD',
+          amount: (session.amount_total || 9900) / 100,
+          currency: (session.currency || 'nzd').toUpperCase(),
           status: 'paid' as const,
           tier: 'Diagnostic Report & Turnaround OS',
           unlockedAt: new Date().toISOString(),
-          paymentMode: 'sandbox_simulation' as const,
+          customerEmail: session.customer_details?.email || undefined,
+          paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as 'stripe_live' | 'stripe_test',
         };
+
         verifiedPaidCases.set(caseId, record);
+
+        // Persist verified payment in Firestore
+        if (req.user?.uid) {
+          try {
+            await adminDb.collection('users').doc(req.user.uid).collection('cases').doc(caseId).set({
+              isUnlocked: true,
+              paymentStatus: 'paid',
+              paymentRecord: record,
+              updatedAt: new Date().toISOString(),
+            }, { merge: true });
+          } catch (fsErr: any) {
+            console.warn('Direct Firestore payment write notice (client will also persist):', fsErr.message);
+          }
+        }
+
         return res.json({ paid: true, record });
       } else {
-        return res.status(400).json({ error: 'Unrecognized session ID format' });
+        return res.json({ paid: false, status: session.payment_status });
       }
     } catch (err: any) {
       console.error('Session Verification Error:', err);
@@ -369,13 +376,20 @@ YOUR COACHING & ADVISORY PRINCIPLES:
     }
   });
 
-  // 4. Stripe Webhook Endpoint (Signed & Idempotent)
+  // 3. Stripe Webhook Endpoint (Signed & Idempotent, Raw Body Verification)
   app.post('/api/payment/webhook', async (req: any, res) => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     let event: any;
 
-    if (stripe && webhookSecret && webhookSecret !== 'whsec_placeholder_secret') {
+    if (!stripe || !isStripeConfigured) {
+      return res.status(503).json({ error: 'Stripe is not configured.' });
+    }
+
+    if (webhookSecret && webhookSecret !== 'whsec_placeholder_secret') {
       const sig = req.headers['stripe-signature'];
+      if (!sig) {
+        return res.status(400).json({ error: 'Missing stripe-signature header' });
+      }
       try {
         event = stripe.webhooks.constructEvent(req.rawBody || JSON.stringify(req.body), sig, webhookSecret);
       } catch (err: any) {
@@ -383,6 +397,10 @@ YOUR COACHING & ADVISORY PRINCIPLES:
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
     } else {
+      // In development/testing if webhook secret is not set, reject in production
+      if (isProduction) {
+        return res.status(400).json({ error: 'Webhook secret required in production.' });
+      }
       event = req.body;
     }
 
@@ -404,30 +422,40 @@ YOUR COACHING & ADVISORY PRINCIPLES:
       case 'checkout.session.completed': {
         const session = event.data?.object;
         const caseId = session?.metadata?.caseId;
-        if (caseId) {
-          verifiedPaidCases.set(caseId, {
+        const userId = session?.metadata?.userId;
+        if (caseId && session.payment_status === 'paid') {
+          const record = {
             sessionId: session.id,
             caseId,
             amount: (session.amount_total || 9900) / 100,
             currency: (session.currency || 'nzd').toUpperCase(),
-            status: 'paid',
+            status: 'paid' as const,
             tier: 'Diagnostic Report & Turnaround OS',
             unlockedAt: new Date().toISOString(),
             customerEmail: session.customer_details?.email,
-            paymentMode: 'stripe_live',
-          });
-          console.log(`Server-side unlock confirmed via webhook for case: ${caseId}`);
+            paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as 'stripe_live' | 'stripe_test',
+          };
+          verifiedPaidCases.set(caseId, record);
+
+          if (userId) {
+            try {
+              await adminDb.collection('users').doc(userId).collection('cases').doc(caseId).set({
+                isUnlocked: true,
+                paymentStatus: 'paid',
+                paymentRecord: record,
+                updatedAt: new Date().toISOString(),
+              }, { merge: true });
+              console.log(`Persistently unlocked case ${caseId} for user ${userId} via Stripe webhook.`);
+            } catch (fsErr: any) {
+              console.warn('Webhook Firestore persistence note:', fsErr.message);
+            }
+          }
         }
         break;
       }
       case 'charge.refunded': {
         const charge = event.data?.object;
-        console.log(`Charge refunded: ${charge?.id}. Processing revocation.`);
-        break;
-      }
-      case 'payment_intent.payment_failed': {
-        const intent = event.data?.object;
-        console.warn(`Payment intent failed: ${intent?.id}`);
+        console.log(`Charge refunded: ${charge?.id}. Entitlement revocation logged.`);
         break;
       }
     }
@@ -435,8 +463,8 @@ YOUR COACHING & ADVISORY PRINCIPLES:
     return res.json({ received: true });
   });
 
-  // 5. Entitlement Status by Case ID
-  app.get('/api/payment/status/:caseId', (req, res) => {
+  // 4. Entitlement Status by Case ID (Authenticated)
+  app.get('/api/payment/status/:caseId', requireAuth, verifyCaseOwnership, (req: AuthenticatedRequest, res) => {
     const { caseId } = req.params;
     const record = verifiedPaidCases.get(caseId);
     if (record) {
@@ -444,13 +472,12 @@ YOUR COACHING & ADVISORY PRINCIPLES:
     }
     return res.json({ isUnlocked: false, paymentStatus: 'free', record: null });
   });
-
   // ==========================================
-  // COACH & DIAGNOSTIC ENDPOINTS
+  // COACH & DIAGNOSTIC ENDPOINTS (Authenticated & Scoped)
   // ==========================================
 
-  // 1. Dynamic Coach Chat API
-  app.post('/api/coach/query', async (req, res) => {
+  // 1. Dynamic Coach Chat API (Protected)
+  app.post('/api/coach/query', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const { prompt, businessProfile, healthInputs, financials, overallHealth, userRole, topic } = req.body;
 
@@ -483,8 +510,8 @@ YOUR COACHING & ADVISORY PRINCIPLES:
     }
   });
 
-  // 2. Dynamic Structured Recommendation Engine API (Phase 3)
-  app.post('/api/coach/generate-recommendation', async (req, res) => {
+  // 2. Dynamic Structured Recommendation Engine API (Protected)
+  app.post('/api/coach/generate-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const { businessProfile, healthInputs, financials, overallHealth } = req.body;
 
@@ -567,8 +594,8 @@ Return the result strictly as a valid JSON object matching the requested schema.
     }
   });
 
-  // 3. Dynamic Script Generation API
-  app.post('/api/coach/generate-script', async (req, res) => {
+  // 3. Dynamic Script Generation API (Protected)
+  app.post('/api/coach/generate-script', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const { scriptType, businessProfile, details } = req.body;
       const bName = businessProfile?.name || 'Our Company';

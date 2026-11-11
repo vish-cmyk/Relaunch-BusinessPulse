@@ -16,4 +16,25 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+/**
+ * Returns authorization headers including the current user's verified Firebase ID token.
+ */
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  const user = auth.currentUser;
+  if (!user) {
+    return { 'Content-Type': 'application/json' };
+  }
+  try {
+    const token = await user.getIdToken();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  } catch (err) {
+    console.warn('Failed to retrieve Firebase ID token:', err);
+    return { 'Content-Type': 'application/json' };
+  }
+}
+
 export default app;

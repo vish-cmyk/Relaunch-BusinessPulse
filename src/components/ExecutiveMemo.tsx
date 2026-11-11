@@ -414,10 +414,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </p>
             </div>
           </div>
-          {activeAccordion === 'sec-2' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+          {activeAccordion === 'sec-2' ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
         </button>
 
-        {activeAccordion === 'sec-2' && (
+        <div className={activeAccordion === 'sec-2' ? 'block' : 'hidden print:block'}>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl bg-slate-950/60 border border-emerald-800/40 space-y-2">
@@ -463,7 +463,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* SECTION 3: CORE COMMERCIAL CONTRADICTION & ROOT-CAUSE ANALYSIS */}
@@ -485,10 +485,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </p>
             </div>
           </div>
-          {activeAccordion === 'sec-3' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+          {activeAccordion === 'sec-3' ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
         </button>
 
-        {activeAccordion === 'sec-3' && (
+        <div className={activeAccordion === 'sec-3' ? 'block' : 'hidden print:block'}>
           <div className="p-6 space-y-5 text-xs text-slate-300 leading-relaxed">
             <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
               <h4 className="font-bold text-white text-sm">The Mechanism of Cash Trapping</h4>
@@ -524,7 +524,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </ol>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* SECTION 4: THE INTEGRATED COMMERCIAL RISK MAP */}
@@ -546,10 +546,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </p>
             </div>
           </div>
-          {activeAccordion === 'sec-4' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+          {activeAccordion === 'sec-4' ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
         </button>
 
-        {activeAccordion === 'sec-4' && (
+        <div className={activeAccordion === 'sec-4' ? 'block' : 'hidden print:block'}>
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {RISK_MAP_ITEMS.map((item) => (
@@ -580,7 +580,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* SECTION 5: GROWTH INVESTMENT COMPARISON (OPTION A, B, AND C) */}
@@ -602,10 +602,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </p>
             </div>
           </div>
-          {activeAccordion === 'sec-5' ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+          {activeAccordion === 'sec-5' ? <ChevronUp className="w-5 h-5 text-slate-400 print:hidden" /> : <ChevronDown className="w-5 h-5 text-slate-400 print:hidden" />}
         </button>
 
-        {activeAccordion === 'sec-5' && (
+        <div className={activeAccordion === 'sec-5' ? 'block' : 'hidden print:block'}>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {GROWTH_OPTIONS_EVALUATION.map((opt) => (
@@ -645,7 +645,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </p>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* SECTION 6: MANAGEMENT RECOMMENDATIONS & 48-HOUR GATES */}

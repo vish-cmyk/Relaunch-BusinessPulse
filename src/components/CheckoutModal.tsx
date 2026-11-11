@@ -14,6 +14,7 @@ import {
   Bot
 } from 'lucide-react';
 import { CaseRecord } from '../types/bizpulse';
+import { getAuthHeaders } from '../services/firebase';
 
 interface CheckoutModalProps {
   caseRecord: CaseRecord;
@@ -41,9 +42,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setError(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/payment/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: JSON.stringify({
           caseId: caseRecord.id,
           businessName: caseRecord.profile.name,
@@ -51,11 +56,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session.');
+      const data = await response.json();
+
+      if (!response.ok || data.configured === false) {
+        throw new Error(data.error || 'Stripe payment integration is not configured on the server. Please set STRIPE_SECRET_KEY to enable live checkout.');
       }
 
-      const data = await response.json();
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
@@ -64,37 +70,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Error initiating checkout.');
-      setIsLoading(false);
-    }
-  };
-
-  const handleInstantSandboxUnlock = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const mockSessionId = `cs_sandbox_${Date.now()}`;
-      const response = await fetch('/api/payment/verify-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: mockSessionId,
-          caseId: caseRecord.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Sandbox verification failed.');
-      }
-
-      const data = await response.json();
-      if (data.paid && data.record) {
-        onPaymentSuccess(data.record);
-        onClose();
-      }
-    } catch (err: any) {
-      setError(err.message || 'Sandbox unlock failed.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -197,15 +172,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </button>
 
           <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-            <span>Stripe Test Mode Supported</span>
-            <button
-              onClick={handleInstantSandboxUnlock}
-              disabled={isLoading}
-              className="text-amber-400/80 hover:text-amber-300 underline font-mono"
-              title="Instantly simulate confirmed payment for testing without entering credit cards"
-            >
-              [Dev Test: Instant Sandbox Unlock]
-            </button>
+            <span>Stripe Encrypted Checkout</span>
+            <span className="text-slate-400 font-mono">Instant Case Access Upon Payment</span>
           </div>
         </div>
 

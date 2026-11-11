@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { SCRIPT_PRESETS } from '../data/coachingBriefing';
 import { ScriptPreset, CaseRecord, BusinessProfile } from '../types/bizpulse';
+import { getAuthHeaders } from '../services/firebase';
 
 interface Message {
   id: string;
@@ -131,9 +132,10 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
     setIsLoading(true);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/coach/query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           prompt: textToSend,
           topic: selectedTopic,
@@ -178,9 +180,10 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
     setGeneratedScript(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/coach/generate-script', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           scriptType: preset.title,
           businessProfile: caseRecord.profile,

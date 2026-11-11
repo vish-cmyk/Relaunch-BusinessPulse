@@ -449,7 +449,6 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                             type="button"
                             onClick={() => {
                               handleStatusChange(key, st);
-                              onRecalculateOverall();
                             }}
                             className={`p-3 rounded-xl border text-left flex items-center space-x-2 transition ${
                               isSelected

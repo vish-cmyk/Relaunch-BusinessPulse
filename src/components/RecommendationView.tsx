@@ -22,6 +22,8 @@ import {
   RecommendationOutput 
 } from '../types/bizpulse';
 
+import { getAuthHeaders } from '../services/firebase';
+
 interface RecommendationViewProps {
   profile: BusinessProfile;
   healthInputs: Record<HealthDimensionKey, HealthDimensionInput>;
@@ -49,10 +51,15 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
     setError(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/coach/generate-recommendation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: JSON.stringify({
+          caseId: profile.caseId,
           businessProfile: profile,
           healthInputs,
           financials,
@@ -61,7 +68,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error('Server returned an error generating recommendation.');
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Server returned an error generating recommendation.');
       }
 
       const data = await response.json();

@@ -344,12 +344,12 @@ function BizPulseWorkspace() {
   // 1. Initial Auth Loading State
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 font-sans">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center font-black text-slate-950 text-2xl shadow-xl shadow-orange-500/20 mb-4 animate-pulse">
+      <div className="min-h-screen bg-[#F5F6F3] flex flex-col items-center justify-center text-[#14283F] font-sans">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#168C83] to-[#12726B] flex items-center justify-center font-extrabold text-white text-2xl shadow-md mb-4 animate-pulse">
           BP
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300">
-          <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+        <div className="flex items-center gap-2 text-sm text-[#64748B]">
+          <RefreshCw className="w-4 h-4 animate-spin text-[#168C83]" />
           <span>Verifying Firebase session...</span>
         </div>
       </div>
@@ -364,16 +364,16 @@ function BizPulseWorkspace() {
   // 3. User is signed in, but initial Firestore cases are loading
   if (casesLoading || !activeCase) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 font-sans">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center font-black text-slate-950 text-2xl shadow-xl shadow-orange-500/20 mb-4">
+      <div className="min-h-screen bg-[#F5F6F3] flex flex-col items-center justify-center text-[#14283F] font-sans">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#168C83] to-[#12726B] flex items-center justify-center font-extrabold text-white text-2xl shadow-md mb-4">
           BP
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300">
-          <Database className="w-4 h-4 animate-bounce text-amber-400" />
+        <div className="flex items-center gap-2 text-sm text-[#64748B]">
+          <Database className="w-4 h-4 animate-bounce text-[#168C83]" />
           <span>Loading client workspace from Cloud Firestore...</span>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
-          Vault: <code className="font-mono text-slate-400">users/{currentUser.uid}/cases</code>
+        <p className="mt-2 text-xs text-[#64748B]">
+          Vault: <code className="font-mono text-[#14283F]">users/{currentUser.uid}/cases</code>
         </p>
       </div>
     );
@@ -381,7 +381,7 @@ function BizPulseWorkspace() {
 
   // 4. Authenticated Workspace
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-[#F5F6F3] text-[#14283F] flex flex-col font-sans selection:bg-[#168C83]/20 selection:text-[#14283F]">
       {/* Top Application Header */}
       <Header
         activeTab={activeTab}
@@ -414,14 +414,14 @@ function BizPulseWorkspace() {
 
       {/* Sync / Firestore Error Banner if any */}
       {firestoreError && (
-        <div className="bg-amber-950/70 border-b border-amber-800/80 px-4 py-2 text-xs text-amber-200 flex items-center justify-between">
+        <div className="bg-[#FFFBEB] border-b border-[#FDE68A] px-4 py-2 text-xs text-[#B45309] flex items-center justify-between">
           <div className="flex items-center gap-2 max-w-5xl mx-auto w-full">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-[#D99A35] shrink-0" />
             <span>{firestoreError}</span>
           </div>
           <button 
             onClick={() => setFirestoreError(null)}
-            className="text-amber-400 hover:text-white text-xs px-2 py-0.5 rounded"
+            className="text-[#B45309] hover:text-[#14283F] text-xs px-2 py-0.5 rounded font-medium"
           >
             Dismiss
           </button>
@@ -534,14 +534,14 @@ function BizPulseWorkspace() {
       />
 
       {/* Footer */}
-      <footer className="bg-slate-900/60 border-t border-slate-900 py-6 text-center text-xs text-slate-500 print:hidden">
+      <footer className="bg-white border-t border-[#E5EBEF] py-6 text-center text-xs text-[#64748B] print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Relaunch BizPulse © 2026 • Evidence-Based SME Turnaround Operating System</span>
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-[#64748B]">
             <span>Firestore Vault:</span>
-            <strong className="text-slate-200">{activeCase.profile.name}</strong>
-            <span className="text-emerald-400 flex items-center gap-1 font-mono text-[11px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <strong className="text-[#14283F]">{activeCase.profile.name}</strong>
+            <span className="text-[#15803D] flex items-center gap-1 font-mono text-[11px] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
               Connected
             </span>
           </div>

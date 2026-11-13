@@ -1,23 +1,17 @@
 import React from 'react';
 import { 
   Building2, 
-  ShieldAlert, 
-  TrendingUp, 
-  Calendar, 
   DollarSign, 
-  Users, 
-  CheckSquare, 
   Bot, 
-  Printer, 
   Sparkles,
   BarChart3,
-  Layers,
   Activity,
   FileText,
   Download,
-  Target,
+  Calendar,
+  TrendingUp,
   LogOut,
-  Cloud,
+  ShieldCheck,
   CheckCircle2
 } from 'lucide-react';
 import { BusinessProfile, OverallHealthAssessment } from '../types/bizpulse';
@@ -62,96 +56,101 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 text-white shadow-xl print:hidden">
-      {/* Top Banner Context */}
+    <header className="bg-white border-b border-[#E5EBEF] sticky top-0 z-40 text-[#14283F] shadow-xs print:hidden">
+      {/* Top Header Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+        
+        {/* Brand & Active Case Context */}
         <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center shadow-lg shadow-orange-500/20 text-white font-black text-xl shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#168C83] via-teal-700 to-[#14283F] flex items-center justify-center shadow-xs text-white font-extrabold text-xl shrink-0">
             BP
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-lg text-slate-100 tracking-tight">Relaunch BizPulse</span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                SME Commercial Turnaround OS
+              <span className="font-bold text-lg text-[#14283F] tracking-tight">Relaunch BizPulse</span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
+                SME Consulting & Diagnostic OS
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">
                 {activeProfile.industry} • {activeProfile.currency}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5 truncate max-w-xl">
-              Active Business: <strong className="text-slate-200">{activeProfile.name}</strong> • Objective: {activeProfile.primaryObjective}
+            <p className="text-xs text-[#64748B] mt-0.5 truncate max-w-xl">
+              Active Client: <strong className="text-[#14283F]">{activeProfile.name}</strong> • Objective: {activeProfile.primaryObjective}
             </p>
           </div>
         </div>
 
-        {/* Status Pills & Actions */}
-        <div className="flex items-center gap-3">
+        {/* Status Indicators & Executive Action Buttons */}
+        <div className="flex items-center gap-2.5">
+          {/* Health Score Tag */}
           {overallHealth && (
-            <div className="hidden lg:flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
-              <span className="text-slate-400">Health:</span>
+            <div className="hidden lg:flex items-center space-x-2 bg-[#F8FAFC] px-3 py-1.5 rounded-lg border border-[#E5EBEF] text-xs">
+              <span className="text-[#64748B] font-medium">Health:</span>
               <span className={`font-bold font-mono ${
-                overallHealth.overallScore >= 70 ? 'text-emerald-400' :
-                overallHealth.overallScore >= 45 ? 'text-amber-400' : 'text-rose-400'
+                overallHealth.overallScore >= 70 ? 'text-[#15803D]' :
+                overallHealth.overallScore >= 45 ? 'text-[#B45309]' : 'text-[#B91C1C]'
               }`}>
                 {overallHealth.overallScore}/100 ({overallHealth.overallRating})
               </span>
             </div>
           )}
 
-          {/* License Status / Unlock Button */}
+          {/* License Status / Unlock Diagnostic Button */}
           {activeProfile.isDemonstrationCase ? (
-            <span className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 text-xs font-semibold">
+            <span className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1] text-xs font-semibold">
               <span>Benchmark Case</span>
             </span>
           ) : isUnlocked ? (
-            <span className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] text-xs font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]"></span>
               <span>Diagnostic License: Active</span>
             </span>
           ) : (
             <button
               onClick={onOpenCheckoutModal}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] text-xs font-bold transition shadow-xs"
               title="Unlock full commercial diagnostic and executive reports"
             >
               <span>Unlock Diagnostic ({activeProfile.currency} $99)</span>
             </button>
           )}
 
+          {/* Export Report Modal Trigger */}
           <button
             onClick={onOpenExportModal}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition"
-            title="Export Word, PDF or Markdown report"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-[#F5F6F3] text-[#14283F] text-xs font-semibold border border-[#CBD5E1] transition shadow-xs"
+            title="Export Word, PowerPoint, PDF or CSV report"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-[#64748B]" />
             <span className="hidden sm:inline">Export Report</span>
           </button>
 
+          {/* AI Coach Action Button */}
           <button
             onClick={onOpenCoachModal}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 text-xs font-bold shadow-md shadow-orange-500/20 transition transform active:scale-95"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#168C83] hover:bg-[#12726B] text-white text-xs font-bold shadow-xs transition transform active:scale-95"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Ask Coach</span>
+            <span>Consult Coach</span>
           </button>
 
-          {/* User Account & Sign Out */}
+          {/* User Email & Sign Out */}
           {userEmail && (
-            <div className="flex items-center pl-2 ml-1 border-l border-slate-800 space-x-2">
+            <div className="flex items-center pl-2 ml-1 border-l border-[#E5EBEF] space-x-2">
               <div 
-                className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300"
+                className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#F8FAFC] border border-[#E5EBEF] text-[11px] text-[#64748B]"
                 title={`Signed in as ${userEmail} • Cloud Firestore Active`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                <span className="max-w-[150px] truncate text-slate-200">{userEmail}</span>
+                <span className="w-2 h-2 rounded-full bg-[#15803D] shrink-0" />
+                <span className="max-w-[140px] truncate text-[#14283F] font-medium">{userEmail}</span>
               </div>
 
               {onSignOut && (
                 <button
                   onClick={onSignOut}
-                  className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-950/50 hover:text-rose-300 text-slate-400 text-xs font-medium border border-slate-700/80 hover:border-rose-800/50 transition"
-                  title="Sign out of Firebase workspace"
+                  className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#FEF2F2] hover:text-[#B91C1C] text-[#64748B] text-xs font-medium border border-[#E5EBEF] hover:border-[#FECACA] transition"
+                  title="Sign out of workspace"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span className="hidden md:inline">Sign Out</span>
@@ -162,8 +161,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-800/80">
+      {/* Navigation Bar (All 9 Tabs Preserved) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-[#E5EBEF]">
         <nav className="flex space-x-1 overflow-x-auto py-2 scrollbar-none" aria-label="Tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -172,13 +171,13 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+                className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                } ${tab.isSpecial && !isActive ? 'text-orange-400 font-semibold' : ''}`}
+                    ? 'bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 shadow-xs font-semibold'
+                    : 'text-[#64748B] hover:text-[#14283F] hover:bg-[#F5F6F3]'
+                } ${tab.isSpecial && !isActive ? 'text-[#D99A35] font-semibold' : ''}`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : ''}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#168C83]' : tab.isSpecial ? 'text-[#D99A35]' : 'text-[#64748B]'}`} />
                 <span>{tab.label}</span>
               </button>
             );

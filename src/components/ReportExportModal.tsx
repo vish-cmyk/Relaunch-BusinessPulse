@@ -648,27 +648,27 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden text-slate-100 space-y-5 p-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+      <div className="bg-white border border-[#E5EBEF] rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden text-[#14283F] space-y-5 p-6">
+        <div className="flex items-center justify-between border-b border-[#E5EBEF] pb-4">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#E6F4F2] border border-[#168C83]/30 text-[#168C83] flex items-center justify-center font-bold">
               <Download className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">Export Executive Reports & Presentation Deck</h3>
-              <p className="text-xs text-slate-400">Current case: {profile.name} ({profile.country})</p>
+              <h3 className="font-bold text-[#14283F] text-base">Export Executive Reports & Presentation Deck</h3>
+              <p className="text-xs text-[#64748B]">Current case: {profile.name} ({profile.country})</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <button onClick={onClose} className="p-1 rounded-lg text-[#64748B] hover:text-[#14283F] hover:bg-[#F1F5F9] transition">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {downloadStatus && (
-          <div className="p-3 bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 text-xs rounded-xl flex items-center gap-2">
-            <Check className="w-4 h-4" />
-            <span>{downloadStatus}</span>
+          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600" />
+            <span className="font-medium">{downloadStatus}</span>
           </div>
         )}
 
@@ -677,16 +677,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           <button
             onClick={handleDownloadDirectPdf}
             disabled={isGenerating}
-            className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 hover:bg-slate-850 transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50"
+            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
           >
-            <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20">
+            <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center border border-red-200">
               <Printer className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-white text-xs block group-hover:text-amber-400">
+              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
                 PDF Document (.pdf)
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-[#64748B]">
                 Formatted executive summary report
               </span>
             </div>
@@ -696,16 +696,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           <button
             onClick={handleDownloadWordDoc}
             disabled={isGenerating}
-            className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 hover:bg-slate-850 transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50"
+            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-white text-xs block group-hover:text-amber-400">
+              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
                 Word Document (.docx)
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-[#64748B]">
                 Genuine OpenXML editable document
               </span>
             </div>
@@ -715,16 +715,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           <button
             onClick={handleDownloadPowerPointDeck}
             disabled={isGenerating}
-            className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 hover:bg-slate-850 transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50"
+            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
           >
-            <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center border border-orange-500/20">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#D99A35] flex items-center justify-center border border-amber-200">
               <Presentation className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-white text-xs block group-hover:text-amber-400">
+              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
                 PowerPoint (.pptx)
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-[#64748B]">
                 6-slide executive briefing deck
               </span>
             </div>
@@ -734,71 +734,71 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           <button
             onClick={handleDownloadInfographic}
             disabled={isGenerating}
-            className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 hover:bg-slate-850 transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50"
+            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
           >
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
               <ImageIcon className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-white text-xs block group-hover:text-amber-400">
+              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
                 Health Infographic
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-[#64748B]">
                 Vector 8D scorecard infographic (.svg)
               </span>
             </div>
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#E5EBEF] text-xs">
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
                 onClose();
                 onPrintReport();
               }}
-              className="text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition"
+              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
               title="Open full print view for memo"
             >
-              <Printer className="w-3.5 h-3.5 text-rose-400" />
+              <Printer className="w-3.5 h-3.5 text-rose-600" />
               <span>Print View</span>
             </button>
 
             <button
               onClick={handleDownloadMarkdown}
-              className="text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition"
+              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
               title="Download structured Markdown summary"
             >
-              <FileCode className="w-3.5 h-3.5 text-purple-400" />
+              <FileCode className="w-3.5 h-3.5 text-purple-600" />
               <span>Markdown (.md)</span>
             </button>
 
             <button
               onClick={handleDownloadCsv}
-              className="text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition"
+              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
               title="Export scorecard & financials as CSV spreadsheet"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
               <span>Scorecard (.csv)</span>
             </button>
 
             <button
               onClick={handleDownloadJson}
-              className="text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition"
+              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
               title="Download full case data as portable JSON"
             >
-              <Database className="w-3.5 h-3.5 text-cyan-400" />
+              <Database className="w-3.5 h-3.5 text-cyan-600" />
               <span>Full Data (.json)</span>
             </button>
           </div>
 
-          <span className="text-[11px] text-slate-500 font-mono">
+          <span className="text-[11px] text-[#64748B] font-mono">
             Case ID: {profile.caseId}
           </span>
         </div>
 
-        <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-          <Activity className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E5EBEF] text-[11px] text-[#64748B] flex items-start gap-2">
+          <Activity className="w-4 h-4 text-[#D99A35] shrink-0 mt-0.5" />
           <span>
             Every export is strictly compiled from the active case (<strong>{profile.name}</strong>) and excludes information from other businesses.
           </span>

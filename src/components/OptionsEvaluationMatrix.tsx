@@ -30,19 +30,19 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
   return (
     <div className="space-y-6">
       {/* Top Banner Context */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
                 Objective Commercial Appraisal
               </span>
-              <span className="text-slate-400 text-xs">Section 5 Analysis</span>
+              <span className="text-[#64748B] text-xs font-medium">Section 5 Analysis</span>
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl font-bold text-[#14283F] tracking-tight">
               Growth Investment Decision Engine: Option A vs. Option B vs. Option C
             </h2>
-            <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
+            <p className="text-sm text-[#64748B] max-w-3xl leading-relaxed">
               Evaluating proposed capital commitments objectively without pre-determined bias. What must be true for each option to work, transparent calculation models, and explicit approval/deferral/rejection conditions.
             </p>
           </div>
@@ -53,10 +53,10 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               <button
                 key={optId}
                 onClick={() => setSelectedOptionId(optId)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
                   selectedOptionId === optId
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-[#168C83] text-white'
+                    : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
                 }`}
               >
                 {optId}
@@ -76,42 +76,42 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               onClick={() => setSelectedOptionId(opt.id)}
               className={`p-5 rounded-2xl cursor-pointer transition-all border flex flex-col justify-between ${
                 isSelected
-                  ? 'bg-slate-850 border-amber-500 shadow-xl ring-1 ring-amber-500/50'
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-850/60'
+                  ? 'bg-white border-[#168C83] shadow-md ring-1 ring-[#168C83]/30'
+                  : 'bg-white border-[#E5EBEF] hover:border-[#CBD5E1] hover:bg-[#F8FAFC]'
               }`}
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 font-mono">
+                  <span className="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-[#F1F5F9] text-[#14283F] font-mono border border-[#CBD5E1]">
                     {opt.id}
                   </span>
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                     opt.id === 'Option C' 
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                      : 'bg-amber-50 text-amber-800 border border-amber-200'
                   }`}>
                     {opt.id === 'Option C' ? 'Primary Recommendation' : 'High Risk / Premature'}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-white text-sm line-clamp-2">
+                  <h3 className="font-bold text-[#14283F] text-sm line-clamp-2">
                     {opt.title}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                  <p className="text-xs text-[#64748B] mt-1 line-clamp-2">
                     {opt.proposedAction}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-800 space-y-1.5 text-xs">
+              <div className="mt-4 pt-3 border-t border-[#E5EBEF] space-y-1.5 text-xs">
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-slate-500">Upfront Cash:</span>
-                  <span className="text-slate-200 font-mono">{opt.id === 'Option A' ? 'NZ$20,000' : opt.id === 'Option B' ? 'NZ$15k–$20k setup' : 'NZ$0'}</span>
+                  <span className="text-[#64748B]">Upfront Cash:</span>
+                  <span className="text-[#14283F] font-mono font-medium">{opt.id === 'Option A' ? 'NZ$20,000' : opt.id === 'Option B' ? 'NZ$15k–$20k setup' : 'NZ$0'}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-slate-500">Ongoing Cost:</span>
-                  <span className="text-slate-200 font-mono">{opt.id === 'Option A' ? 'NZ$3k–$6k/mo' : opt.id === 'Option B' ? '~NZ$7,460/mo' : 'Management Time'}</span>
+                  <span className="text-[#64748B]">Ongoing Cost:</span>
+                  <span className="text-[#14283F] font-mono font-medium">{opt.id === 'Option A' ? 'NZ$3k–$6k/mo' : opt.id === 'Option B' ? '~NZ$7,460/mo' : 'Management Time'}</span>
                 </div>
               </div>
             </div>
@@ -120,40 +120,40 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
       </div>
 
       {/* Selected Option Comprehensive Inspection */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#E5EBEF]">
           <div>
             <div className="flex items-center space-x-3">
-              <span className="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-sm">
+              <span className="px-3 py-1 rounded-lg bg-[#168C83] text-white font-black text-sm shadow-sm">
                 {selectedOption.id}
               </span>
-              <h3 className="text-xl font-bold text-white">
+              <h3 className="text-xl font-bold text-[#14283F]">
                 {selectedOption.title}
               </h3>
             </div>
-            <p className="text-xs text-slate-400 mt-1.5 max-w-3xl leading-relaxed">
+            <p className="text-xs text-[#64748B] mt-1.5 max-w-3xl leading-relaxed">
               {selectedOption.proposedAction}
             </p>
           </div>
 
-          <div className="text-xs font-mono bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Cash Commitment</span>
-            <span className="text-slate-200 font-semibold">{selectedOption.upfrontCashRequirement}</span>
+          <div className="text-xs font-mono bg-[#F8FAFC] px-4 py-2 rounded-xl border border-[#CBD5E1]">
+            <span className="text-[#64748B] block text-[10px] uppercase font-bold">Cash Commitment</span>
+            <span className="text-[#14283F] font-semibold">{selectedOption.upfrontCashRequirement}</span>
           </div>
         </div>
 
         {/* 4 Core Analysis Blocks */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
           {/* Block 1: What Must Be True */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-emerald-400 text-sm flex items-center gap-1.5 uppercase tracking-wider">
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
+          <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2">
+            <h4 className="font-bold text-emerald-700 text-sm flex items-center gap-1.5 uppercase tracking-wider">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
               What Must Be True for This Option to Work
             </h4>
-            <ul className="space-y-1.5 text-slate-300 pt-1">
+            <ul className="space-y-1.5 text-[#14283F] pt-1">
               {selectedOption.whatMustBeTrue.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span className="text-emerald-600 font-bold">✓</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -161,15 +161,15 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
           </div>
 
           {/* Block 2: Commercial Assumptions to Test */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-amber-400 text-sm flex items-center gap-1.5 uppercase tracking-wider">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2">
+            <h4 className="font-bold text-amber-800 text-sm flex items-center gap-1.5 uppercase tracking-wider">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
               Commercial Assumptions That Need Testing
             </h4>
-            <ul className="space-y-1.5 text-slate-300 pt-1">
+            <ul className="space-y-1.5 text-[#14283F] pt-1">
               {selectedOption.commercialAssumptionsToTest.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-amber-500 font-bold">?</span>
+                  <span className="text-[#D99A35] font-bold">?</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -177,26 +177,26 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
           </div>
 
           {/* Block 3: Expected Route to Revenue & Cash */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-blue-400 text-sm flex items-center gap-1.5 uppercase tracking-wider">
-              <Clock className="w-4 h-4 text-blue-400" />
+          <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2">
+            <h4 className="font-bold text-[#168C83] text-sm flex items-center gap-1.5 uppercase tracking-wider">
+              <Clock className="w-4 h-4 text-[#168C83]" />
               Expected Route to Revenue and Cash Collection
             </h4>
-            <p className="text-slate-300 leading-relaxed pt-1">
+            <p className="text-[#14283F] leading-relaxed pt-1">
               {selectedOption.routeToRevenueAndCash}
             </p>
           </div>
 
           {/* Block 4: Principal Risks */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-rose-400 text-sm flex items-center gap-1.5 uppercase tracking-wider">
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
+          <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2">
+            <h4 className="font-bold text-rose-700 text-sm flex items-center gap-1.5 uppercase tracking-wider">
+              <ShieldAlert className="w-4 h-4 text-rose-600" />
               Principal Commercial & Financial Risks
             </h4>
-            <ul className="space-y-1.5 text-slate-300 pt-1">
+            <ul className="space-y-1.5 text-[#14283F] pt-1">
               {selectedOption.principalRisks.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-rose-500 font-bold">!</span>
+                  <span className="text-rose-600 font-bold">!</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -205,49 +205,49 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
         </div>
 
         {/* Calculation Framework */}
-        <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-          <div className="flex items-center space-x-2 text-amber-400 font-bold text-sm">
-            <Calculator className="w-4 h-4 text-amber-400" />
+        <div className="p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-3">
+          <div className="flex items-center space-x-2 text-[#D99A35] font-bold text-sm">
+            <Calculator className="w-4 h-4 text-[#D99A35]" />
             <span>Transparent Break-Even Calculation Framework</span>
           </div>
 
-          <div className="p-3 bg-slate-900 rounded-lg font-mono text-emerald-300 text-xs">
+          <div className="p-3 bg-white rounded-lg font-mono text-emerald-800 border border-emerald-200 text-xs">
             {selectedOption.calculationFramework.formula}
           </div>
 
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-[#14283F] leading-relaxed">
             {selectedOption.calculationFramework.explanation}
           </p>
 
-          <div className="pt-2 text-xs text-slate-400">
-            <strong className="text-slate-200">Exact Inputs Required from Owner: </strong>
+          <div className="pt-2 text-xs text-[#64748B]">
+            <strong className="text-[#14283F]">Exact Inputs Required from Owner: </strong>
             {selectedOption.calculationFramework.requiredInputs.join(' • ')}
           </div>
         </div>
 
         {/* Decision Gates: Approval / Deferral / Rejection */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
-          <div className="p-3.5 bg-emerald-950/20 border border-emerald-900/30 rounded-xl space-y-1">
-            <span className="font-bold text-emerald-400 uppercase tracking-wider block">Approval Conditions:</span>
-            <ul className="space-y-1 text-slate-300">
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
+            <span className="font-bold text-emerald-800 uppercase tracking-wider block">Approval Conditions:</span>
+            <ul className="space-y-1 text-emerald-950">
               {selectedOption.approvalConditions.map((c, i) => (
                 <li key={i}>• {c}</li>
               ))}
             </ul>
           </div>
 
-          <div className="p-3.5 bg-amber-950/20 border border-amber-900/30 rounded-xl space-y-1">
-            <span className="font-bold text-amber-400 uppercase tracking-wider block">Deferral Conditions:</span>
-            <ul className="space-y-1 text-slate-300">
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+            <span className="font-bold text-amber-800 uppercase tracking-wider block">Deferral Conditions:</span>
+            <ul className="space-y-1 text-amber-950">
               {selectedOption.deferralConditions.map((c, i) => (
                 <li key={i}>• {c}</li>
               ))}
             </ul>
           </div>
 
-          <div className="p-3.5 bg-rose-950/20 border border-rose-900/30 rounded-xl space-y-1">
-            <span className="font-bold text-rose-400 uppercase tracking-wider block">Rejection Conditions:</span>
-            <ul className="space-y-1 text-slate-300">
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+            <span className="font-bold text-rose-800 uppercase tracking-wider block">Rejection Conditions:</span>
+            <ul className="space-y-1 text-rose-950">
               {selectedOption.rejectionConditions.map((c, i) => (
                 <li key={i}>• {c}</li>
               ))}

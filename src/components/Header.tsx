@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const tabs = [
     { id: 'essentials', label: '1. Essentials', icon: Building2 },
-    { id: 'health', label: '2. Health (8D)', icon: Activity },
+    { id: 'health', label: '2. Business Health', icon: Activity },
     { id: 'recommendations', label: '3. Recommendations', icon: Sparkles, isSpecial: true },
     { id: 'memo', label: 'Executive Report', icon: FileText },
     { id: 'cashflow', label: 'Cash & Working Capital', icon: DollarSign },
@@ -62,14 +62,14 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand & Active Case Context */}
         <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#168C83] via-teal-700 to-[#14283F] flex items-center justify-center shadow-xs text-white font-extrabold text-xl shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1D4ED8] via-blue-700 to-[#14283F] flex items-center justify-center shadow-xs text-white font-extrabold text-xl shrink-0">
             BP
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-lg text-[#14283F] tracking-tight">Relaunch BizPulse</span>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
-                SME Consulting & Diagnostic OS
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#EAF1FF] text-[#1D4ED8] border border-[#1D4ED8]/30">
+                Business opportunity & performance coach
               </span>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">
                 {activeProfile.industry} • {activeProfile.currency}
@@ -112,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] text-xs font-bold transition shadow-xs"
               title="Unlock full commercial diagnostic and executive reports"
             >
-              <span>Unlock Diagnostic ({activeProfile.currency} $99)</span>
+              <span>Explore paid review</span>
             </button>
           )}
 
@@ -129,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* AI Coach Action Button */}
           <button
             onClick={onOpenCoachModal}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#168C83] hover:bg-[#12726B] text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#1D4ED8] hover:bg-[#173EA8] text-white text-xs font-bold shadow-xs transition transform active:scale-95"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Consult Coach</span>

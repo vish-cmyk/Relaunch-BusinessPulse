@@ -20,10 +20,10 @@ interface AuthScreenProps {
   onSuccess?: () => void;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode = 'signin' }) => {
   const { login, register, resetPassword, authError, clearAuthError } = useAuth();
   
-  const [mode, setMode] = useState<'signin' | 'register' | 'forgot'>('signin');
+  const [mode, setMode] = useState<'signin' | 'register' | 'forgot'>(initialMode);
   const [email, setEmail] = useState('vish@relaunch.co.nz');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

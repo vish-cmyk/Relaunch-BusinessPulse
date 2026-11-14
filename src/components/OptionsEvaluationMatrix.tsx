@@ -55,7 +55,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                 onClick={() => setSelectedOptionId(optId)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
                   selectedOptionId === optId
-                    ? 'bg-[#168C83] text-white'
+                    ? 'bg-[#2563EB] text-white'
                     : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
                 }`}
               >
@@ -76,7 +76,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               onClick={() => setSelectedOptionId(opt.id)}
               className={`p-5 rounded-2xl cursor-pointer transition-all border flex flex-col justify-between ${
                 isSelected
-                  ? 'bg-white border-[#168C83] shadow-md ring-1 ring-[#168C83]/30'
+                  ? 'bg-white border-[#2563EB] shadow-md ring-1 ring-[#2563EB]/30'
                   : 'bg-white border-[#E5EBEF] hover:border-[#CBD5E1] hover:bg-[#F8FAFC]'
               }`}
             >
@@ -124,7 +124,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#E5EBEF]">
           <div>
             <div className="flex items-center space-x-3">
-              <span className="px-3 py-1 rounded-lg bg-[#168C83] text-white font-black text-sm shadow-sm">
+              <span className="px-3 py-1 rounded-lg bg-[#2563EB] text-white font-black text-sm shadow-sm">
                 {selectedOption.id}
               </span>
               <h3 className="text-xl font-bold text-[#14283F]">
@@ -169,7 +169,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
             <ul className="space-y-1.5 text-[#14283F] pt-1">
               {selectedOption.commercialAssumptionsToTest.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-[#D99A35] font-bold">?</span>
+                  <span className="text-[#E87518] font-bold">?</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -178,8 +178,8 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
 
           {/* Block 3: Expected Route to Revenue & Cash */}
           <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2">
-            <h4 className="font-bold text-[#168C83] text-sm flex items-center gap-1.5 uppercase tracking-wider">
-              <Clock className="w-4 h-4 text-[#168C83]" />
+            <h4 className="font-bold text-[#2563EB] text-sm flex items-center gap-1.5 uppercase tracking-wider">
+              <Clock className="w-4 h-4 text-[#2563EB]" />
               Expected Route to Revenue and Cash Collection
             </h4>
             <p className="text-[#14283F] leading-relaxed pt-1">
@@ -206,8 +206,8 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
 
         {/* Calculation Framework */}
         <div className="p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-3">
-          <div className="flex items-center space-x-2 text-[#D99A35] font-bold text-sm">
-            <Calculator className="w-4 h-4 text-[#D99A35]" />
+          <div className="flex items-center space-x-2 text-[#E87518] font-bold text-sm">
+            <Calculator className="w-4 h-4 text-[#E87518]" />
             <span>Transparent Break-Even Calculation Framework</span>
           </div>
 

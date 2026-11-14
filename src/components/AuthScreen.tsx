@@ -105,11 +105,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
   return (
     <div className="min-h-screen bg-[#F5F6F3] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans text-[#14283F]">
       {/* Background radial accent glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#168C83]/10 via-[#D99A35]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#2563EB]/10 via-[#E87518]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
 
       {/* Header Branding */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center z-10 px-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#168C83] to-[#14283F] text-white font-black text-2xl shadow-md shadow-[#168C83]/20 mb-4 border border-[#168C83]/30">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#14283F] text-white font-black text-2xl shadow-md shadow-[#2563EB]/20 mb-4 border border-[#2563EB]/30">
           BP
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#14283F]">
@@ -118,8 +118,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
         <p className="mt-1 text-sm text-[#64748B]">
           Executive SME Turnaround & Diagnostic Operating System
         </p>
-        <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
-          <Database className="w-3.5 h-3.5 text-[#168C83]" />
+        <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30">
+          <Database className="w-3.5 h-3.5 text-[#2563EB]" />
           <span>Cloud Firestore & Firebase Auth Secured</span>
         </div>
       </div>
@@ -134,7 +134,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
               onClick={() => handleSwitchMode('signin')}
               className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
                 mode === 'signin'
-                  ? 'border-[#168C83] text-[#168C83]'
+                  ? 'border-[#2563EB] text-[#2563EB]'
                   : 'border-transparent text-[#64748B] hover:text-[#14283F]'
               }`}
             >
@@ -145,7 +145,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
               onClick={() => handleSwitchMode('register')}
               className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
                 mode === 'register'
-                  ? 'border-[#168C83] text-[#168C83]'
+                  ? 'border-[#2563EB] text-[#2563EB]'
                   : 'border-transparent text-[#64748B] hover:text-[#14283F]'
               }`}
             >
@@ -156,7 +156,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
               onClick={() => handleSwitchMode('forgot')}
               className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
                 mode === 'forgot'
-                  ? 'border-[#168C83] text-[#168C83]'
+                  ? 'border-[#2563EB] text-[#2563EB]'
                   : 'border-transparent text-[#64748B] hover:text-[#14283F]'
               }`}
             >
@@ -173,7 +173,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
             )}
             {mode === 'register' && (
               <p>
-                Register an adviser account. Your client records are stored exclusively in your private Firestore vault (<code className="text-[#168C83] font-mono">users/&#123;uid&#125;/cases</code>).
+                Register an adviser account. Your client records are stored exclusively in your private Firestore vault (<code className="text-[#2563EB] font-mono">users/&#123;uid&#125;/cases</code>).
               </p>
             )}
             {mode === 'forgot' && (
@@ -214,7 +214,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="name@business.co.nz"
-                  className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] text-xs sm:text-sm transition"
+                  className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
                 />
               </div>
             </div>
@@ -229,7 +229,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
                     <button
                       type="button"
                       onClick={() => handleSwitchMode('forgot')}
-                      className="text-[11px] text-[#168C83] hover:text-[#12726B] font-semibold transition"
+                      className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] font-semibold transition"
                     >
                       Forgot password?
                     </button>
@@ -245,7 +245,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="••••••••••••"
-                    className="block w-full pl-10 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] text-xs sm:text-sm transition"
+                    className="block w-full pl-10 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
                   />
                   <button
                     type="button"
@@ -273,7 +273,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     placeholder="••••••••••••"
-                    className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] text-xs sm:text-sm transition"
+                    className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
                   />
                 </div>
                 <p className="mt-1.5 text-[11px] text-[#64748B]">
@@ -285,7 +285,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#168C83] hover:bg-[#12726B] text-white text-xs sm:text-sm font-bold shadow-sm transition transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs sm:text-sm font-bold shadow-sm transition transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
@@ -319,7 +319,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
                 <button
                   type="button"
                   onClick={() => handleSwitchMode('register')}
-                  className="text-[#168C83] hover:text-[#12726B] font-bold transition"
+                  className="text-[#2563EB] hover:text-[#1D4ED8] font-bold transition"
                 >
                   Create one now
                 </button>
@@ -330,7 +330,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
                 <button
                   type="button"
                   onClick={() => handleSwitchMode('signin')}
-                  className="text-[#168C83] hover:text-[#12726B] font-bold transition"
+                  className="text-[#2563EB] hover:text-[#1D4ED8] font-bold transition"
                 >
                   Sign in
                 </button>
@@ -343,7 +343,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
         <div className="mt-6 text-center text-[11px] text-[#64748B] space-y-1">
           <p className="flex items-center justify-center gap-1.5 text-[#14283F] font-medium">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Strict Client Isolation — All cases scoped to <code className="font-mono text-[#168C83]">users/&#123;userId&#125;/cases</code></span>
+            <span>Strict Client Isolation — All cases scoped to <code className="font-mono text-[#2563EB]">users/&#123;userId&#125;/cases</code></span>
           </p>
           <p>Relaunch BizPulse © 2026 • Confidential Commercial Operating System</p>
         </div>

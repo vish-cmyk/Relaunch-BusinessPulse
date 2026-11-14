@@ -103,7 +103,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode =
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6F3] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans text-[#14283F]">
+    <div className="min-h-screen bg-[#F3F6FC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans text-[#14283F]">
       {/* Background radial accent glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#2563EB]/10 via-[#E87518]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  ArrowRight, Activity, TrendingUp, Compass, FileSearch, ShieldCheck,
+  ArrowRight, Activity, TrendingUp, Compass, FileSearch, ShieldCheck, DollarSign, Users,
   CheckCircle2, Menu, X, BarChart3, Sparkles, Target, Clock3
 } from 'lucide-react';
 
@@ -28,7 +28,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSignIn }) =
             <span className="leading-tight"><span className="block text-[17px] font-extrabold tracking-tight">RELAUNCH <span className="text-[#E87518]">BizPulse</span></span><span className="block text-[10px] font-semibold uppercase tracking-[.19em] text-[#7A8792]">Business clarity. Forward momentum.</span></span>
           </a>
           <nav className="hidden items-center gap-8 md:flex">
-            <a href="#how-it-works" className="text-sm font-semibold text-[#526273] transition hover:text-[#E87518]">How it works</a>
+            <a href="#problem-first" className="text-sm font-semibold text-[#526273] transition hover:text-[#1D4ED8]">Start with a problem</a><a href="#how-it-works" className="text-sm font-semibold text-[#526273] transition hover:text-[#1D4ED8]">How it works</a>
             <a href="#what-you-get" className="text-sm font-semibold text-[#526273] transition hover:text-[#E87518]">What you get</a>
             <a href="#who-its-for" className="text-sm font-semibold text-[#526273] transition hover:text-[#E87518]">Who it's for</a>
           </nav>
@@ -38,7 +38,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSignIn }) =
           </div>
           <button className="rounded-lg p-2 text-[#14283F] md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">{menuOpen ? <X/> : <Menu/>}</button>
         </div>
-        {menuOpen && <div className="border-t border-[#E2E8F0] bg-white px-5 py-4 md:hidden"><div className="flex flex-col gap-4 text-sm font-semibold"><a onClick={() => setMenuOpen(false)} href="#how-it-works">How it works</a><a onClick={() => setMenuOpen(false)} href="#what-you-get">What you get</a><a onClick={() => setMenuOpen(false)} href="#who-its-for">Who it's for</a><button onClick={onSignIn} className="text-left text-[#1D4ED8]">Sign in</button><button onClick={start} className="rounded-xl bg-[#1D4ED8] px-4 py-3 text-left text-white">Start your review <ArrowRight className="inline" size={16}/></button></div></div>}
+        {menuOpen && <div className="border-t border-[#E2E8F0] bg-white px-5 py-4 md:hidden"><div className="flex flex-col gap-4 text-sm font-semibold"><a onClick={() => setMenuOpen(false)} href="#problem-first">Start with a problem</a><a onClick={() => setMenuOpen(false)} href="#how-it-works">How it works</a><a onClick={() => setMenuOpen(false)} href="#what-you-get">What you get</a><a onClick={() => setMenuOpen(false)} href="#who-its-for">Who it's for</a><button onClick={onSignIn} className="text-left text-[#1D4ED8]">Sign in</button><button onClick={start} className="rounded-xl bg-[#1D4ED8] px-4 py-3 text-left text-white">Start your review <ArrowRight className="inline" size={16}/></button></div></div>}
       </header>
 
       <main id="top">
@@ -46,7 +46,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSignIn }) =
           <div className="absolute inset-0 -z-10 bg-[#F1F5FC]"/>
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.04fr_.96fr] lg:gap-16 lg:pb-28">
             <div>
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#F5C99F] bg-white/80 px-3.5 py-2 text-xs font-bold tracking-wide text-[#1D4ED8] shadow-sm"><Sparkles size={14}/> A friendly first step towards business clarity</div>
+              <div className="mb-7 inline-flex items-center gap-2 rounded-full border-2 border-[#F5C99F] bg-white px-4 py-2.5 text-sm font-extrabold tracking-wide text-[#1D4ED8] shadow-sm"><Sparkles size={14}/> A friendly first step towards business clarity</div>
               <h1 className="max-w-2xl text-[42px] font-extrabold leading-[1.08] tracking-[-.045em] text-[#14283F] sm:text-6xl lg:text-[64px]">Busy running your business? <span className="text-[#E87518]">Make sure it’s moving forward.</span></h1>
               <p className="mt-7 max-w-xl text-base leading-8 text-[#596A79] sm:text-lg">Welcome. Start with a few details about your business. BizPulse will guide you through a clear, practical review—helping you see what’s working, what needs attention and where new opportunities may lie.</p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -82,6 +82,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSignIn }) =
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-12 gap-y-4 px-5 text-center sm:px-8">
             <p className="text-xs font-extrabold uppercase tracking-[.16em] text-[#89959E]">A practical review across the business</p>
             {['Health','Revenue','Profit','Cash flow','Sustainability'].map(x=><span key={x} className="text-sm font-bold text-[#405265]">{x}</span>)}
+          </div>
+        </section>
+
+        <section id="problem-first" className="border-y border-[#DCE6F5] bg-[#EEF4FF] py-16 sm:py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#1D4ED8]">Start where it matters</p>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#14283F] sm:text-4xl">What would you most like to improve?</h2>
+              <p className="mt-5 text-base leading-7 text-[#596A79]">You do not need to solve everything at once. Begin with the issue that is putting the most pressure on your business—or the opportunity you want to explore.</p>
+            </div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[{i:DollarSign,t:'Cash flow',d:'Late payments, cash pressure or working capital.'},{i:TrendingUp,t:'Revenue & profit',d:'Stalled sales, margins or hidden opportunities.'},{i:Users,t:'Customers',d:'Retention, concentration or winning better work.'},{i:Compass,t:'Operations & growth',d:'Capacity, people, processes or next-stage growth.'}].map(({i:Icon,t,d})=><div key={t} className="rounded-2xl border border-[#D9E4F5] bg-white p-5 shadow-sm"><div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF1FF] text-[#1D4ED8]"><Icon size={21}/></div><h3 className="text-base font-extrabold text-[#14283F]">{t}</h3><p className="mt-2 text-sm leading-6 text-[#68798A]">{d}</p></div>)}
+            </div>
+            <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-[#F3C08F] bg-white px-6 py-5 text-center">
+              <p className="text-base font-extrabold text-[#14283F]">A clear first step. No pressure to buy.</p>
+              <p className="mt-2 text-sm leading-6 text-[#64748B]">Start with a limited initial assessment. If you want to go further, you can choose a clearly defined piece of support for the problem you want to address. Any paid service and its price will be shown before you decide.</p>
+              <button onClick={start} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1D4ED8] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#173EA8]">Explore my business issue <ArrowRight size={16}/></button>
+            </div>
           </div>
         </section>
 

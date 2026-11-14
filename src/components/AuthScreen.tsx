@@ -18,13 +18,14 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface AuthScreenProps {
   onSuccess?: () => void;
+  initialMode?: 'signin' | 'register';
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, initialMode = 'signin' }) => {
   const { login, register, resetPassword, authError, clearAuthError } = useAuth();
   
   const [mode, setMode] = useState<'signin' | 'register' | 'forgot'>(initialMode);
-  const [email, setEmail] = useState('vish@relaunch.co.nz');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

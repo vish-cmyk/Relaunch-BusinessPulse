@@ -31,7 +31,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30">
                 Operating Rhythm
               </span>
               <span className="text-[#64748B] text-xs font-medium">Section 10 Executive Scoreboard</span>
@@ -51,7 +51,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
             <div className="text-xl font-bold text-[#14283F] mt-1">
               Every Monday
             </div>
-            <div className="text-xs text-[#D99A35] font-mono font-medium mt-0.5">
+            <div className="text-xs text-[#E87518] font-mono font-medium mt-0.5">
               9:00 AM – 9:45 AM (Strict 45 Min)
             </div>
           </div>
@@ -65,7 +65,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
           return (
             <div
               key={kpi.id}
-              className={`bg-white border rounded-2xl p-6 shadow-xs flex flex-col justify-between transition-all hover:border-[#168C83]/50 hover:shadow-md ${
+              className={`bg-white border rounded-2xl p-6 shadow-xs flex flex-col justify-between transition-all hover:border-[#2563EB]/50 hover:shadow-md ${
                 isCritical ? 'border-[#FECACA] ring-1 ring-[#FECACA]/60' : 'border-[#E5EBEF]'
               }`}
             >
@@ -75,7 +75,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
                   <span className="text-xs font-semibold uppercase tracking-wider text-[#475569] px-2.5 py-0.5 rounded-md bg-[#F1F5F9] border border-[#E2E8F0] font-mono">
                     {kpi.area}
                   </span>
-                  <span className="text-xs font-semibold text-[#168C83] bg-[#E6F4F2] px-2 py-0.5 rounded">
+                  <span className="text-xs font-semibold text-[#2563EB] bg-[#EAF1FF] px-2 py-0.5 rounded">
                     Role: {kpi.accountableRole}
                   </span>
                 </div>
@@ -94,7 +94,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
                 <div className={`p-4 rounded-xl border space-y-1 ${
                   isCritical 
                     ? 'bg-[#FEF2F2] border-[#FECACA]' 
-                    : 'bg-[#FDF6E9] border-[#FDE68A]'
+                    : 'bg-[#FFF1E5] border-[#FDE68A]'
                 }`}>
                   <span className="text-xs font-semibold text-[#64748B] block uppercase tracking-wider">Reported Baseline:</span>
                   <div className={`text-xl font-extrabold font-mono tabular-nums ${
@@ -134,20 +134,20 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
       {/* Monday Agenda Operating Rules */}
       <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs">
         <h3 className="text-lg font-bold text-[#14283F] mb-4 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-[#D99A35]" />
+          <Calendar className="w-5 h-5 text-[#E87518]" />
           The 45-Minute Monday Meeting Operating Protocol
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
           <div className="p-5 rounded-xl bg-[#F8F9FA] border border-[#E5EBEF] space-y-2">
-            <span className="font-bold text-[#D99A35] text-sm block">1. Minutes 0–15: Cash & Credit Governance</span>
+            <span className="font-bold text-[#E87518] text-sm block">1. Minutes 0–15: Cash & Credit Governance</span>
             <p className="text-[#64748B] leading-relaxed">
               Review current bank balance, remaining overdraft headroom, and invoices overdue past 20 days. Confirm stop-work notices for accounts past 45 days. No informal exceptions without formal payment arrangements.
             </p>
           </div>
 
           <div className="p-5 rounded-xl bg-[#F8F9FA] border border-[#E5EBEF] space-y-2">
-            <span className="font-bold text-[#168C83] text-sm block">2. Minutes 15–30: Top 12 Client & Service Health</span>
+            <span className="font-bold text-[#2563EB] text-sm block">2. Minutes 15–30: Top 12 Client & Service Health</span>
             <p className="text-[#64748B] leading-relaxed">
               Review green/amber/red status across the Top 12 clients. Inspect ticket backlog and senior technician focus block adherence. Ensure no reactive fires displace planned billable projects.
             </p>

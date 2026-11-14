@@ -302,7 +302,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
           <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-white hover:bg-[#F5F6F3] text-[#14283F] text-xs font-bold border border-[#CBD5E1] transition shadow-2xs"
+              className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-white hover:bg-[#F3F6FC] text-[#14283F] text-xs font-bold border border-[#CBD5E1] transition shadow-2xs"
             >
               <Save className="w-4 h-4" />
               <span>{isSaved ? 'Saved!' : 'Save Essentials'}</span>

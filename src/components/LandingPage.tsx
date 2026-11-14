@@ -43,12 +43,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSignIn }) =
 
       <main id="top">
         <section className="relative isolate overflow-hidden">
-          <div className="absolute inset-0 -z-10 bg-[#F1F5FC]"/>
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#080F20] via-[#102B63] to-[#1D4ED8]"/>
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.04fr_.96fr] lg:gap-16 lg:pb-28">
             <div>
               <div className="mb-7 inline-flex items-center gap-2 rounded-full border-2 border-[#F5C99F] bg-white px-4 py-2.5 text-sm font-extrabold tracking-wide text-[#1D4ED8] shadow-sm"><Sparkles size={14}/> THE HIDDEN OPPORTUNITY FINDER</div>
-              <h1 className="max-w-2xl text-[42px] font-extrabold leading-[1.08] tracking-[-.045em] text-[#14283F] sm:text-6xl lg:text-[64px]">What if your business is <span className="text-[#E87518]">earning less than it could?</span></h1>
-              <p className="mt-7 max-w-xl text-base leading-8 text-[#596A79] sm:text-lg">You work hard to keep the business moving. But hidden costs, missed sales, delayed payments and overlooked customers can quietly hold it back. BizPulse helps you investigate where the next improvement — and the next dollar — may come from.</p>
+              <h1 className="max-w-2xl text-[42px] font-extrabold leading-[1.08] tracking-[-.045em] text-white sm:text-6xl lg:text-[64px]">What if your business is <span className="text-[#E87518]">earning less than it could?</span></h1>
+              <p className="mt-7 max-w-xl text-base leading-8 text-blue-100/85 sm:text-lg">You work hard to keep the business moving. But hidden costs, missed sales, delayed payments and overlooked customers can quietly hold it back. BizPulse helps you investigate where the next improvement — and the next dollar — may come from.</p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <button onClick={start} className="group inline-flex items-center justify-center gap-3 rounded-xl bg-[#1D4ED8] px-7 py-4 text-base font-bold text-white shadow-xl shadow-teal-900/20 transition hover:-translate-y-1 hover:bg-[#173EA8]">Find my hidden opportunities <ArrowRight className="transition group-hover:translate-x-1" size={18}/></button>
                 <a href="#how-it-works" className="inline-flex items-center justify-center rounded-xl border border-[#D8E1E1] bg-white/80 px-6 py-4 text-sm font-bold text-[#405265] transition hover:border-[#E87518] hover:text-[#1D4ED8]">See how it works</a>
@@ -57,23 +57,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onSignIn }) =
             </div>
 
             <div className="relative mx-auto w-full max-w-[570px]">
-              <div className="absolute -inset-5 rounded-[34px] bg-gradient-to-br from-[#1D4ED8]/10 via-transparent to-[#F28C28]/10 blur-2xl"/>
-              <div className="relative overflow-hidden rounded-[28px] border border-white bg-white p-5 shadow-[0_28px_90px_-35px_rgba(20,40,63,.35)] sm:p-7">
-                <div className="flex items-start justify-between gap-4 border-b border-[#EDF1F1] pb-5">
-                  <div><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#E87518]">BizPulse business snapshot</p><h2 className="mt-2 text-xl font-extrabold tracking-tight">See the whole picture.</h2><p className="mt-1 text-xs text-[#84919C]">Illustrative preview • not a real assessment</p></div>
-                  <div className="rounded-xl bg-[#FFF1E5] p-3 text-[#E87518]"><BarChart3 size={23}/></div>
+              <div className="absolute -inset-6 rounded-[40px] bg-[#60A5FA]/20 blur-3xl"/>
+              <div className="relative overflow-hidden rounded-[30px] border border-white/20 bg-white p-5 shadow-2xl sm:p-7">
+                <div className="rounded-[24px] bg-gradient-to-br from-[#0B1730] via-[#123A79] to-[#2563EB] p-6 text-white sm:p-8">
+                  <p className="text-xs font-extrabold uppercase tracking-[.2em] text-orange-200">A clearer view starts here</p>
+                  <h2 className="mt-3 max-w-sm text-2xl font-extrabold leading-tight sm:text-3xl">You know your business. Let's uncover what you may be missing.</h2>
+                  <div className="mt-7 flex items-end justify-between gap-3">
+                    <div className="space-y-3 text-sm font-semibold">
+                      <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-orange-400"/> More from existing customers</p>
+                      <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-sky-300"/> Less money tied up in delays</p>
+                      <p className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-300"/> Time and cost-saving improvements</p>
+                    </div>
+                    <svg viewBox="0 0 150 150" className="h-28 w-28 shrink-0 sm:h-36 sm:w-36" role="img" aria-label="Illustration of a small business owner looking at growth opportunities">
+                      <circle cx="75" cy="75" r="68" fill="#FFFFFF" fillOpacity=".12"/>
+                      <path d="M28 112h94" stroke="#BFDBFE" strokeWidth="4" strokeLinecap="round"/>
+                      <path d="M39 110V67l36-24 36 24v43" fill="#F8FAFC" stroke="#BFDBFE" strokeWidth="3" strokeLinejoin="round"/>
+                      <path d="M33 68h84L75 37 33 68Z" fill="#F28C28"/>
+                      <rect x="50" y="77" width="19" height="33" rx="3" fill="#93C5FD"/>
+                      <rect x="80" y="77" width="20" height="17" rx="3" fill="#DBEAFE"/>
+                      <circle cx="108" cy="37" r="13" fill="#FDBA74"/>
+                      <path d="M108 24v-9m0 44v-9m13-13h9m-44 0h9m22-9 6-6m-31 31-6 6" stroke="#FDBA74" strokeWidth="3" strokeLinecap="round"/>
+                    </svg>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 py-5">
-                  <div className="rounded-2xl bg-[#F3F6FB] p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-[#84919C]">Business health</p><p className="mt-2 text-2xl font-extrabold text-[#14283F]">A clearer view</p><p className="mt-1 text-[11px] text-[#6C7C88]">Understand key dimensions</p></div>
-                  <div className="rounded-2xl bg-[#F3F6FB] p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-[#84919C]">Growth focus</p><p className="mt-2 text-2xl font-extrabold text-[#E87518]">Find potential</p><p className="mt-1 text-[11px] text-[#6C7C88]">Explore improvement areas</p></div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  {['Revenue','Cash flow','Customers'].map((x,i)=><div key={x} className="rounded-xl bg-[#F1F5FB] p-3"><p className="text-xs font-bold text-[#14283F]">{x}</p><p className="mt-1 text-[10px] text-[#64748B]">Explore</p></div>)}
                 </div>
-                <div className="rounded-2xl border border-[#E2E8F0] p-4">
-                  <div className="mb-4 flex items-center justify-between"><p className="text-xs font-extrabold text-[#34495A]">Your opportunity scan</p><span className="rounded-full bg-[#FFF5E5] px-2.5 py-1 text-[9px] font-bold text-[#A66C19]">Illustrative</span></div>
-                  {['Revenue & customers','Cash flow & margins','Operations & capacity','Business sustainability'].map((label,i) => <div key={label} className="mb-3 last:mb-0"><div className="mb-1.5 flex justify-between text-[11px] font-semibold text-[#526273]"><span>{label}</span><span className="text-[#9AA5AE]">Review area</span></div><div className="h-2 overflow-hidden rounded-full bg-[#EEF2F1]"><div className="h-full rounded-full" style={{width: ['82%','66%','74%','58%'][i],background: ['#E87518','#F28C28','#5D8AA6','#7C91A3'][i]}}/></div></div>)}
-                </div>
-                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#14283F] p-4 text-white"><div className="rounded-xl bg-white/10 p-2.5 text-[#FDBA74]"><Target size={19}/></div><div className="min-w-0 flex-1"><p className="text-xs font-bold">From insight to action</p><p className="mt-1 text-[10px] text-white/65">Priorities • recommendations • practical roadmap</p></div><ArrowRight size={17} className="text-[#FDBA74]"/></div>
+                <p className="mt-4 text-center text-xs font-semibold text-[#53657A]">A practical business conversation — not another technical dashboard.</p>
               </div>
-              <div className="absolute -bottom-5 -left-5 hidden items-center gap-3 rounded-2xl border border-white bg-white px-4 py-3 shadow-xl sm:flex"><div className="rounded-xl bg-[#FFF1E5] p-2 text-[#E87518]"><ShieldCheck size={19}/></div><div><p className="text-[11px] font-extrabold text-[#14283F]">Your business. Your decisions.</p><p className="text-[10px] text-[#82909B]">Insights to support better choices</p></div></div>
             </div>
           </div>
         </section>

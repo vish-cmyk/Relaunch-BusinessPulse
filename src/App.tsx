@@ -361,7 +361,12 @@ function BizPulseWorkspace() {
 
   // 2. Requirement 3: Require users to sign in before accessing their private business workspace
   if (!currentUser) {
-    return <AuthScreen />;
+    return showAuth
+      ? <AuthScreen initialMode={authMode} />
+      : <LandingPage
+          onStart={() => { setAuthMode('register'); setShowAuth(true); }}
+          onSignIn={() => { setAuthMode('signin'); setShowAuth(true); }}
+        />;
   }
 
   // 3. User is signed in, but initial Firestore cases are loading

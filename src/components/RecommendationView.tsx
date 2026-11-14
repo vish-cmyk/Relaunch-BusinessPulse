@@ -90,8 +90,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1.5">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#168C83]" />
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#2563EB]" />
                 Phase 3: Turnaround Diagnostic Engine
               </span>
               <span className="text-[#64748B] text-xs">Dynamic Commercial Advisory</span>
@@ -108,7 +108,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             <button
               onClick={handleGenerateRecommendation}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#168C83] hover:bg-[#12726B] disabled:opacity-50 text-white font-bold text-xs shadow-xs transition transform active:scale-95"
+              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white font-bold text-xs shadow-xs transition transform active:scale-95"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span>{isLoading ? 'Synthesizing...' : recommendations ? 'Regenerate Analysis' : 'Generate Recommendation'}</span>
@@ -130,10 +130,10 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           {/* 1: Primary Commercial Observation & Why It Matters */}
           <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
             <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#E6F4F2] text-[#168C83] font-black text-xs flex items-center justify-center border border-[#168C83]/30">
+              <span className="w-7 h-7 rounded-lg bg-[#EAF1FF] text-[#2563EB] font-black text-xs flex items-center justify-center border border-[#2563EB]/30">
                 1
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#168C83]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">
                 Primary Commercial Observation
               </span>
             </div>
@@ -143,7 +143,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             </h3>
 
             <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] text-xs text-[#14283F] space-y-1.5 leading-relaxed">
-              <strong className="text-[#D99A35] uppercase tracking-wider text-[11px] block">
+              <strong className="text-[#E87518] uppercase tracking-wider text-[11px] block">
                 Why This Matters Commercially (Profit, Solvency & Capacity):
               </strong>
               <p className="text-[#64748B] leading-relaxed">{recommendations.commercialWhy}</p>
@@ -216,8 +216,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Contextual Questions */}
             <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 shadow-xs space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#168C83] flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-[#168C83]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB] flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-[#2563EB]" />
                 The 2–3 Essential Questions for the Next Decision
               </span>
               <p className="text-xs text-[#64748B]">
@@ -226,7 +226,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               <div className="space-y-2 pt-1 text-xs">
                 {recommendations.contextualQuestions.map((q, idx) => (
                   <div key={idx} className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] text-[#14283F] font-medium leading-relaxed">
-                    <span className="text-[#168C83] font-bold mr-1.5">{idx + 1}.</span>
+                    <span className="text-[#2563EB] font-bold mr-1.5">{idx + 1}.</span>
                     {q}
                   </div>
                 ))}
@@ -245,7 +245,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               <ul className="space-y-2 pt-1 text-xs text-[#14283F]">
                 {recommendations.missingEvidence.map((ev, idx) => (
                   <li key={idx} className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E5EBEF] flex items-start gap-2 leading-relaxed">
-                    <span className="text-[#168C83] font-bold">→</span>
+                    <span className="text-[#2563EB] font-bold">→</span>
                     <span>{ev}</span>
                   </li>
                 ))}
@@ -256,10 +256,10 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           {/* 4: Strategic Action Plan & Immediate Action */}
           <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-5">
             <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#E6F4F2] text-[#168C83] font-black text-xs flex items-center justify-center border border-[#168C83]/30">
+              <span className="w-7 h-7 rounded-lg bg-[#EAF1FF] text-[#2563EB] font-black text-xs flex items-center justify-center border border-[#2563EB]/30">
                 3
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#168C83]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">
                 Strategic Action Plan & Immediate 48-Hour Step
               </span>
             </div>
@@ -271,8 +271,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-[#E6F4F2] border border-[#168C83]/30 space-y-1.5">
-              <span className="font-bold text-[#168C83] text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-5 rounded-xl bg-[#EAF1FF] border border-[#2563EB]/30 space-y-1.5">
+              <span className="font-bold text-[#2563EB] text-xs uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
                 Immediate Action (Next 48–72 Hours):
               </span>
@@ -284,7 +284,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             {/* Specialist Advice Callout */}
             {recommendations.specialistAdviceNeeded && (
               <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#14283F] flex items-start gap-2.5">
-                <Scale className="w-4 h-4 text-[#D99A35] shrink-0 mt-0.5" />
+                <Scale className="w-4 h-4 text-[#E87518] shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-[#B45309]">Specialist Advisory Trigger: </strong>
                   {recommendations.specialistAdviceNeeded}
@@ -299,9 +299,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
               <button
                 onClick={() => onNavigateToConsole(`Regarding the recommendation: "${recommendations.initialRecommendation.substring(0, 80)}..." How do I execute this step?`)}
-                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-[#F5F6F3] text-[#14283F] text-xs font-semibold border border-[#CBD5E1] transition shadow-2xs"
+                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-[#F3F6FC] text-[#14283F] text-xs font-semibold border border-[#CBD5E1] transition shadow-2xs"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-[#168C83]" />
+                <MessageSquare className="w-3.5 h-3.5 text-[#2563EB]" />
                 <span>Discuss with Coach in Console</span>
               </button>
             </div>
@@ -310,7 +310,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
       ) : (
         /* Empty State */
         <div className="bg-white border border-[#E5EBEF] rounded-2xl p-12 text-center space-y-4 shadow-xs">
-          <div className="w-12 h-12 rounded-2xl bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/20 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-2xl bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/20 flex items-center justify-center mx-auto">
             <Sparkles className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-[#14283F]">
@@ -322,7 +322,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           <button
             onClick={handleGenerateRecommendation}
             disabled={isLoading}
-            className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[#168C83] hover:bg-[#12726B] disabled:opacity-50 text-white text-xs font-bold shadow-xs transition"
+            className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold shadow-xs transition"
           >
             <Sparkles className="w-4 h-4" />
             <span>{isLoading ? 'Analyzing Business...' : 'Generate AI Diagnostic Now'}</span>

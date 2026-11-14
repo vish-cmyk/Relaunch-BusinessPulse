@@ -64,7 +64,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
           <div className="border-b border-[#E5EBEF] pb-6 print:border-black">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#168C83] bg-[#E6F4F2] px-3 py-1 rounded-full border border-[#168C83]/30">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB] bg-[#EAF1FF] px-3 py-1 rounded-full border border-[#2563EB]/30">
                   Custom Turnaround Diagnostic · Case: {p.caseId}
                 </span>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-[#14283F] mt-3 tracking-tight print:text-black">
@@ -86,7 +86,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
           <div className="mt-6 p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center space-x-2">
-                <Activity className="w-5 h-5 text-[#168C83]" />
+                <Activity className="w-5 h-5 text-[#2563EB]" />
                 <span className="font-bold text-[#14283F] text-sm">Overall Business Health Assessment:</span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                   h?.overallRating === 'Healthy' ? 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]' :
@@ -101,7 +101,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onSwitchTab('health')}
-                  className="text-xs text-[#168C83] hover:text-[#12726B] font-semibold underline"
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-semibold underline"
                 >
                   Edit 8 Dimensions
                 </button>
@@ -115,7 +115,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               </div>
 
               <div className="p-3.5 rounded-lg bg-white border border-[#E5EBEF] space-y-1">
-                <span className="text-[#D99A35] font-semibold block uppercase tracking-wider text-[11px]">Stated Primary Concern</span>
+                <span className="text-[#E87518] font-semibold block uppercase tracking-wider text-[11px]">Stated Primary Concern</span>
                 <p className="text-[#14283F] font-medium">{p.primaryConcern || 'Unspecified commercial pressure'}</p>
               </div>
             </div>
@@ -132,14 +132,14 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
         <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#E5EBEF]">
             <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#E6F4F2] text-[#168C83] font-bold text-xs flex items-center justify-center border border-[#168C83]/30">
+              <span className="w-7 h-7 rounded-lg bg-[#EAF1FF] text-[#2563EB] font-bold text-xs flex items-center justify-center border border-[#2563EB]/30">
                 1
               </span>
               <h3 className="text-lg font-bold text-[#14283F]">The Eight Commercial Health Dimensions</h3>
             </div>
             <button
               onClick={() => onSwitchTab('health')}
-              className="text-xs text-[#168C83] hover:text-[#12726B] font-semibold"
+              className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-semibold"
             >
               Update Dimensions &rarr;
             </button>
@@ -189,14 +189,14 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
         <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#E5EBEF]">
             <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#E6F4F2] text-[#168C83] font-bold text-xs flex items-center justify-center border border-[#168C83]/30">
+              <span className="w-7 h-7 rounded-lg bg-[#EAF1FF] text-[#2563EB] font-bold text-xs flex items-center justify-center border border-[#2563EB]/30">
                 2
               </span>
               <h3 className="text-lg font-bold text-[#14283F]">Diagnostic Synthesis & Executive Recommendations</h3>
             </div>
             <button
               onClick={() => onSwitchTab('recommendations')}
-              className="text-xs text-[#168C83] hover:text-[#12726B] font-semibold"
+              className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-semibold"
             >
               Consult Engine &rarr;
             </button>
@@ -205,15 +205,15 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
           {rec ? (
             <div className="space-y-4 text-xs">
               <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-1">
-                <span className="font-bold text-[#D99A35] uppercase tracking-wider block text-[11px]">
+                <span className="font-bold text-[#E87518] uppercase tracking-wider block text-[11px]">
                   Core Diagnostic Finding:
                 </span>
                 <p className="text-sm font-bold text-[#14283F]">{rec.initialObservation}</p>
                 <p className="text-[#64748B] mt-1 leading-relaxed">{rec.commercialWhy}</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#E6F4F2] border border-[#168C83]/30 space-y-1">
-                <span className="font-bold text-[#168C83] uppercase tracking-wider block text-[11px]">
+              <div className="p-4 rounded-xl bg-[#EAF1FF] border border-[#2563EB]/30 space-y-1">
+                <span className="font-bold text-[#2563EB] uppercase tracking-wider block text-[11px]">
                   Primary Strategic Recommendation:
                 </span>
                 <p className="text-[#14283F] font-semibold">{rec.initialRecommendation}</p>
@@ -238,7 +238,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               <p className="text-xs text-[#64748B]">Recommendations have not yet been generated for this case.</p>
               <button
                 onClick={() => onSwitchTab('recommendations')}
-                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#168C83] text-white font-bold text-xs"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#2563EB] text-white font-bold text-xs"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Generate Recommendations Now</span>
@@ -283,7 +283,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
         {/* Section 5: Commercial Navigation Tools Callout */}
         <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#E5EBEF] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#168C83]">Next Action</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Next Action</span>
             <h4 className="text-base font-bold text-[#14283F]">Explore Interactive Financial Workbenches</h4>
             <p className="text-xs text-[#64748B] max-w-xl">
               Model your cash flow deficit, test price realignment scenarios, or review the weekly management scoreboard for {p.name}.
@@ -305,7 +305,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
             </button>
             <button
               onClick={() => onSwitchTab('aicoach')}
-              className="px-4 py-2 rounded-xl bg-[#168C83] hover:bg-[#12726B] text-white text-xs font-bold transition shadow-xs"
+              className="px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition shadow-xs"
             >
               Consult AI Coach
             </button>
@@ -327,7 +327,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#168C83] bg-[#E6F4F2] px-3 py-1 rounded-full border border-[#168C83]/30">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB] bg-[#EAF1FF] px-3 py-1 rounded-full border border-[#2563EB]/30">
                   Executive Turnaround Advisory Document
                 </span>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#475569] bg-[#F1F5F9] px-3 py-1 rounded-full border border-[#CBD5E1]">
@@ -353,7 +353,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
         <div className="mt-6 p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-[#D99A35]" />
+              <Activity className="w-5 h-5 text-[#E87518]" />
               <span className="font-bold text-[#14283F] text-sm">Provisional Overall Business-Health Assessment:</span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
                 AMBER-CAUTION (Working-Capital & Operational Strain)
@@ -391,7 +391,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
           className="w-full p-6 text-left flex items-center justify-between bg-[#F8FAFC] hover:bg-[#F1F5F9] transition border-b border-[#E5EBEF]"
         >
           <div className="flex items-center space-x-3">
-            <span className="w-8 h-8 rounded-lg bg-[#E6F4F2] text-[#168C83] font-bold text-sm flex items-center justify-center border border-[#168C83]/30">
+            <span className="w-8 h-8 rounded-lg bg-[#EAF1FF] text-[#2563EB] font-bold text-sm flex items-center justify-center border border-[#2563EB]/30">
               2
             </span>
             <div>
@@ -497,7 +497,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
                 </div>
                 <div className="p-3 bg-white rounded-lg border border-[#E5EBEF]">
                   <span className="text-[#64748B] block text-[11px]">Bank Overdraft Utilized</span>
-                  <span className="text-lg font-bold text-[#D99A35] font-mono mt-0.5 block">NZ$52,000</span>
+                  <span className="text-lg font-bold text-[#E87518] font-mono mt-0.5 block">NZ$52,000</span>
                   <span className="text-[10px] text-[#64748B]">69.3% of NZ$75k credit ceiling</span>
                 </div>
               </div>
@@ -544,7 +544,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               {RISK_MAP_ITEMS.map((item) => (
                 <div key={item.id} className="p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#168C83] font-mono">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB] font-mono">
                       {item.category}
                     </span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]">
@@ -579,7 +579,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
           className="w-full p-6 text-left flex items-center justify-between bg-[#F8FAFC] hover:bg-[#F1F5F9] transition border-b border-[#E5EBEF]"
         >
           <div className="flex items-center space-x-3">
-            <span className="w-8 h-8 rounded-lg bg-[#E6F4F2] text-[#168C83] font-bold text-sm flex items-center justify-center border border-[#168C83]/30">
+            <span className="w-8 h-8 rounded-lg bg-[#EAF1FF] text-[#2563EB] font-bold text-sm flex items-center justify-center border border-[#2563EB]/30">
               5
             </span>
             <div>
@@ -600,7 +600,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
               {GROWTH_OPTIONS_EVALUATION.map((opt) => (
                 <div key={opt.id} className="p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-3 flex flex-col justify-between">
                   <div className="space-y-2">
-                    <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 font-mono">
+                    <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30 font-mono">
                       {opt.id}
                     </span>
                     <h3 className="font-bold text-[#14283F] text-sm">{opt.title}</h3>
@@ -619,7 +619,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
                     </div>
 
                     <div className="p-2.5 rounded bg-white border border-[#E5EBEF] space-y-1">
-                      <span className="font-bold text-[#D99A35] block text-[11px]">Break-Even Calculation Framework:</span>
+                      <span className="font-bold text-[#E87518] block text-[11px]">Break-Even Calculation Framework:</span>
                       <p className="font-mono text-[#14283F] text-[10px]">{opt.calculationFramework.formula}</p>
                     </div>
                   </div>
@@ -639,8 +639,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({ activeCase, onSwit
 
       {/* SECTION 6: MANAGEMENT RECOMMENDATIONS & 48-HOUR GATES */}
       <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#E5EBEF] shadow-xs space-y-4">
-        <div className="flex items-center space-x-2 text-[#168C83] font-bold text-base">
-          <ShieldCheck className="w-6 h-6 text-[#168C83]" />
+        <div className="flex items-center space-x-2 text-[#2563EB] font-bold text-base">
+          <ShieldCheck className="w-6 h-6 text-[#2563EB]" />
           <span>Direct Commercial Recommendation for Vish & Managing Partner</span>
         </div>
         

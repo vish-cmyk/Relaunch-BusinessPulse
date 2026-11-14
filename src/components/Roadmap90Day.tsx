@@ -59,12 +59,12 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
           {/* Progress Gauge */}
           <div className="bg-[#F8FAFC] border border-[#E5EBEF] rounded-xl p-4 min-w-[220px] text-center shadow-sm">
             <span className="text-xs text-[#64748B] uppercase tracking-wider font-semibold">Turnaround Milestones</span>
-            <div className="text-3xl font-extrabold text-[#168C83] mt-1 font-mono">
+            <div className="text-3xl font-extrabold text-[#2563EB] mt-1 font-mono">
               {progressPercent}%
             </div>
             <div className="w-full bg-[#E2E8F0] rounded-full h-2 mt-2 overflow-hidden">
               <div 
-                className="bg-[#168C83] h-full rounded-full transition-all duration-300"
+                className="bg-[#2563EB] h-full rounded-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -81,7 +81,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
             <button
               onClick={() => setSelectedHorizon('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                selectedHorizon === 'all' ? 'bg-[#168C83] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
+                selectedHorizon === 'all' ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
               }`}
             >
               All Horizons
@@ -89,7 +89,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
             <button
               onClick={() => setSelectedHorizon('First 7 Days')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                selectedHorizon === 'First 7 Days' ? 'bg-[#168C83] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
+                selectedHorizon === 'First 7 Days' ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
               }`}
             >
               Horizon 1 (First 7 Days)
@@ -97,7 +97,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
             <button
               onClick={() => setSelectedHorizon('Days 8–30')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                selectedHorizon === 'Days 8–30' ? 'bg-[#168C83] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
+                selectedHorizon === 'Days 8–30' ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
               }`}
             >
               Horizon 2 (Days 8–30)
@@ -105,7 +105,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
             <button
               onClick={() => setSelectedHorizon('Days 31–90')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                selectedHorizon === 'Days 31–90' ? 'bg-[#168C83] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
+                selectedHorizon === 'Days 31–90' ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1]'
               }`}
             >
               Horizon 3 (Days 31–90)
@@ -144,13 +144,13 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
               <div className="flex items-start space-x-3.5">
                 <button
                   onClick={() => toggleTask(task.id)}
-                  className="mt-0.5 text-[#64748B] hover:text-[#168C83] transition"
+                  className="mt-0.5 text-[#64748B] hover:text-[#2563EB] transition"
                   title="Toggle action status"
                 >
                   {task.completed ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   ) : (
-                    <Circle className="w-5 h-5 text-[#CBD5E1] hover:text-[#168C83]" />
+                    <Circle className="w-5 h-5 text-[#CBD5E1] hover:text-[#2563EB]" />
                   )}
                 </button>
                 <div>
@@ -163,7 +163,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({ caseRecord }) => {
                     }`}>
                       {task.priority}
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 flex items-center gap-1 font-medium">
+                    <span className="text-xs px-2 py-0.5 rounded bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30 flex items-center gap-1 font-medium">
                       <UserCheck className="w-3 h-3" />
                       {task.accountableRole}
                     </span>

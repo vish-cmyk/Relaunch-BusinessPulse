@@ -15,6 +15,7 @@ import { AICoachConsole } from './components/AICoachConsole';
 import { ReportExportModal } from './components/ReportExportModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthScreen } from './components/AuthScreen';
+import { LandingPage } from './components/LandingPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import { 
@@ -46,6 +47,8 @@ function BizPulseWorkspace() {
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>('memo');
+  const [showAuth, setShowAuth] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
   const [coachInitialPrompt, setCoachInitialPrompt] = useState<string | undefined>(undefined);
@@ -358,7 +361,12 @@ function BizPulseWorkspace() {
 
   // 2. Requirement 3: Require users to sign in before accessing their private business workspace
   if (!currentUser) {
-    return <AuthScreen />;
+    return showAuth
+      ? <AuthScreen initialMode={authMode} />
+      : <LandingPage
+          onStart={() => { setAuthMode('register'); setShowAuth(true); }}
+          onSignIn={() => { setAuthMode('signin'); setShowAuth(true); }}
+        />;
   }
 
   // 3. User is signed in, but initial Firestore cases are loading

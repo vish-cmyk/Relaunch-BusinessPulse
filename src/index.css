@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #F5F6F3;
+  --color-canvas: #F3F6FC;
   --color-panel: #FFFFFF;
   --color-navy: #14283F;
   --color-navy-dark: #0D1B2A;
   --color-slate-muted: #64748B;
-  --color-teal-accent: #168C83;
-  --color-teal-hover: #12726B;
-  --color-teal-light: #E6F4F2;
-  --color-amber-accent: #D99A35;
-  --color-amber-light: #FDF6E9;
+  --color-teal-accent: #2563EB;
+  --color-teal-hover: #173EA8;
+  --color-teal-light: #EAF1FF;
+  --color-amber-accent: #E87518;
+  --color-amber-light: #FFF1E5;
   --color-border-soft: #E5EBEF;
   --color-border-subtle: #EDF2F5;
   
@@ -33,8 +33,8 @@
 
 @layer base {
   body {
-    background-color: #F5F6F3;
-    color: #14283F;
+    background-color: #F3F6FC;
+    color: #101B33;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -52,7 +52,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F5F6F3;
+  background: #F3F6FC;
 }
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
@@ -72,3 +72,7 @@
     display: none !important;
   }
 }
+
+/* RELAUNCH BizPulse: consistent midnight-to-blue visual language */
+:root{--bp-midnight:#080F20;--bp-navy:#101B33;--bp-blue:#1D4ED8;--bp-bright:#3B82F6;--bp-orange:#F28C28;}
+.bp-brand-gradient{background:linear-gradient(115deg,var(--bp-midnight) 0%,#102B63 48%,#1D4ED8 100%);}

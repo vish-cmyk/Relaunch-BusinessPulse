@@ -89,7 +89,7 @@ Managing Director`;
 
           <div className="bg-[#F8FAFC] border border-[#E5EBEF] rounded-xl p-4 min-w-[200px] text-center shadow-sm">
             <span className="text-xs text-[#64748B] uppercase tracking-wider font-semibold">Sprint Status</span>
-            <div className="text-2xl font-extrabold text-[#D99A35] mt-1 font-mono">
+            <div className="text-2xl font-extrabold text-[#E87518] mt-1 font-mono">
               {Object.values(completedActions).filter(Boolean).length} / 3 Done
             </div>
             <div className="text-xs text-[#64748B] mt-0.5">
@@ -111,12 +111,12 @@ Managing Director`;
             <div className="flex items-start space-x-3.5">
               <button
                 onClick={() => toggleAction('sprint-1')}
-                className="mt-1 text-[#64748B] hover:text-[#168C83] transition"
+                className="mt-1 text-[#64748B] hover:text-[#2563EB] transition"
               >
                 {completedActions['sprint-1'] ? (
                   <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 ) : (
-                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#168C83]" />
+                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#2563EB]" />
                 )}
               </button>
               <div>
@@ -159,7 +159,7 @@ Managing Director`;
                   onClick={() => copyToClipboard(action1Script, 'action-1')}
                   className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#14283F] transition text-[11px] font-medium border border-[#CBD5E1]"
                 >
-                  {copiedKey === 'action-1' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#168C83]" />}
+                  {copiedKey === 'action-1' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#2563EB]" />}
                   <span>{copiedKey === 'action-1' ? 'Copied' : 'Copy Email'}</span>
                 </button>
               </div>
@@ -180,12 +180,12 @@ Managing Director`;
             <div className="flex items-start space-x-3.5">
               <button
                 onClick={() => toggleAction('sprint-2')}
-                className="mt-1 text-[#64748B] hover:text-[#168C83] transition"
+                className="mt-1 text-[#64748B] hover:text-[#2563EB] transition"
               >
                 {completedActions['sprint-2'] ? (
                   <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 ) : (
-                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#168C83]" />
+                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#2563EB]" />
                 )}
               </button>
               <div>
@@ -214,7 +214,7 @@ Managing Director`;
                 One large customer is actively flirting with a national MSP provider. Do NOT send an email or offer a desperate fee cut. Vish calls the Managing Director directly and invites them to lunch.
               </p>
               <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-1">
-                <span className="text-[#D99A35] font-bold block">How to Beat National Providers Without Discounting:</span>
+                <span className="text-[#E87518] font-bold block">How to Beat National Providers Without Discounting:</span>
                 <ul className="space-y-1 text-[#64748B]">
                   <li>• <strong className="text-[#14283F]">Named Engineers: </strong> National MSPs rotate offshore tier-1 helpdesk agents who know nothing about the client&apos;s business.</li>
                   <li>• <strong className="text-[#14283F]">Zero Ticket Bureaucracy: </strong> No 4-hour SLA holding patterns for urgent executive issues.</li>
@@ -230,7 +230,7 @@ Managing Director`;
                   onClick={() => copyToClipboard(action2Script, 'action-2')}
                   className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#14283F] transition text-[11px] font-medium border border-[#CBD5E1]"
                 >
-                  {copiedKey === 'action-2' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#168C83]" />}
+                  {copiedKey === 'action-2' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#2563EB]" />}
                   <span>{copiedKey === 'action-2' ? 'Copied' : 'Copy Script'}</span>
                 </button>
               </div>
@@ -251,20 +251,20 @@ Managing Director`;
             <div className="flex items-start space-x-3.5">
               <button
                 onClick={() => toggleAction('sprint-3')}
-                className="mt-1 text-[#64748B] hover:text-[#168C83] transition"
+                className="mt-1 text-[#64748B] hover:text-[#2563EB] transition"
               >
                 {completedActions['sprint-3'] ? (
                   <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 ) : (
-                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#168C83]" />
+                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#2563EB]" />
                 )}
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-[#E6F4F2] text-[#168C83] font-bold text-xs flex items-center justify-center border border-[#168C83]/30">
+                  <span className="w-6 h-6 rounded-md bg-[#EAF1FF] text-[#2563EB] font-bold text-xs flex items-center justify-center border border-[#2563EB]/30">
                     #3
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#168C83] font-mono">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB] font-mono">
                     Day 1–4 Priority (Operational Sanity)
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-[#F1F5F9] text-[#14283F] font-medium border border-[#CBD5E1]">
@@ -280,7 +280,7 @@ Managing Director`;
 
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs text-[#14283F]">
             <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E5EBEF] space-y-1">
-              <span className="font-bold text-[#168C83] block mb-1">1. Triage Gatekeeper</span>
+              <span className="font-bold text-[#2563EB] block mb-1">1. Triage Gatekeeper</span>
               <p className="leading-relaxed text-[#64748B]">
                 100% of phone calls and ticket queues route through the 2 service-desk staff. No customer can call the senior technician&apos;s mobile directly.
               </p>

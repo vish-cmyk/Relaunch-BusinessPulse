@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const tabs = [
     { id: 'essentials', label: '1. Essentials', icon: Building2 },
-    { id: 'health', label: '2. Health (8D)', icon: Activity },
+    { id: 'health', label: '2. Business Health', icon: Activity },
     { id: 'recommendations', label: '3. Recommendations', icon: Sparkles, isSpecial: true },
     { id: 'memo', label: 'Executive Report', icon: FileText },
     { id: 'cashflow', label: 'Cash & Working Capital', icon: DollarSign },
@@ -56,27 +56,27 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="bg-white border-b border-[#E5EBEF] sticky top-0 z-40 text-[#14283F] shadow-xs print:hidden">
+    <header className="bg-gradient-to-r from-[#080F20] via-[#102B63] to-[#1D4ED8] border-b border-[#263D69] sticky top-0 z-40 text-white shadow-xs print:hidden">
       {/* Top Header Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
         
         {/* Brand & Active Case Context */}
         <div className="flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#168C83] via-teal-700 to-[#14283F] flex items-center justify-center shadow-xs text-white font-extrabold text-xl shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1D4ED8] via-blue-700 to-[#14283F] flex items-center justify-center shadow-xs text-white font-extrabold text-xl shrink-0">
             BP
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-lg text-[#14283F] tracking-tight">Relaunch BizPulse</span>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
-                SME Consulting & Diagnostic OS
+              <span className="font-bold text-lg text-white tracking-tight">Relaunch BizPulse</span>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-white/15 text-white border border-[#1D4ED8]/30">
+                Business opportunity & performance coach
               </span>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">
                 {activeProfile.industry} • {activeProfile.currency}
               </span>
             </div>
-            <p className="text-xs text-[#64748B] mt-0.5 truncate max-w-xl">
-              Active Client: <strong className="text-[#14283F]">{activeProfile.name}</strong> • Objective: {activeProfile.primaryObjective}
+            <p className="text-xs text-blue-100/75 mt-0.5 truncate max-w-xl">
+              Active Client: <strong className="text-white">{activeProfile.name}</strong> • Objective: {activeProfile.primaryObjective}
             </p>
           </div>
         </div>
@@ -112,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] text-xs font-bold transition shadow-xs"
               title="Unlock full commercial diagnostic and executive reports"
             >
-              <span>Unlock Diagnostic ({activeProfile.currency} $99)</span>
+              <span>Explore paid review</span>
             </button>
           )}
 
@@ -129,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* AI Coach Action Button */}
           <button
             onClick={onOpenCoachModal}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#168C83] hover:bg-[#12726B] text-white text-xs font-bold shadow-xs transition transform active:scale-95"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#F28C28] hover:bg-[#E87518] text-white text-xs font-bold shadow-xs transition transform active:scale-95"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Consult Coach</span>
@@ -162,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Navigation Bar (All 9 Tabs Preserved) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-[#E5EBEF]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/15">
         <nav className="flex space-x-1 overflow-x-auto py-2 scrollbar-none" aria-label="Tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -173,11 +173,11 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-1.5 px-3.5 py-2 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 shadow-xs font-semibold'
-                    : 'text-[#64748B] hover:text-[#14283F] hover:bg-[#F5F6F3]'
-                } ${tab.isSpecial && !isActive ? 'text-[#D99A35] font-semibold' : ''}`}
+                    ? 'bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30 shadow-xs font-semibold'
+                    : 'text-blue-100/80 hover:text-white hover:bg-white/10'
+                } ${tab.isSpecial && !isActive ? 'text-[#E87518] font-semibold' : ''}`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#168C83]' : tab.isSpecial ? 'text-[#D99A35]' : 'text-[#64748B]'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#2563EB]' : tab.isSpecial ? 'text-[#E87518]' : 'text-[#64748B]'}`} />
                 <span>{tab.label}</span>
               </button>
             );

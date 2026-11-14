@@ -59,20 +59,20 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
         {/* Active Case Selector Pill */}
         <div className="flex items-center space-x-2">
           <span className="text-[#64748B] font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-[#168C83]" />
+            <Building2 className="w-3.5 h-3.5 text-[#2563EB]" />
             Active Case:
           </span>
 
           <div className="relative">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-[#CBD5E1] hover:border-[#168C83] text-[#14283F] font-semibold transition shadow-2xs"
+              className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-[#CBD5E1] hover:border-[#2563EB] text-[#14283F] font-semibold transition shadow-2xs"
             >
               <span className="max-w-[200px] sm:max-w-[300px] truncate text-left">
                 {activeCase.profile.name}
               </span>
               {activeCase.profile.isDemonstrationCase && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EAF1FF] text-[#2563EB] border border-[#2563EB]/30">
                   Demo
                 </span>
               )}
@@ -95,8 +95,8 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                         key={c.id}
                         className={`flex items-center justify-between p-2.5 rounded-lg transition ${
                           isCurrent
-                            ? 'bg-[#E6F4F2] border border-[#168C83]/30 text-[#168C83] font-semibold'
-                            : 'hover:bg-[#F5F6F3] text-[#14283F]'
+                            ? 'bg-[#EAF1FF] border border-[#2563EB]/30 text-[#2563EB] font-semibold'
+                            : 'hover:bg-[#F3F6FC] text-[#14283F]'
                         }`}
                       >
                         <button
@@ -114,7 +114,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
 
                         <div className="flex items-center gap-1">
                           {c.profile.isDemonstrationCase ? (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#E6F4F2] text-[#168C83] font-semibold">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EAF1FF] text-[#2563EB] font-semibold">
                               Demo
                             </span>
                           ) : (
@@ -144,7 +144,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                       onNewCase();
                       setIsOpen(false);
                     }}
-                    className="p-1.5 rounded-lg bg-[#168C83] hover:bg-[#12726B] text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-2xs"
+                    className="p-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-2xs"
                   >
                     <Plus className="w-3 h-3" />
                     <span>New Business</span>
@@ -154,9 +154,9 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                       onLoadDemoCase();
                       setIsOpen(false);
                     }}
-                    className="p-1.5 rounded-lg bg-white hover:bg-[#F5F6F3] text-[#14283F] border border-[#CBD5E1] font-semibold text-xs flex items-center justify-center gap-1 transition"
+                    className="p-1.5 rounded-lg bg-white hover:bg-[#F3F6FC] text-[#14283F] border border-[#CBD5E1] font-semibold text-xs flex items-center justify-center gap-1 transition"
                   >
-                    <FolderSync className="w-3 h-3 text-[#168C83]" />
+                    <FolderSync className="w-3 h-3 text-[#2563EB]" />
                     <span>Load Demo MSP</span>
                   </button>
                 </div>
@@ -169,7 +169,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onNewCase}
-            className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-[#E6F4F2] hover:bg-[#d4edea] text-[#168C83] border border-[#168C83]/30 transition text-[11px] font-semibold"
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-[#EAF1FF] hover:bg-[#d4edea] text-[#2563EB] border border-[#2563EB]/30 transition text-[11px] font-semibold"
           >
             <Plus className="w-3 h-3" />
             <span>New Case</span>
@@ -177,23 +177,23 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
 
           <button
             onClick={onLoadDemoCase}
-            className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#F5F6F3] text-[#14283F] border border-[#CBD5E1] transition text-[11px] font-medium"
+            className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#F3F6FC] text-[#14283F] border border-[#CBD5E1] transition text-[11px] font-medium"
             title="Load the pre-filled NZ Managed IT Services test scenario"
           >
-            <FolderSync className="w-3 h-3 text-[#168C83]" />
+            <FolderSync className="w-3 h-3 text-[#2563EB]" />
             <span>Load Demo Case</span>
           </button>
 
           <button
             onClick={onExportJson}
-            className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#F5F6F3] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1] transition text-[11px]"
+            className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#F3F6FC] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1] transition text-[11px]"
             title="Backup active case as JSON"
           >
             <Download className="w-3 h-3" />
             <span className="hidden md:inline">Export JSON</span>
           </button>
 
-          <label className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#F5F6F3] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1] transition text-[11px] cursor-pointer">
+          <label className="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#F3F6FC] text-[#64748B] hover:text-[#14283F] border border-[#CBD5E1] transition text-[11px] cursor-pointer">
             <Upload className="w-3 h-3" />
             <span className="hidden md:inline">Import</span>
             <input type="file" accept=".json" onChange={handleFileImport} className="hidden" />

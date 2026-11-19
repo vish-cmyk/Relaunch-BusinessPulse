@@ -57,7 +57,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           caseId: caseRecord.id,
           businessName: caseRecord.profile.name,
           currency,
-          tier: selectedTier,
+          tierId: selectedTier,
         }),
       });
 

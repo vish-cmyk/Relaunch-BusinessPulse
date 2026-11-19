@@ -538,7 +538,7 @@ COACHING & EVIDENCE RULES:
           customerEmail: session.customer_details?.email,
           paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as 'stripe_live' | 'stripe_test',
         };
-        verifiedPaidCases.set(caseId, record);
+        if (userId) verifiedPaidCases.set(`${userId}:${caseId}`, record);
 
         if (userId && hasAdminCredentials) {
           try {

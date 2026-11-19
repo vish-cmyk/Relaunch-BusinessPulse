@@ -249,8 +249,10 @@ async function startServer() {
   >();
   const processedWebhookEventIds = new Set<string>();
 
-  // Gemini 4 Hydrogen helper with transient exponential backoff (never passes deprecated params or deprecated models)
-  async function generateWithGemini4(params: { contents: any; config?: any }): Promise<any> {
+  // Gemini API helper. Override GEMINI_MODEL per environment when needed.
+  const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+  async function generateWithGemini(params: { contents: any; config?: any }): Promise<any> {
     if (!process.env.GEMINI_API_KEY) {
       throw Object.assign(
         new Error('GEMINI_API_KEY is not configured on the server. Please check Settings > Secrets.'),
@@ -268,7 +270,7 @@ async function startServer() {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         return await ai.models.generateContent({
-          model: 'gemini-4-hydrogen',
+          model: GEMINI_MODEL,
           contents: params.contents,
           config: cleanConfig,
         });
@@ -590,7 +592,7 @@ COACHING & EVIDENCE RULES:
         buildDynamicSystemInstruction(businessProfile, healthInputs, financials, overallHealth, uploadedDocuments) +
         `\nSpeaking as: ${userRole || 'Owner/Director'}. Topic: ${topic || 'General Strategy'}. Format concisely using clear bullet points and direct commercial reasoning. Never invent missing financial numbers.`;
 
-      const response = await generateWithGemini4({
+      const response = await generateWithGemini({
         contents: prompt.trim(),
         config: { systemInstruction },
       });
@@ -635,7 +637,7 @@ Produce a tailored, practical SME diagnostic matching every requirement:
 Strictly do NOT invent any financial figures that were not supplied. Return strictly valid JSON matching the schema.
 `;
 
-      const response = await generateWithGemini4({
+      const response = await generateWithGemini({
         contents: prompt,
         config: {
           systemInstruction,
@@ -748,7 +750,7 @@ Respond directly, respectfully, and rigorously:
 - Provide the concrete next adjustment or verification step without inventing any financial numbers.
 `;
 
-      const response = await generateWithGemini4({
+      const response = await generateWithGemini({
         contents: prompt,
         config: { systemInstruction },
       });
@@ -804,7 +806,7 @@ Produce a structured audit JSON with:
         ? { parts: [extracted.inlinePart, { text: auditInstruction }] }
         : `${auditInstruction}\n\n=== EXTRACTED DOCUMENT CONTENT (${fileName}) ===\n${extracted.textContent}`;
 
-      const response = await generateWithGemini4({
+      const response = await generateWithGemini({
         contents,
         config: {
           systemInstruction,
@@ -895,7 +897,7 @@ Include:
 2. Phone call talking points & objection handling
 3. Escalation follow-up trigger (48–72 hours).`;
 
-      const response = await generateWithGemini4({
+      const response = await generateWithGemini({
         contents: prompt,
         config: {
           systemInstruction: `You are an executive commercial adviser for SME owners in ${country}. Write clear, respectful, commercially firm correspondence.`,

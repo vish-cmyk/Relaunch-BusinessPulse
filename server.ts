@@ -89,27 +89,29 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
     return res.status(403).json({ error: 'Forbidden: Case access denied for this account.' });
   }
 
-  if (caseId === 'case-demo-msp-nz') {
-    return next();
-  }
+  // Every case, including the per-user demonstration copy, must exist in the
+  // authenticated user's own Firestore workspace. Never fail open when the
+  // Admin SDK is unavailable or the ownership lookup fails.
+  try {
+    const docSnap = await adminDb
+      .collection('users')
+      .doc(req.user.uid)
+      .collection('cases')
+      .doc(caseId)
+      .get();
 
-  // When Admin SDK service account is present, verify Firestore ownership directly
-  if (hasAdminCredentials) {
-    try {
-      const docSnap = await adminDb
-        .collection('users')
-        .doc(req.user.uid)
-        .collection('cases')
-        .doc(caseId)
-        .get();
-      if (!docSnap.exists) {
-        return res.status(403).json({
-          error: 'Forbidden: Case record not found in your authenticated workspace.',
-        });
-      }
-    } catch (err: any) {
-      console.warn('Firestore admin ownership check notice:', err.message);
+    if (!docSnap.exists) {
+      return res.status(403).json({
+        error: 'Forbidden: Case record not found in your authenticated workspace.',
+        code: 'CASE_NOT_OWNED',
+      });
     }
+  } catch (err: any) {
+    console.error('Firestore case ownership verification failed:', err.message);
+    return res.status(503).json({
+      error: 'Case security verification is temporarily unavailable. Please try again later.',
+      code: 'CASE_OWNERSHIP_UNAVAILABLE',
+    });
   }
 
   next();

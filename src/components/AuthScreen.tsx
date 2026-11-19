@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Building2, 
-  Lock, 
-  Mail, 
-  ShieldCheck, 
-  ArrowRight, 
-  KeyRound, 
-  CheckCircle2, 
+import {
+  Lock,
+  Mail,
+  ShieldCheck,
+  ArrowRight,
+  KeyRound,
+  CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
-  Sparkles,
-  Layers,
-  Database
+  Database,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,7 +19,7 @@ interface AuthScreenProps {
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const { login, register, resetPassword, authError, clearAuthError } = useAuth();
-  
+
   const [mode, setMode] = useState<'signin' | 'register' | 'forgot'>('signin');
   const [email, setEmail] = useState('vish@relaunch.co.nz');
   const [password, setPassword] = useState('');
@@ -55,8 +52,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
       try {
         setIsSubmitting(true);
         await resetPassword(cleanEmail);
-        setSuccessNotice('Password reset email sent! Please check your inbox and follow the link.');
-      } catch (err: any) {
+        setSuccessNotice('Password reset email sent. Please check your inbox and follow the link.');
+      } catch {
         // authError is set in context
       } finally {
         setIsSubmitting(false);
@@ -83,7 +80,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
         setIsSubmitting(true);
         await register(cleanEmail, password);
         onSuccess?.();
-      } catch (err) {
+      } catch {
         // authError is set in context
       } finally {
         setIsSubmitting(false);
@@ -93,7 +90,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
         setIsSubmitting(true);
         await login(cleanEmail, password);
         onSuccess?.();
-      } catch (err) {
+      } catch {
         // authError is set in context
       } finally {
         setIsSubmitting(false);
@@ -102,39 +99,36 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6F3] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans text-[#14283F]">
-      {/* Background radial accent glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#168C83]/10 via-[#D99A35]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
-
+    <div className="min-h-screen bizpulse-hero-gradient flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-[#0B1324]">
       {/* Header Branding */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center z-10 px-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#168C83] to-[#14283F] text-white font-black text-2xl shadow-md shadow-[#168C83]/20 mb-4 border border-[#168C83]/30">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center px-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1D4ED8] text-white font-extrabold text-2xl shadow-lg mb-4 border border-white/20">
           BP
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#14283F]">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
           Relaunch BizPulse
         </h1>
-        <p className="mt-1 text-sm text-[#64748B]">
-          Executive SME Turnaround & Diagnostic Operating System
+        <p className="mt-1.5 text-sm text-[#CBD5E1]">
+          Executive Coaching &amp; Diagnostic OS for SMEs
         </p>
-        <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
-          <Database className="w-3.5 h-3.5 text-[#168C83]" />
-          <span>Cloud Firestore & Firebase Auth Secured</span>
+        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/10 text-[#93C5FD] border border-white/15">
+          <Database className="w-3.5 h-3.5 text-[#93C5FD]" />
+          <span>Private Multi-Business Cloud Workspace</span>
         </div>
       </div>
 
       {/* Main Form Card */}
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4">
-        <div className="bg-white border border-[#E5EBEF] py-8 px-6 sm:px-10 shadow-md rounded-2xl">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className="bg-white border border-[#D9E2F0] py-8 px-6 sm:px-10 shadow-2xl rounded-2xl">
           {/* Mode Switcher Tabs */}
-          <div className="flex border-b border-[#E5EBEF] pb-4 mb-6">
+          <div className="flex border-b border-[#E8EEF7] pb-4 mb-6">
             <button
               type="button"
               onClick={() => handleSwitchMode('signin')}
               className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
                 mode === 'signin'
-                  ? 'border-[#168C83] text-[#168C83]'
-                  : 'border-transparent text-[#64748B] hover:text-[#14283F]'
+                  ? 'border-[#1D4ED8] text-[#1D4ED8]'
+                  : 'border-transparent text-[#52627A] hover:text-[#0B1324]'
               }`}
             >
               Sign In
@@ -144,8 +138,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               onClick={() => handleSwitchMode('register')}
               className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
                 mode === 'register'
-                  ? 'border-[#168C83] text-[#168C83]'
-                  : 'border-transparent text-[#64748B] hover:text-[#14283F]'
+                  ? 'border-[#1D4ED8] text-[#1D4ED8]'
+                  : 'border-transparent text-[#52627A] hover:text-[#0B1324]'
               }`}
             >
               Create Account
@@ -155,44 +149,44 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               onClick={() => handleSwitchMode('forgot')}
               className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
                 mode === 'forgot'
-                  ? 'border-[#168C83] text-[#168C83]'
-                  : 'border-transparent text-[#64748B] hover:text-[#14283F]'
+                  ? 'border-[#1D4ED8] text-[#1D4ED8]'
+                  : 'border-transparent text-[#52627A] hover:text-[#0B1324]'
               }`}
             >
-              Reset Key
+              Reset Password
             </button>
           </div>
 
           {/* Context Notice */}
-          <div className="mb-5 text-xs text-[#64748B] bg-[#F8FAFC] p-3 rounded-xl border border-[#E5EBEF]">
+          <div className="mb-5 text-xs text-[#52627A] bg-[#F3F6FB] p-3.5 rounded-xl border border-[#E8EEF7] leading-relaxed">
             {mode === 'signin' && (
               <p>
-                Sign in to access your confidential client turnaround cases, customer profitability matrices, and AI coach consultations.
+                Sign in to resume your saved SME health diagnostics, uploaded document reviews, and executive action plans.
               </p>
             )}
             {mode === 'register' && (
               <p>
-                Register an adviser account. Your client records are stored exclusively in your private Firestore vault (<code className="text-[#168C83] font-mono">users/&#123;uid&#125;/cases</code>).
+                Create your private coaching account. Each business you add stays isolated inside your personal workspace vault.
               </p>
             )}
             {mode === 'forgot' && (
               <p>
-                Enter your registered email address to receive a secure password reset link via Firebase Authentication.
+                Enter your registered email address to receive a password reset link via Firebase Authentication.
               </p>
             )}
           </div>
 
           {/* Feedback Alerts */}
           {(authError || validationError) && (
-            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="mb-5 p-3.5 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded-xl flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-[#B91C1C] shrink-0 mt-0.5" />
               <div className="flex-1 font-medium">{validationError || authError}</div>
             </div>
           )}
 
           {successNotice && (
-            <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="mb-5 p-3.5 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs rounded-xl flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
               <div className="flex-1 font-medium">{successNotice}</div>
             </div>
           )}
@@ -200,11 +194,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#14283F] mb-1.5">
+              <label className="block text-xs font-semibold text-[#0B1324] mb-1.5">
                 Work Email Address
               </label>
-              <div className="relative rounded-xl shadow-xs">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#64748B]">
+              <div className="relative rounded-xl">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52627A]">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -213,7 +207,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="name@business.co.nz"
-                  className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] text-xs sm:text-sm transition"
+                  className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] text-xs sm:text-sm transition"
                 />
               </div>
             </div>
@@ -221,21 +215,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             {mode !== 'forgot' && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-[#14283F]">
+                  <label className="block text-xs font-semibold text-[#0B1324]">
                     Password
                   </label>
                   {mode === 'signin' && (
                     <button
                       type="button"
                       onClick={() => handleSwitchMode('forgot')}
-                      className="text-[11px] text-[#168C83] hover:text-[#12726B] font-semibold transition"
+                      className="text-[11px] text-[#1D4ED8] hover:text-[#1E40AF] font-semibold transition"
                     >
                       Forgot password?
                     </button>
                   )}
                 </div>
-                <div className="relative rounded-xl shadow-xs">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#64748B]">
+                <div className="relative rounded-xl">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52627A]">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -243,13 +237,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="••••••••••••"
-                    className="block w-full pl-10 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] text-xs sm:text-sm transition"
+                    placeholder="Enter password"
+                    className="block w-full pl-10 pr-10 py-2.5 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] text-xs sm:text-sm transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#64748B] hover:text-[#14283F] transition"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#52627A] hover:text-[#0B1324] transition"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -259,11 +254,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
             {mode === 'register' && (
               <div>
-                <label className="block text-xs font-semibold text-[#14283F] mb-1.5">
+                <label className="block text-xs font-semibold text-[#0B1324] mb-1.5">
                   Confirm Password
                 </label>
-                <div className="relative rounded-xl shadow-xs">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#64748B]">
+                <div className="relative rounded-xl">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52627A]">
                     <KeyRound className="w-4 h-4" />
                   </div>
                   <input
@@ -271,12 +266,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    placeholder="••••••••••••"
-                    className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] text-xs sm:text-sm transition"
+                    placeholder="Repeat password"
+                    className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] text-xs sm:text-sm transition"
                   />
                 </div>
-                <p className="mt-1.5 text-[11px] text-[#64748B]">
-                  Minimum 6 characters. Use a strong, unique password.
+                <p className="mt-1.5 text-[11px] text-[#52627A]">
+                  Minimum 6 characters required.
                 </p>
               </div>
             )}
@@ -284,7 +279,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#168C83] hover:bg-[#12726B] text-white text-xs sm:text-sm font-bold shadow-sm transition transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white text-xs sm:text-sm font-bold shadow-sm transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
@@ -298,7 +293,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 </>
               ) : mode === 'register' ? (
                 <>
-                  <span>Create Workspace & Start Diagnostic</span>
+                  <span>Create Account &amp; Start Diagnostic</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               ) : (
@@ -311,16 +306,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           </form>
 
           {/* Quick toggle at bottom */}
-          <div className="mt-6 pt-4 border-t border-[#E5EBEF] text-center text-xs text-[#64748B]">
+          <div className="mt-6 pt-4 border-t border-[#E8EEF7] text-center text-xs text-[#52627A]">
             {mode === 'signin' ? (
               <p>
-                Don&apos;t have an account yet?{' '}
+                Need an account?{' '}
                 <button
                   type="button"
                   onClick={() => handleSwitchMode('register')}
-                  className="text-[#168C83] hover:text-[#12726B] font-bold transition"
+                  className="text-[#1D4ED8] hover:text-[#1E40AF] font-bold transition"
                 >
-                  Create one now
+                  Register here
                 </button>
               </p>
             ) : (
@@ -329,7 +324,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => handleSwitchMode('signin')}
-                  className="text-[#168C83] hover:text-[#12726B] font-bold transition"
+                  className="text-[#1D4ED8] hover:text-[#1E40AF] font-bold transition"
                 >
                   Sign in
                 </button>
@@ -338,13 +333,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           </div>
         </div>
 
-        {/* Security badge footer */}
-        <div className="mt-6 text-center text-[11px] text-[#64748B] space-y-1">
-          <p className="flex items-center justify-center gap-1.5 text-[#14283F] font-medium">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Strict Client Isolation — All cases scoped to <code className="font-mono text-[#168C83]">users/&#123;userId&#125;/cases</code></span>
+        {/* Security footer */}
+        <div className="mt-6 text-center text-[11px] text-[#CBD5E1] space-y-1">
+          <p className="flex items-center justify-center gap-1.5 text-white font-medium">
+            <ShieldCheck className="w-4 h-4 text-[#93C5FD]" />
+            <span>Confidential Multi-Business Isolation</span>
           </p>
-          <p>Relaunch BizPulse © 2026 • Confidential Commercial Operating System</p>
+          <p className="text-[#94A3B8]">Relaunch BizPulse © 2026 • Executive Coaching &amp; Diagnostic OS</p>
         </div>
       </div>
     </div>

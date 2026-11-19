@@ -1,100 +1,89 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Bot, 
-  Send, 
-  Sparkles, 
-  FileText, 
-  Copy, 
-  Check, 
-  MessageSquare, 
-  RotateCcw, 
-  ShieldCheck, 
-  AlertTriangle,
-  Lightbulb,
+import {
+  Bot,
+  Send,
+  Sparkles,
+  FileText,
+  Copy,
+  Check,
+  RotateCcw,
   UserCheck,
-  Building2,
-  Coins
+  Loader2,
 } from 'lucide-react';
 import { SCRIPT_PRESETS } from '../data/coachingBriefing';
-import { ScriptPreset, CaseRecord, BusinessProfile } from '../types/bizpulse';
+import { ScriptPreset, CaseRecord, BusinessProfile, ChatMessage } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
-
-interface Message {
-  id: string;
-  sender: 'user' | 'coach';
-  text: string;
-  timestamp: string;
-}
 
 interface AICoachConsoleProps {
   caseRecord: CaseRecord;
   onUpdateCase?: (updated: CaseRecord) => void;
+  onTrackUsage?: (field: 'coachMessagesCount') => void;
   initialPrompt?: string;
 }
 
 export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   caseRecord,
   onUpdateCase,
-  initialPrompt
+  onTrackUsage,
+  initialPrompt,
 }) => {
   const profile = caseRecord.profile;
 
   const getInitialWelcomeText = (p: BusinessProfile) => {
     if (p.isDemonstrationCase) {
-      return `Kia ora Vish and Managing Partner. I am your direct, commercially minded executive coach. I know your numbers inside out: NZ$1.28M revenue, NZ$100k paper profit, NZ$38k cash, NZ$52k overdraft used, and NZ$58k in >60-day overdue accounts.
+      return `Kia ora Vish and Managing Partner. I am your direct, commercially minded executive business coach. I have reviewed your baseline numbers: NZ$1.28M revenue, NZ$100k operating profit, NZ$38k cash, NZ$52k overdraft drawn, and NZ$58k in >60-day overdue accounts.
 
-I am here to protect your solvency, relieve debt collection pressure, shield your senior technician, and build a high-margin, manageable IT business.
-
-Ask me any tough tactical question, or click one of the quick script presets below to generate client communications right now.`;
+Ask any tough commercial question below, challenge priorities, or use the quick communication templates to prepare overdue account notices and client outreach.`;
     }
-    return `Welcome to your Executive Commercial Coaching Console for ${p.name}.
-I am calibrated specifically for your business in ${p.industry} (${p.country}, Currency: ${p.currency}).
+    return `Welcome to your Executive Coaching Console for ${p.name || 'your business'}.
+Context loaded: ${p.industry} (${p.country}, Currency: ${p.currency}) | Uploaded Documents: ${
+      caseRecord.uploadedDocuments?.length || 0
+    }.
 
-Stated Primary Objective: "${p.primaryObjective}"
-Primary Concern: "${p.primaryConcern || 'Commercial pressure and operational bottlenecks'}"
+Primary Objective: "${p.primaryObjective || 'Not entered yet'}"
+Primary Concern: "${p.primaryConcern || 'Not entered yet'}"
 
-I am ready to help you analyze cash flow, negotiate price increases, protect team capacity, or draft firm client communications. What commercial issue should we tackle today?`;
+Ask about cash flow, pricing adjustments, customer negotiations, staff workload, or document findings.`;
   };
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'm-0',
-      sender: 'coach',
-      text: getInitialWelcomeText(profile),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const buildInitialMessages = (record: CaseRecord): ChatMessage[] => {
+    if (record.conversations && record.conversations.length > 0) {
+      return record.conversations;
     }
-  ]);
+    return [
+      {
+        id: 'm-0',
+        sender: 'coach',
+        text: getInitialWelcomeText(record.profile),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ];
+  };
 
+  const [messages, setMessages] = useState<ChatMessage[]>(() => buildInitialMessages(caseRecord));
   const [inputPrompt, setInputPrompt] = useState<string>(initialPrompt || '');
-  const [selectedTopic, setSelectedTopic] = useState<string>('Solvency & Collections');
+  const [selectedTopic, setSelectedTopic] = useState<string>('Cash Flow & Collections');
 
-  const defaultRole = profile.isDemonstrationCase 
-    ? 'Managing Director (Vish)' 
-    : `Owner / Managing Director (${profile.name})`;
+  const defaultRole = profile.isDemonstrationCase
+    ? 'Managing Director (Vish)'
+    : `Owner / Managing Director (${profile.name || 'SME'})`;
   const [userRole, setUserRole] = useState<string>(defaultRole);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [copiedScriptId, setCopiedScriptId] = useState<string | null>(null);
 
-  // Script Generator Modal / View
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState<boolean>(false);
   const [selectedPreset, setSelectedPreset] = useState<ScriptPreset | null>(null);
 
-  // When profile changes, reset welcome message
   useEffect(() => {
-    setMessages([
-      {
-        id: 'm-0',
-        sender: 'coach',
-        text: getInitialWelcomeText(caseRecord.profile),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
+    setMessages(buildInitialMessages(caseRecord));
     setUserRole(
-      caseRecord.profile.isDemonstrationCase 
-        ? 'Managing Director (Vish)' 
-        : `Owner / Managing Director (${caseRecord.profile.name})`
+      caseRecord.profile.isDemonstrationCase
+        ? 'Managing Director (Vish)'
+        : `Owner / Managing Director (${caseRecord.profile.name || 'SME'})`
     );
+    setGeneratedScript(null);
+    setSelectedPreset(null);
   }, [caseRecord.id]);
 
   useEffect(() => {
@@ -104,30 +93,27 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
   }, [initialPrompt]);
 
   const roleOptions = profile.isDemonstrationCase
-    ? [
-        'Managing Director (Vish)',
-        'Finance/Operations (Partner)',
-        'Senior Systems Engineer'
-      ]
+    ? ['Managing Director (Vish)', 'Finance/Operations (Partner)', 'Senior Systems Engineer']
     : [
-        `Owner / Managing Director (${profile.name})`,
+        `Owner / Managing Director (${profile.name || 'SME'})`,
         'Finance & Administration Lead',
         'Operations / Service Manager',
-        'General Manager / Partner'
+        'General Manager / Partner',
       ];
 
   const handleSendMessage = async (customPrompt?: string) => {
-    const textToSend = customPrompt || inputPrompt;
-    if (!textToSend.trim() || isLoading) return;
+    const textToSend = (customPrompt || inputPrompt).trim();
+    if (!textToSend || isLoading) return;
 
-    const userMsg: Message = {
+    const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       sender: 'user',
       text: textToSend,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
     setInputPrompt('');
     setIsLoading(true);
 
@@ -135,40 +121,53 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
       const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/coach/query', {
         method: 'POST',
-        headers: authHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
         body: JSON.stringify({
+          caseId: caseRecord.id,
           prompt: textToSend,
           topic: selectedTopic,
-          userRole: userRole,
+          userRole,
           businessProfile: caseRecord.profile,
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
+          uploadedDocuments: caseRecord.uploadedDocuments || [],
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate response from coach');
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to generate coaching response.');
       }
 
       const data = await response.json();
-      const coachMsg: Message = {
+      const coachMsg: ChatMessage = {
         id: `c-${Date.now()}`,
         sender: 'coach',
         text: data.reply || 'No response generated.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      setMessages(prev => [...prev, coachMsg]);
+      const finalMessages = [...nextMessages, coachMsg];
+      setMessages(finalMessages);
+      onUpdateCase?.({
+        ...caseRecord,
+        conversations: finalMessages,
+        updatedAt: new Date().toISOString(),
+      });
+      onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
       console.error(err);
-      const errorMsg: Message = {
+      const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'coach',
-        text: `Error communicating with Executive Coach: ${err.message}. Please check that your dev server is active and GEMINI_API_KEY is configured.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        text: `Unable to reach Executive Coach: ${err.message || 'Please retry shortly.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -183,8 +182,12 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
       const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/coach/generate-script', {
         method: 'POST',
-        headers: authHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
         body: JSON.stringify({
+          caseId: caseRecord.id,
           scriptType: preset.title,
           businessProfile: caseRecord.profile,
           details: preset.defaultPrompt,
@@ -192,14 +195,16 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate script');
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to generate communication draft.');
       }
 
       const data = await response.json();
       setGeneratedScript(data.script);
+      onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
       console.error(err);
-      setGeneratedScript(`Error generating script: ${err.message}`);
+      setGeneratedScript(`Unable to generate draft: ${err.message}`);
     } finally {
       setIsGeneratingScript(false);
     }
@@ -212,41 +217,39 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner Context */}
-      <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 shadow-sm">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Black-to-Blue Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-[#168C83]" />
-                Interactive Advisory Console
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#1D4ED8] text-white flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                Live Executive Coach
               </span>
-              <span className="text-[#64748B] text-xs font-medium">Powered by Gemini 2.5 Flash</span>
-              {profile.isDemonstrationCase && (
-                <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30">
-                  Demo Case: NZ MSP
-                </span>
-              )}
+              <span className="text-[#CBD5E1] text-xs font-medium">
+                Evidence-Based SME Advisory
+              </span>
             </div>
-            <h2 className="text-2xl font-bold text-[#14283F] tracking-tight">
-              Executive Small-Business Coach (Live Advisory)
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Executive Coaching Console ({profile.name})
             </h2>
-            <p className="text-sm text-[#64748B] max-w-3xl leading-relaxed">
-              Trained on {profile.name} ({profile.industry}, {profile.country}). Grounded in your 8 health dimensions, working capital constraints, and primary concerns. Roleplay difficult client conversations, draft letters, or challenge strategic decisions.
+            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed">
+              Grounded strictly in {profile.name} ({profile.industry}, {profile.country}) — including your 8 health scores, primary concern, and {caseRecord.uploadedDocuments?.length || 0} uploaded document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
             </p>
           </div>
 
-          {/* User Persona Selector */}
-          <div className="flex items-center space-x-3 bg-[#F8FAFC] px-4 py-2 rounded-xl border border-[#CBD5E1]">
-            <span className="text-xs text-[#64748B] font-medium">Speaking as:</span>
+          <div className="flex items-center space-x-2.5 bg-white/10 px-4 py-2.5 rounded-xl border border-white/15 shrink-0">
+            <span className="text-xs text-[#CBD5E1] font-medium whitespace-nowrap">Role:</span>
             <select
               value={userRole}
               onChange={(e) => setUserRole(e.target.value)}
-              className="bg-white text-xs font-bold text-[#14283F] border border-[#CBD5E1] rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#168C83] max-w-[240px]"
+              className="bg-[#0F172A] text-xs font-bold text-white border border-white/20 rounded-lg px-2.5 py-1.5 focus:outline-none max-w-[220px]"
             >
               {roleOptions.map((role) => (
-                <option key={role} value={role}>{role}</option>
+                <option key={role} value={role}>
+                  {role}
+                </option>
               ))}
             </select>
           </div>
@@ -254,51 +257,50 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
       </div>
 
       {/* Quick Script Presets Bar */}
-      <div className="bg-white border border-[#E5EBEF] rounded-2xl p-5 shadow-sm">
+      <div className="bg-white border border-[#D9E2F0] rounded-2xl p-5 shadow-xs">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#14283F] flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#168C83]" />
-            Instant Professional Script Generator ({profile.country} Commercial Format)
+          <span className="text-xs font-bold uppercase tracking-wider text-[#0B1324] flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-[#1D4ED8]" />
+            Commercial Script Drafts ({profile.country})
           </span>
-          <span className="text-xs text-[#64748B]">1-Click AI Generation</span>
+          <span className="text-xs text-[#52627A]">1-Click Custom Draft</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SCRIPT_PRESETS.map((preset: ScriptPreset) => (
             <button
               key={preset.id}
+              type="button"
               onClick={() => handleGeneratePresetScript(preset)}
-              className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] hover:border-[#168C83]/50 hover:bg-white transition text-left space-y-1 group shadow-xs"
+              className="p-3 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] hover:border-[#1D4ED8] hover:bg-white transition text-left space-y-1 group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#168C83] border border-[#E5EBEF]">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#1D4ED8] border border-[#D9E2F0]">
                   {preset.category}
                 </span>
-                <Sparkles className="w-3 h-3 text-[#CBD5E1] group-hover:text-[#168C83] transition" />
+                <Sparkles className="w-3 h-3 text-[#94A3B8] group-hover:text-[#1D4ED8] transition" />
               </div>
-              <h4 className="font-bold text-[#14283F] text-xs line-clamp-1 group-hover:text-[#168C83]">
+              <h4 className="font-bold text-[#0B1324] text-xs line-clamp-1 group-hover:text-[#1D4ED8]">
                 {preset.title}
               </h4>
-              <p className="text-[11px] text-[#64748B] line-clamp-2">
-                {preset.description}
-              </p>
+              <p className="text-[11px] text-[#52627A] line-clamp-2">{preset.description}</p>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Generated Script Display Modal/Drawer */}
+      {/* Generated Script Drawer */}
       {selectedPreset && (
-        <div className="bg-white border border-[#168C83]/40 rounded-2xl p-6 shadow-md relative">
-          <div className="flex items-center justify-between pb-4 border-b border-[#E5EBEF]">
+        <div className="bg-white border border-[#1D4ED8]/40 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between pb-4 border-b border-[#E8EEF7]">
             <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-[#168C83]" />
+              <FileText className="w-5 h-5 text-[#1D4ED8]" />
               <div>
-                <h3 className="font-bold text-[#14283F] text-sm">
-                  Generated Script: {selectedPreset.title}
+                <h3 className="font-bold text-[#0B1324] text-sm">
+                  Draft Script: {selectedPreset.title}
                 </h3>
-                <p className="text-xs text-[#64748B]">
-                  Calibrated for {profile.name} ({profile.country}, Currency: {profile.currency})
+                <p className="text-xs text-[#52627A]">
+                  Calibrated for {profile.name} ({profile.country}, {profile.currency})
                 </p>
               </div>
             </div>
@@ -306,25 +308,27 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
             <div className="flex items-center space-x-2">
               {generatedScript && (
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(generatedScript, 'generated-script')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#168C83] text-white text-xs font-bold hover:bg-[#12726B] shadow-sm transition"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#1D4ED8] text-white text-xs font-bold hover:bg-[#1E40AF] transition"
                 >
                   {copiedScriptId === 'generated-script' ? (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      <span>Copied!</span>
+                      <span>Copied</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Full Script</span>
+                      <span>Copy Script</span>
                     </>
                   )}
                 </button>
               )}
               <button
+                type="button"
                 onClick={() => setSelectedPreset(null)}
-                className="px-2.5 py-1.5 text-xs text-[#64748B] hover:text-[#14283F] font-medium"
+                className="px-2.5 py-1.5 text-xs text-[#52627A] hover:text-[#0B1324] font-semibold"
               >
                 Close
               </button>
@@ -333,12 +337,12 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
 
           <div className="mt-4">
             {isGeneratingScript ? (
-              <div className="py-8 text-center text-[#64748B] text-xs flex flex-col items-center justify-center space-y-2">
-                <div className="w-6 h-6 border-2 border-[#168C83] border-t-transparent rounded-full animate-spin" />
-                <span>Gemini is drafting your custom commercial correspondence...</span>
+              <div className="py-8 text-center text-[#52627A] text-xs flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="w-6 h-6 text-[#1D4ED8] animate-spin" />
+                <span>Drafting tailored communication...</span>
               </div>
             ) : (
-              <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#CBD5E1] text-xs text-[#14283F] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+              <div className="bg-[#F3F6FB] p-4 rounded-xl border border-[#CBD5E1] text-xs text-[#0B1324] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
                 {generatedScript}
               </div>
             )}
@@ -346,27 +350,27 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
         </div>
       )}
 
-      {/* Main Chat Interface */}
-      <div className="bg-white border border-[#E5EBEF] rounded-2xl shadow-sm overflow-hidden flex flex-col h-[650px]">
-        {/* Chat Control Sub-Bar */}
-        <div className="bg-[#F8FAFC] px-6 py-3 border-b border-[#E5EBEF] flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center space-x-2">
-            <span className="text-[#64748B] font-medium">Consultation Topic:</span>
+      {/* Main Chat Container */}
+      <div className="bg-white border border-[#D9E2F0] rounded-2xl shadow-xs overflow-hidden flex flex-col h-[620px]">
+        <div className="bg-[#F3F6FB] px-6 py-3 border-b border-[#D9E2F0] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[#52627A] font-semibold">Topic:</span>
             <div className="flex flex-wrap gap-1">
               {[
-                'Solvency & Collections',
-                'Pricing & Contracts',
+                'Cash Flow & Collections',
+                'Pricing & Margins',
                 'Client Retention',
-                'Service Desk Firefighting',
-                'Hiring vs Marketing'
+                'Team & Owner Capacity',
+                'Documents & Numbers',
               ].map((topic) => (
                 <button
                   key={topic}
+                  type="button"
                   onClick={() => setSelectedTopic(topic)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
                     selectedTopic === topic
-                      ? 'bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/40'
-                      : 'text-[#64748B] hover:text-[#14283F] hover:bg-white'
+                      ? 'bg-[#0F172A] text-white'
+                      : 'text-[#52627A] hover:text-[#0B1324] hover:bg-white'
                   }`}
                 >
                   {topic}
@@ -376,26 +380,35 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
           </div>
 
           <button
+            type="button"
             onClick={() => {
-              setMessages([
+              const resetMsgs: ChatMessage[] = [
                 {
                   id: 'm-reset',
                   sender: 'coach',
                   text: getInitialWelcomeText(profile),
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                }
-              ]);
+                  timestamp: new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                },
+              ];
+              setMessages(resetMsgs);
+              onUpdateCase?.({
+                ...caseRecord,
+                conversations: resetMsgs,
+                updatedAt: new Date().toISOString(),
+              });
             }}
-            className="flex items-center space-x-1 text-[#64748B] hover:text-[#14283F] transition font-medium"
-            title="Reset conversation"
+            className="flex items-center space-x-1 text-[#52627A] hover:text-[#0B1324] transition font-semibold"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset Chat</span>
+            <span>Reset Thread</span>
           </button>
         </div>
 
         {/* Message History */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#F5F6F3]/30">
+        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#F8FAFC]">
           {messages.map((msg) => {
             const isCoach = msg.sender === 'coach';
             return (
@@ -404,29 +417,29 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
                 className={`flex gap-3 ${isCoach ? 'justify-start' : 'justify-end'}`}
               >
                 {isCoach && (
-                  <div className="w-8 h-8 rounded-lg bg-[#168C83] flex items-center justify-center shrink-0 shadow-sm text-white font-bold">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
+                    <Bot className="w-4 h-4 text-[#93C5FD]" />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-2xl rounded-2xl p-4 text-xs leading-relaxed shadow-sm ${
+                  className={`max-w-2xl rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-2xs ${
                     isCoach
-                      ? 'bg-white border border-[#E5EBEF] text-[#14283F]'
-                      : 'bg-[#E6F4F2] border border-[#168C83]/30 text-[#14283F] font-medium'
+                      ? 'bg-white border border-[#D9E2F0] text-[#0B1324]'
+                      : 'bg-[#EFF6FF] border border-[#BFDBFE] text-[#0B1324] font-medium'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1.5 opacity-60 text-[10px]">
-                    <span className="font-bold">
-                      {isCoach ? 'Turnaround Coach' : userRole}
+                  <div className="flex items-center justify-between mb-1.5 text-[10px] text-[#52627A]">
+                    <span className="font-bold uppercase tracking-wider">
+                      {isCoach ? 'Executive Coach' : userRole}
                     </span>
-                    <span>{msg.timestamp}</span>
+                    <span className="font-mono tabular-nums">{msg.timestamp}</span>
                   </div>
                   <div className="whitespace-pre-wrap">{msg.text}</div>
                 </div>
 
                 {!isCoach && (
-                  <div className="w-8 h-8 rounded-lg bg-[#14283F] border border-[#14283F] flex items-center justify-center shrink-0 text-white font-bold shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-[#1D4ED8] flex items-center justify-center shrink-0 text-white">
                     <UserCheck className="w-4 h-4" />
                   </div>
                 )}
@@ -436,19 +449,19 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-lg bg-[#168C83] flex items-center justify-center shrink-0 text-white shadow-sm">
-                <Bot className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
+                <Bot className="w-4 h-4 text-[#93C5FD]" />
               </div>
-              <div className="bg-white border border-[#E5EBEF] rounded-2xl p-4 text-xs text-[#64748B] flex items-center space-x-2 shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-[#168C83] animate-ping" />
-                <span>Coach is analyzing commercial implications...</span>
+              <div className="bg-white border border-[#D9E2F0] rounded-2xl p-4 text-xs text-[#52627A] flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 text-[#1D4ED8] animate-spin" />
+                <span>Analyzing commercial context...</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Input Bar */}
-        <div className="p-4 bg-white border-t border-[#E5EBEF]">
+        {/* Input Form */}
+        <div className="p-4 bg-white border-t border-[#D9E2F0]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -460,23 +473,19 @@ I am ready to help you analyze cash flow, negotiate price increases, protect tea
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder={`Ask your coach about cash flow, customer negotiations, pricing adjustments, or team protection...`}
+              placeholder={`Ask about ${profile.name}'s cash flow, pricing, customer trade-offs, or uploaded documents...`}
               disabled={isLoading}
-              className="flex-1 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-4 py-3 text-xs text-[#14283F] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#168C83] focus:border-[#168C83] disabled:opacity-50"
+              className="flex-1 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-3 text-xs sm:text-sm text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isLoading || !inputPrompt.trim()}
-              className="px-5 py-3 rounded-xl bg-[#168C83] hover:bg-[#12726B] disabled:opacity-40 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition active:scale-95"
+              className="px-5 py-3 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] disabled:opacity-40 text-white font-bold text-xs flex items-center space-x-1.5 transition"
             >
               <span>Send</span>
               <Send className="w-3.5 h-3.5" />
             </button>
           </form>
-          <div className="flex justify-between items-center text-[10px] text-[#64748B] mt-2 px-1">
-            <span>Context: {profile.name} ({profile.industry})</span>
-            <span>All responses grounded in evidence and commercial triage</span>
-          </div>
         </div>
       </div>
     </div>

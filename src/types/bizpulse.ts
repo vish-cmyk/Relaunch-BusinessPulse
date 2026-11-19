@@ -55,10 +55,24 @@ export interface HealthDimensionInput {
   evidenceType: 'owner_reported' | 'verified' | 'assumption' | 'hypothesis' | 'unknown';
 }
 
+export interface DimensionScoreDetail {
+  key: HealthDimensionKey;
+  title: string;
+  status: HealthStatus;
+  score: number | null; // 0 to 100, or null if unanswered
+  color: 'green' | 'amber' | 'red' | 'slate';
+  explanation: string;
+}
+
 export interface OverallHealthAssessment {
-  overallScore: number; // 0 to 100
+  overallScore: number | null; // 0 to 100, or null when 0 dimensions answered
   overallRating: 'Healthy' | 'Needs Attention' | 'At Risk' | 'Incomplete / Missing Information';
   scoreLabel: string;
+  overallExplanation?: string;
+  dimensionScores?: DimensionScoreDetail[];
+  answeredCount?: number;
+  unsureCount?: number;
+  unansweredCount?: number;
   criticalRisksIdentified: string[];
   strongestAreas: string[];
   missingEvidenceAreas: string[];
@@ -82,14 +96,34 @@ export interface FinancialData {
   customerCount: number | null;
   top5ConcentrationPercent: number | null;
   top12ConcentrationPercent: number | null;
-  standardPaymentTermsDays: number;
+  standardPaymentTermsDays: number | null;
   actualPaymentDelayDays: number | null;
   pricingReviewLastYears: number | null;
+}
+
+export interface RecommendationActionItem {
+  id: string;
+  priority: 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)';
+  ownerRole: string;
+  timeframe: string;
+  action: string;
+  expectedImpact: string;
+  completed?: boolean;
+}
+
+export interface RecommendationChallenge {
+  id: string;
+  questionOrChallenge: string;
+  coachResponse: string;
+  createdAt: string;
 }
 
 export interface RecommendationOutput {
   initialObservation: string;
   commercialWhy: string;
+  sustainabilityRisks?: string[];
+  hiddenProfitOpportunities?: string[];
+  revenueFlowImprovements?: string[];
   knownsVsAssumptions: {
     knowns: string[];
     assumptions: string[];
@@ -99,8 +133,34 @@ export interface RecommendationOutput {
   contextualQuestions: string[];
   initialRecommendation: string;
   immediateAction: string;
+  actionItems?: RecommendationActionItem[];
+  challenges?: RecommendationChallenge[];
   specialistAdviceNeeded: string | null;
   generatedAt: string;
+}
+
+export interface DocumentMetricFound {
+  label: string;
+  value: string;
+  sourceBasis: 'document_verified' | 'owner_reported';
+}
+
+export interface UploadedDocument {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSizeBytes: number;
+  uploadedAt: string;
+  summary: string;
+  verifiedFacts: string[];
+  ownerSuppliedClaims: string[];
+  assumptionsFlagged: string[];
+  missingFinancialFigures: string[];
+  earningPotentialAssessment: string;
+  risksIdentified: string[];
+  opportunitiesIdentified: string[];
+  metricsFound: DocumentMetricFound[];
+  extractedPreview?: string;
 }
 
 export interface ChatMessage {
@@ -167,6 +227,8 @@ export interface CustomDashboardMetric {
 }
 
 export type PaymentStatus = 'free' | 'pending' | 'paid' | 'failed' | 'refunded';
+export type SubscriptionTierId = 'free_trial' | 'essential_monthly' | 'founding_monthly';
+export type SubscriptionTier = SubscriptionTierId;
 
 export interface PaymentRecord {
   sessionId: string;
@@ -174,10 +236,16 @@ export interface PaymentRecord {
   amount: number;
   currency: string;
   status: PaymentStatus;
-  tier: 'Diagnostic Report & Turnaround OS' | 'Executive Subscription';
+  tier: 'Essential Coach Monthly' | 'Founding Member Growth OS Monthly' | 'Diagnostic Report & Turnaround OS' | 'Executive Subscription';
   unlockedAt?: string;
   receiptUrl?: string;
   paymentMethod?: string;
+}
+
+export interface CaseUsageStats {
+  recommendationsCount: number;
+  coachMessagesCount: number;
+  documentsAnalyzedCount: number;
 }
 
 export interface CaseRecord {
@@ -187,9 +255,13 @@ export interface CaseRecord {
   overallHealth: OverallHealthAssessment | null;
   financials: FinancialData | null;
   recommendations: RecommendationOutput | null;
+  uploadedDocuments?: UploadedDocument[];
   conversations: ChatMessage[];
   actionPlan: TurnaroundAction[];
+  sprintCompleted?: Record<string, boolean>;
   dashboardMetrics: CustomDashboardMetric[];
+  subscriptionTier?: SubscriptionTierId;
+  usageStats?: CaseUsageStats;
   paymentStatus?: PaymentStatus;
   paymentRecord?: PaymentRecord | null;
   isUnlocked?: boolean;

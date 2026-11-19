@@ -62,6 +62,7 @@ export function createBlankCase(profileOverrides?: Partial<BusinessProfile>): Ca
     overallHealth: null,
     financials: null,
     recommendations: null,
+    uploadedDocuments: [],
     conversations: [
       {
         id: 'msg-' + Date.now(),
@@ -71,7 +72,10 @@ export function createBlankCase(profileOverrides?: Partial<BusinessProfile>): Ca
       }
     ],
     actionPlan: [],
+    sprintCompleted: { 'sprint-1': false, 'sprint-2': false, 'sprint-3': false },
     dashboardMetrics: [],
+    subscriptionTier: 'free_trial',
+    usageStats: { recommendationsCount: 0, coachMessagesCount: 0, documentsAnalyzedCount: 0 },
     isUnlocked: false,
     paymentStatus: 'free',
     paymentRecord: null,
@@ -156,120 +160,5 @@ export function deleteCase(caseId: string): CaseRecord {
   return nextCase;
 }
 
-/**
- * 8 Dimensions Scoring Algorithm (Ninth Output: Overall Business Health)
- * Rules:
- * - Healthy: 100 pts
- * - Needs Attention: 50 pts
- * - At Risk: 15 pts
- * - Not Sure: 35 pts (flags missing information)
- * - Unanswered: Excluded from score calculation
- * - Critical Risk Override: If Money or Operations is At Risk, overall rating cannot be 'Healthy' (capped at 'At Risk' or 'Needs Attention').
- * - Incomplete Override: If 3 or more dimensions are unanswered, status is 'Incomplete / Missing Information'.
- */
-export function calculateOverallHealth(
-  inputs: Record<HealthDimensionKey, HealthDimensionInput>,
-  financials?: FinancialData | null
-): OverallHealthAssessment {
-  const keys = Object.keys(inputs) as HealthDimensionKey[];
-  let totalScore = 0;
-  let answeredCount = 0;
-  let unansweredCount = 0;
-
-  const criticalRisks: string[] = [];
-  const strongestAreas: string[] = [];
-  const missingEvidence: string[] = [];
-  const mainDrivers: string[] = [];
-
-  for (const key of keys) {
-    const item = inputs[key];
-    switch (item.status) {
-      case 'healthy':
-        totalScore += 100;
-        answeredCount++;
-        strongestAreas.push(`${item.title}: Sound processes and positive feedback.`);
-        break;
-      case 'needs_attention':
-        totalScore += 50;
-        answeredCount++;
-        mainDrivers.push(`${item.title}: Requires active optimization and monitoring.`);
-        break;
-      case 'at_risk':
-        totalScore += 15;
-        answeredCount++;
-        criticalRisks.push(`${item.title}: Urgent operational or financial friction flagged.`);
-        mainDrivers.push(`${item.title}: Critical vulnerability requiring immediate intervention.`);
-        break;
-      case 'not_sure':
-        totalScore += 35;
-        answeredCount++;
-        missingEvidence.push(`${item.title}: Owner reported lack of data or visibility.`);
-        break;
-      case 'unanswered':
-      default:
-        unansweredCount++;
-        missingEvidence.push(`${item.title}: Unanswered dimension (no data provided).`);
-        break;
-    }
-  }
-
-  // Calculate raw average of answered dimensions
-  const rawScore = answeredCount > 0 ? Math.round(totalScore / answeredCount) : 0;
-  let finalScore = rawScore;
-
-  // Financial constraint penalty based on proportional ratio (e.g. overdue > 30% of total receivables)
-  if (financials) {
-    const totalAR = Number(financials.accountsReceivable) || 0;
-    const overdueAR = Number(financials.overdueReceivables) || 0;
-    const overdueRatio = totalAR > 0 ? overdueAR / totalAR : 0;
-    const isProportionallyHigh = overdueRatio >= 0.30 || (totalAR === 0 && overdueAR > 0);
-
-    if (isProportionallyHigh && overdueAR > 0) {
-      if (!criticalRisks.some(r => r.includes('Debtor') || r.includes('Working capital'))) {
-        const ratioPercent = totalAR > 0 ? ` (${Math.round(overdueRatio * 100)}% of aged ledger)` : '';
-        criticalRisks.push(`Working capital pressure: Delinquent receivables${ratioPercent} impairing cash flow velocity.`);
-      }
-    }
-  }
-
-  let rating: OverallHealthAssessment['overallRating'] = 'Healthy';
-  let label = 'Operationally Resilient & Commercially Balanced';
-
-  // Apply non-averaging risk overrides
-  const moneyStatus = inputs.money?.status;
-  const opsStatus = inputs.operations?.status;
-  const hasCriticalSolvencyRisk = moneyStatus === 'at_risk';
-  const hasCriticalOpsRisk = opsStatus === 'at_risk';
-
-  if (unansweredCount >= 3) {
-    rating = 'Incomplete / Missing Information';
-    label = `Assessment Incomplete (${unansweredCount} of 8 Dimensions Missing)`;
-    finalScore = Math.min(finalScore, Math.round((answeredCount / keys.length) * 100));
-  } else if (hasCriticalSolvencyRisk || hasCriticalOpsRisk || finalScore < 45 || criticalRisks.length >= 2) {
-    rating = 'At Risk';
-    label = hasCriticalSolvencyRisk 
-      ? 'At Risk: Acute Cash Conversion / Working Capital Vulnerability' 
-      : 'At Risk: Service Delivery & Operational Capacity Bottleneck';
-    finalScore = Math.min(finalScore, 44);
-  } else if (finalScore < 70 || inputs.ownerDependency?.status === 'at_risk') {
-    rating = 'Needs Attention';
-    label = 'Needs Attention: Structural Friction & Scaling Bottlenecks';
-    finalScore = Math.min(finalScore, 68);
-  } else {
-    rating = 'Healthy';
-    label = 'Healthy: Commercial Foundations Solid';
-  }
-
-  return {
-    overallScore: finalScore,
-    overallRating: rating,
-    scoreLabel: label,
-    criticalRisksIdentified: criticalRisks.length > 0 ? criticalRisks : ['No acute failure points identified by owner.'],
-    strongestAreas: strongestAreas.length > 0 ? strongestAreas : ['No areas confirmed as fully healthy yet.'],
-    missingEvidenceAreas: missingEvidence.length > 0 ? missingEvidence : ['Core 8 dimensions provided.'],
-    mainDrivers: mainDrivers.length > 0 ? mainDrivers : ['Baseline operational indicators.'],
-    assessmentDate: new Date().toISOString().split('T')[0],
-    scoringWeightRules: 'Rule-based scoring: Healthy=100, Needs Attention=50, At Risk=15, Not Sure=35. Unanswered inputs excluded from denominator. Hard constraint: If Money or Operations is At Risk, overall health cannot be rated Healthy regardless of other scores.',
-    isProvisional: unansweredCount > 0 || missingEvidence.length > 0,
-  };
-}
+import { calculateOverallHealth } from './healthScoring';
+export { calculateOverallHealth };

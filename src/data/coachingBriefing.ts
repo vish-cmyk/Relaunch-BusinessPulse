@@ -36,7 +36,7 @@ export const RISK_MAP_ITEMS: RiskMapItem[] = [
     evidenceCurrentlyAvailable: [
       'Reported available cash: NZ$38,000.',
       'Reported overdraft drawn: NZ$52,000 out of NZ$75,000 (NZ$23,000 remaining buffer).',
-      'Reported receivables: NZ$175,000, with NZ$58,000 &gt;60 days overdue.',
+      'Reported receivables: NZ$175,000, with NZ$58,000 >60 days overdue.',
       'Reported customer payment terms: 20 days standard, but realized at 45–75 days.',
       'Reported outstanding supplier liabilities: NZ$92,000.'
     ],
@@ -49,7 +49,7 @@ export const RISK_MAP_ITEMS: RiskMapItem[] = [
     urgency: 'Immediate (Within 7 Days)',
     recommendedFirstAction: 'Conduct a 48-hour debtor and payable audit to isolate collectable overdue cash and verify upcoming net payroll and tax obligations.',
     hypothesisToTest: 'Hypothesis A1: The cash strain is primarily a timing-driven working-capital conversion issue, not fundamental business unviability.',
-    confirmationCriteria: 'Confirmed if aged receivables show &gt;NZ$35,000 in undisputed, collectable invoices from creditworthy customers who will pay upon structured engagement.',
+    confirmationCriteria: 'Confirmed if aged receivables show >NZ$35,000 in undisputed, collectable invoices from creditworthy customers who will pay upon structured engagement.',
     disproofCriteria: 'Disproved if overdue receivables are disputed due to service delivery defects, or if customer businesses are insolvent/unwilling to pay, necessitating write-offs.'
   },
   {
@@ -96,7 +96,7 @@ export const RISK_MAP_ITEMS: RiskMapItem[] = [
     recommendedFirstAction: 'Institute an operational dispatch firewall routing 100% of inbound requests through the service desk, establishing a dedicated 4-hour daily focus block for the senior technician.',
     hypothesisToTest: 'Hypothesis C1: Technical capacity is constrained by unmanaged reactive interruptions and out-of-scope work, rather than a raw shortage of technicians.',
     confirmationCriteria: 'Confirmed if triage processes recover 15–20 hours/week of senior technician time currently spent on routine or unbilled requests.',
-    disproofCriteria: 'Disproved if baseline contracted maintenance alone genuinely requires &gt;100% of available technical capacity even after strict triage.'
+    disproofCriteria: 'Disproved if baseline contracted maintenance alone genuinely requires >100% of available technical capacity even after strict triage.'
   },
   {
     id: 'risk-4',
@@ -388,7 +388,7 @@ export const PRIORITISED_TURNAROUND_PLAN: TurnaroundAction[] = [
     accountableRole: 'Managing Director / Commercial Lead',
     timeframe: 'Days 15–28',
     requiredInformationOrResources: [
-      'Audit of all customer contracts identifying agreements frozen for &gt;2 years.',
+      'Audit of all customer contracts identifying agreements frozen for >2 years.',
       'Formally drafted 30-day price adjustment notice explaining cost inflation and cybersecurity tooling additions.'
     ],
     measurableSuccessIndicator: 'Formal price review notices (5–10% adjustment) issued to the first cohort of low-margin or price-frozen contracts, with clear scope specifications.',
@@ -406,7 +406,7 @@ export const PRIORITISED_TURNAROUND_PLAN: TurnaroundAction[] = [
       'Setup of automated Direct Debit / pre-authorized debit facility (e.g. GoCardless for Xero/accounting).',
       'Standardized credit terms documentation (strict 20th of the month following invoice).'
     ],
-    measurableSuccessIndicator: 'Migration of at least 30% of recurring monthly clients to automated direct debit; reduction in total overdue receivables &gt;45 days by 50%.',
+    measurableSuccessIndicator: 'Migration of at least 30% of recurring monthly clients to automated direct debit; reduction in total overdue receivables >45 days by 50%.',
     dependencyOrRisk: 'Risk: Customers resisting automated debit. Mitigation: Offer incentive or require direct debit as a condition of maintaining current support rates.',
     completed: false
   },
@@ -570,8 +570,8 @@ export const WEEKLY_DASHBOARD_KPIS: WeeklyDashboardKPI[] = [
     area: 'Cash & Working Capital',
     currentReportedValue: 'NZ$38,000 cash | NZ$52,000 OD drawn (NZ$23,000 headroom)',
     targetBenchmark: 'Zero Overdraft usage | Minimum NZ$60,000 unencumbered cash buffer (approx. 4 weeks payroll)',
-    warningThreshold: 'Overdraft usage &gt; NZ$55,000 (headroom &lt; NZ$20,000)',
-    criticalThreshold: 'Overdraft usage &gt; NZ$65,000 (headroom &lt; NZ$10,000) or cash &lt; NZ$15,000',
+    warningThreshold: 'Overdraft usage > NZ$55,000 (headroom < NZ$20,000)',
+    criticalThreshold: 'Overdraft usage > NZ$65,000 (headroom < NZ$10,000) or cash < NZ$15,000',
     accountableRole: 'Finance & Administration Lead',
     measurementFrequency: 'Weekly on Monday 9:00 AM',
     explanation: 'Unencumbered cash balance plus remaining usable credit facility line before weekly vendor payables run.',
@@ -579,12 +579,12 @@ export const WEEKLY_DASHBOARD_KPIS: WeeklyDashboardKPI[] = [
   },
   {
     id: 'kpi-2',
-    name: 'Aged Receivables &gt;45 Days & Total Debtors',
+    name: 'Aged Receivables >45 Days & Total Debtors',
     area: 'Debtors & Working Capital',
-    currentReportedValue: 'Total AR: NZ$175,000 | Overdue &gt;60 days: NZ$58,000 (33.1%)',
-    targetBenchmark: 'Total AR &lt; NZ$80,000 | Overdue &gt;45 days: &lt; NZ$10,000 (DSO under 25 days)',
-    warningThreshold: 'Overdue &gt;45 days &gt; NZ$25,000',
-    criticalThreshold: 'Overdue &gt;45 days &gt; NZ$40,000 or any single customer &gt;60 days exceeding NZ$10,000',
+    currentReportedValue: 'Total AR: NZ$175,000 | Overdue >60 days: NZ$58,000 (33.1%)',
+    targetBenchmark: 'Total AR < NZ$80,000 | Overdue >45 days: < NZ$10,000 (DSO under 25 days)',
+    warningThreshold: 'Overdue >45 days > NZ$25,000',
+    criticalThreshold: 'Overdue >45 days > NZ$40,000 or any single customer >60 days exceeding NZ$10,000',
     accountableRole: 'Finance & Administration Lead',
     measurementFrequency: 'Weekly on Monday 9:00 AM',
     explanation: 'Total unpaid invoices past standard 20th of the month terms, categorized into current, 30-day, and 60+ day aging brackets.',
@@ -597,7 +597,7 @@ export const WEEKLY_DASHBOARD_KPIS: WeeklyDashboardKPI[] = [
     currentReportedValue: 'Estimated NZ$85–$95/hour (unverified baseline)',
     targetBenchmark: 'EBR ≥ NZ$145/hour across all recurring contract tiers',
     warningThreshold: 'EBR between NZ$110 and NZ$130/hour',
-    criticalThreshold: 'EBR &lt; NZ$105/hour across any major contract (indicates unbilled scope loss)',
+    criticalThreshold: 'EBR < NZ$105/hour across any major contract (indicates unbilled scope loss)',
     accountableRole: 'Managing Director / Commercial Lead',
     measurementFrequency: 'Monthly review (sample tracked weekly)',
     explanation: 'Calculated as: Total Monthly Contract Retainer Revenue ÷ Total Technician Hours Logged for That Contract.',
@@ -634,9 +634,9 @@ export const WEEKLY_DASHBOARD_KPIS: WeeklyDashboardKPI[] = [
     name: 'Senior Technician Escalation Load & Overtime Hours',
     area: 'Staff Capacity & Escalations',
     currentReportedValue: 'Reported overloaded; estimated 45–50 hours/week with continuous interruptions',
-    targetBenchmark: 'Max 38 hours/week total; involvement in &lt;15% of total closed service desk tickets',
-    warningThreshold: 'Senior tech working &gt;42 hours/week or handling &gt;25% of routine tier-1/2 tickets',
-    criticalThreshold: 'Senior tech working weekends or &gt;45 hours/week for 2 consecutive weeks',
+    targetBenchmark: 'Max 38 hours/week total; involvement in <15% of total closed service desk tickets',
+    warningThreshold: 'Senior tech working >42 hours/week or handling >25% of routine tier-1/2 tickets',
+    criticalThreshold: 'Senior tech working weekends or >45 hours/week for 2 consecutive weeks',
     accountableRole: 'Managing Director & Service Desk Lead',
     measurementFrequency: 'Weekly on Monday 9:00 AM',
     explanation: 'Total hours logged and number of escalations assigned to the senior technical lead.',

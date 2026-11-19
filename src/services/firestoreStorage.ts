@@ -97,6 +97,7 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
     overallHealth: null,
     financials: null,
     recommendations: null,
+    uploadedDocuments: [],
     conversations: [
       {
         id: 'msg-' + Date.now(),
@@ -106,7 +107,10 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
       }
     ],
     actionPlan: [],
+    sprintCompleted: { 'sprint-1': false, 'sprint-2': false, 'sprint-3': false },
     dashboardMetrics: [],
+    subscriptionTier: 'free_trial',
+    usageStats: { recommendationsCount: 0, coachMessagesCount: 0, documentsAnalyzedCount: 0 },
     isUnlocked: false,
     paymentStatus: 'free',
     paymentRecord: null,
@@ -114,6 +118,19 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
   };
 
   return newCase;
+}
+
+function normalizeLoadedCase(data: CaseRecord): CaseRecord {
+  return {
+    ...data,
+    uploadedDocuments: Array.isArray(data.uploadedDocuments) ? data.uploadedDocuments : [],
+    conversations: Array.isArray(data.conversations) ? data.conversations : [],
+    actionPlan: Array.isArray(data.actionPlan) ? data.actionPlan : [],
+    dashboardMetrics: Array.isArray(data.dashboardMetrics) ? data.dashboardMetrics : [],
+    sprintCompleted: data.sprintCompleted || { 'sprint-1': false, 'sprint-2': false, 'sprint-3': false },
+    subscriptionTier: data.subscriptionTier || 'free_trial',
+    usageStats: data.usageStats || { recommendationsCount: 0, coachMessagesCount: 0, documentsAnalyzedCount: 0 },
+  };
 }
 
 /**
@@ -132,7 +149,7 @@ export function subscribeUserCases(
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as CaseRecord;
         if (data && data.profile) {
-          records.push(data);
+          records.push(normalizeLoadedCase(data));
         }
       });
       // Sort by updatedAt descending (most recent first)
@@ -161,7 +178,7 @@ export async function loadUserCasesOnce(userId: string): Promise<CaseRecord[]> {
     snapshot.forEach((docSnap) => {
       const data = docSnap.data() as CaseRecord;
       if (data && data.profile) {
-        records.push(data);
+        records.push(normalizeLoadedCase(data));
       }
     });
     records.sort((a, b) => {

@@ -1,33 +1,35 @@
 import React, { useState } from 'react';
-import { 
-  Flame, 
-  CheckCircle2, 
-  Circle, 
-  PhoneCall, 
-  ShieldAlert, 
-  Calendar, 
-  DollarSign, 
-  ArrowRight,
+import {
+  Flame,
+  CheckCircle2,
+  Circle,
   Copy,
-  Check
+  Check,
 } from 'lucide-react';
 import { CaseRecord } from '../types/bizpulse';
 
 interface SevenDaySprintProps {
-  caseRecord?: CaseRecord;
+  caseRecord: CaseRecord;
+  onToggleSprintItem?: (sprintKey: string) => void;
 }
 
-export const SevenDaySprint: React.FC<SevenDaySprintProps> = ({ caseRecord }) => {
-  const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({
+export const SevenDaySprint: React.FC<SevenDaySprintProps> = ({
+  caseRecord,
+  onToggleSprintItem,
+}) => {
+  const isDemo = caseRecord.profile.isDemonstrationCase;
+  const profile = caseRecord.profile;
+  const currency = profile.currency || 'NZD';
+  const completedActions = caseRecord.sprintCompleted || {
     'sprint-1': false,
     'sprint-2': false,
     'sprint-3': false,
-  });
+  };
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const toggleAction = (key: string) => {
-    setCompletedActions(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleToggle = (key: string) => {
+    onToggleSprintItem?.(key);
   };
 
   const copyToClipboard = (text: string, key: string) => {
@@ -36,7 +38,8 @@ export const SevenDaySprint: React.FC<SevenDaySprintProps> = ({ caseRecord }) =>
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const action1Script = `Kia ora [Client Name],
+  const action1Script = isDemo
+    ? `Kia ora [Client Name],
 
 I hope you are well.
 
@@ -49,254 +52,279 @@ Please arrange payment by [Day after tomorrow at 5:00 PM], or contact me directl
 Thank you for your prompt attention to this matter.
 
 Ngā mihi,
-[Wife / Finance Director Name]
-[Company Name]`;
+Finance & Accounts Team
+${profile.name}`
+    : `Hello [Client Name],
 
-  const action2Script = `Kia ora [Client MD/CEO Name],
+I hope you are keeping well.
+
+I am following up regarding invoice [Invoice #] for ${currency} [Amount], which is currently [Days] days past our standard payment terms.
+
+To keep our delivery schedule and supplier commitments running smoothly for all customers, we require overdue balances to be cleared or placed on a confirmed payment schedule by [Date at 5:00 PM].
+
+Please let me know once payment is processed or reply directly if you would like to discuss a payment plan today.
+
+Kind regards,
+[Your Name]
+${profile.name}`;
+
+  const action2Script = isDemo
+    ? `Kia ora [Client MD/CEO Name],
 
 Vish here. I wanted to reach out directly to check in on how our team has been supporting you over the past quarter.
 
-With IT and cybersecurity evolving so rapidly in New Zealand, I’d love to buy you a coffee or lunch next Tuesday or Thursday to review your technology roadmap for the coming 12 months.
-
-I want to share some exciting upgrades to our proactive monitoring and cybersecurity stack, and ensure our service levels are directly aligned with your business goals this year.
+With IT and cybersecurity evolving so rapidly in New Zealand, I'd love to buy you a coffee or lunch next Tuesday or Thursday to review your technology roadmap for the coming 12 months.
 
 Let me know what day works best for your schedule.
 
 Ngā mihi,
 Vish
-Managing Director`;
+Managing Director`
+    : `Hello [Customer Decision Maker],
+
+[Your Name] here from ${profile.name}. I wanted to check in personally on how our work has been supporting your team lately.
+
+I'd value 20 minutes over coffee or a call next week to review your upcoming priorities and make sure our service is delivering full value for you.
+
+Let me know what time works best next Tuesday or Thursday.
+
+Best regards,
+[Your Name]
+${profile.name}`;
+
+  const customRecImmediate =
+    caseRecord.recommendations?.immediateAction ||
+    `Review overdue invoices and urgent cash commitments for ${profile.name} within the next 48 hours.`;
+  const customRecCore =
+    caseRecord.recommendations?.initialRecommendation ||
+    `Focus management attention on your single biggest risk (${profile.primaryConcern || 'cash & operational stability'}) before taking on new fixed costs.`;
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner Context */}
-      <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 shadow-sm">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Black-to-Blue Hero Banner */}
+      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
-                <Flame className="w-3.5 h-3.5 text-rose-600" />
-                The Next 7 Days
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#B91C1C] text-white flex items-center gap-1">
+                <Flame className="w-3.5 h-3.5" />
+                Next 7 Days Execution Sprint
               </span>
-              <span className="text-[#64748B] text-xs font-medium">Non-Negotiable Execution</span>
+              <span className="text-[#CBD5E1] text-xs font-medium">{profile.name}</span>
             </div>
-            <h2 className="text-2xl font-bold text-[#14283F] tracking-tight">
-              The Three Most Important Actions for the Next 7 Days
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Three Immediate Priorities for the Next 7 Days
             </h2>
-            <p className="text-sm text-[#64748B] max-w-3xl leading-relaxed">
-              Forget 12-month dreams or marketing campaigns. If you do not execute these three moves in the next 168 hours, your cash buffer will evaporate and key staff may resign.
+            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed">
+              {isDemo
+                ? 'Execute these three moves over the next 7 days to protect cash headroom and prevent senior technician burnout.'
+                : `Focused 7-day execution checklist isolated to ${profile.name} (${profile.industry}).`}
             </p>
           </div>
 
-          <div className="bg-[#F8FAFC] border border-[#E5EBEF] rounded-xl p-4 min-w-[200px] text-center shadow-sm">
-            <span className="text-xs text-[#64748B] uppercase tracking-wider font-semibold">Sprint Status</span>
-            <div className="text-2xl font-extrabold text-[#D99A35] mt-1 font-mono">
+          <div className="bg-white/10 border border-white/15 rounded-xl p-4 min-w-[200px] text-center shrink-0">
+            <span className="text-[11px] text-[#93C5FD] uppercase tracking-wider font-bold block">
+              Sprint Progress
+            </span>
+            <div className="text-2xl font-extrabold text-white mt-1 font-mono tabular-nums">
               {Object.values(completedActions).filter(Boolean).length} / 3 Done
             </div>
-            <div className="text-xs text-[#64748B] mt-0.5">
-              168-Hour Countdown
-            </div>
+            <div className="text-xs text-[#CBD5E1] mt-0.5">Saved per business</div>
           </div>
         </div>
       </div>
 
-      {/* 3 Core Action Cards */}
-      <div className="space-y-6">
-        {/* Action 1 */}
-        <div className={`p-6 rounded-2xl border transition-all ${
-          completedActions['sprint-1'] 
-            ? 'bg-[#F8FAFC] border-emerald-300 opacity-80 shadow-none' 
-            : 'bg-white border-[#E5EBEF] shadow-sm'
-        }`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start space-x-3.5">
-              <button
-                onClick={() => toggleAction('sprint-1')}
-                className="mt-1 text-[#64748B] hover:text-[#168C83] transition"
-              >
-                {completedActions['sprint-1'] ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                ) : (
-                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#168C83]" />
-                )}
-              </button>
+      {/* 3 Sprint Cards */}
+      <div className="space-y-5">
+        {/* Card #1 */}
+        <div
+          className={`p-6 rounded-2xl border transition-all ${
+            completedActions['sprint-1']
+              ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+              : 'bg-white border-[#D9E2F0] shadow-xs'
+          }`}
+        >
+          <div className="flex items-start space-x-3.5">
+            <button
+              type="button"
+              onClick={() => handleToggle('sprint-1')}
+              className="mt-1 shrink-0"
+              aria-label="Toggle Sprint Item 1"
+            >
+              {completedActions['sprint-1'] ? (
+                <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
+              ) : (
+                <Circle className="w-6 h-6 text-[#94A3B8] hover:text-[#1D4ED8]" />
+              )}
+            </button>
+            <div className="flex-1 space-y-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-rose-50 text-rose-700 font-bold text-xs flex items-center justify-center border border-rose-200">
-                    #1
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-[#FEF2F2] text-[#B91C1C] font-bold text-xs border border-[#FECACA]">
+                    #1 · Day 1–3 Priority
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-rose-700 font-mono">
-                    Day 1–3 Priority (Cash Fortress)
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F1F5F9] text-[#14283F] font-medium border border-[#CBD5E1]">
-                    Owners: Wife + Vish
+                  <span className="text-xs px-2 py-0.5 rounded bg-[#F3F6FB] text-[#0B1324] font-semibold border border-[#CBD5E1]">
+                    {isDemo ? 'Owners: Finance Lead + Vish' : `Owner: Managing Director (${profile.name})`}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-[#14283F] mt-2">
-                  Execute the 48-Hour Stop-Work Notice on the NZ$58,000 Overdue Accounts
+                <h3 className="text-lg font-bold text-[#0B1324] mt-2">
+                  {isDemo
+                    ? 'Execute 48-Hour Collection Notices on NZ$58,000 Overdue Accounts'
+                    : 'Immediate 48–72 Hour Cash & Priority Control'}
                 </h3>
               </div>
-            </div>
-          </div>
 
-          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs text-[#14283F]">
-            <div className="space-y-3">
-              <p className="leading-relaxed text-[#64748B]">
-                <strong className="text-[#14283F]">What to do: </strong>
-                Your wife issues written 48-hour credit hold notices to every customer with invoices over 45 days overdue (NZ$58,000 total). On Day 2, Vish personally calls the business owners of the top 3 debtors.
-              </p>
-              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF]">
-                <span className="text-[#14283F] font-bold block mb-1">Vish&apos;s Phone Talk Track:</span>
-                <p className="italic text-[#64748B]">
-                  &quot;Kia ora [Name], Vish here. We&apos;ve valued supporting your team for years, but our finance policy requires accounts to be current to dispatch engineers. We have $14,000 overdue past 60 days. Can we process this today via direct credit, or split 50% today and 50% next week so we don&apos;t have to pause support?&quot;
-                </p>
-              </div>
-            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
+                <div className="p-4 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] space-y-2 text-[#0B1324] leading-relaxed">
+                  <strong>Action Summary:</strong>
+                  <p className="text-[#52627A]">
+                    {isDemo
+                      ? 'Send written 48-hour payment notices to accounts over 45 days overdue and telephone the top 3 debtors directly to agree payment dates.'
+                      : customRecImmediate}
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#14283F]">Ready-to-Use 48-Hour Email Notice:</span>
-                <button
-                  onClick={() => copyToClipboard(action1Script, 'action-1')}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#14283F] transition text-[11px] font-medium border border-[#CBD5E1]"
-                >
-                  {copiedKey === 'action-1' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#168C83]" />}
-                  <span>{copiedKey === 'action-1' ? 'Copied' : 'Copy Email'}</span>
-                </button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#0B1324]">
+                      Ready-to-Use Overdue Account Email Template:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(action1Script, 'action-1')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F3F6FB] hover:bg-[#E2E8F0] text-[#0B1324] border border-[#CBD5E1] text-[11px] font-semibold"
+                    >
+                      {copiedKey === 'action-1' ? (
+                        <Check className="w-3 h-3 text-[#15803D]" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-[#1D4ED8]" />
+                      )}
+                      <span>{copiedKey === 'action-1' ? 'Copied' : 'Copy Email'}</span>
+                    </button>
+                  </div>
+                  <pre className="p-3 bg-[#F8FAFC] rounded-xl border border-[#CBD5E1] text-[#0B1324] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
+                    {action1Script}
+                  </pre>
+                </div>
               </div>
-              <pre className="p-3 bg-[#F8FAFC] rounded-xl border border-[#CBD5E1] text-[#14283F] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
-                {action1Script}
-              </pre>
             </div>
           </div>
         </div>
 
-        {/* Action 2 */}
-        <div className={`p-6 rounded-2xl border transition-all ${
-          completedActions['sprint-2'] 
-            ? 'bg-[#F8FAFC] border-emerald-300 opacity-80 shadow-none' 
-            : 'bg-white border-[#E5EBEF] shadow-sm'
-        }`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start space-x-3.5">
-              <button
-                onClick={() => toggleAction('sprint-2')}
-                className="mt-1 text-[#64748B] hover:text-[#168C83] transition"
-              >
-                {completedActions['sprint-2'] ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                ) : (
-                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#168C83]" />
-                )}
-              </button>
+        {/* Card #2 */}
+        <div
+          className={`p-6 rounded-2xl border transition-all ${
+            completedActions['sprint-2']
+              ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+              : 'bg-white border-[#D9E2F0] shadow-xs'
+          }`}
+        >
+          <div className="flex items-start space-x-3.5">
+            <button
+              type="button"
+              onClick={() => handleToggle('sprint-2')}
+              className="mt-1 shrink-0"
+              aria-label="Toggle Sprint Item 2"
+            >
+              {completedActions['sprint-2'] ? (
+                <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
+              ) : (
+                <Circle className="w-6 h-6 text-[#94A3B8] hover:text-[#1D4ED8]" />
+              )}
+            </button>
+            <div className="flex-1 space-y-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-amber-50 text-amber-800 font-bold text-xs flex items-center justify-center border border-amber-200">
-                    #2
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-[#FFFBEB] text-[#B45309] font-bold text-xs border border-[#FDE68A]">
+                    #2 · Day 2–5 Priority
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800 font-mono">
-                    Day 2–5 Priority (Revenue Protection)
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F1F5F9] text-[#14283F] font-medium border border-[#CBD5E1]">
-                    Owner: Vish
+                  <span className="text-xs px-2 py-0.5 rounded bg-[#F3F6FB] text-[#0B1324] font-semibold border border-[#CBD5E1]">
+                    {isDemo ? 'Owner: Vish' : `Owner: Account / Client Lead (${profile.name})`}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-[#14283F] mt-2">
-                  Lock Down the Flight-Risk Large Client (Executive Coffee / Lunch)
+                <h3 className="text-lg font-bold text-[#0B1324] mt-2">
+                  {isDemo
+                    ? 'Protect Anchor Customer Relationship with Direct MD Outreach'
+                    : `Proactive Executive Check-In with Top Customers (${profile.mainCustomerTypes || 'Key Accounts'})`}
                 </h3>
               </div>
-            </div>
-          </div>
 
-          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs text-[#14283F]">
-            <div className="space-y-3">
-              <p className="leading-relaxed text-[#64748B]">
-                <strong className="text-[#14283F]">What to do: </strong>
-                One large customer is actively flirting with a national MSP provider. Do NOT send an email or offer a desperate fee cut. Vish calls the Managing Director directly and invites them to lunch.
-              </p>
-              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-1">
-                <span className="text-[#D99A35] font-bold block">How to Beat National Providers Without Discounting:</span>
-                <ul className="space-y-1 text-[#64748B]">
-                  <li>• <strong className="text-[#14283F]">Named Engineers: </strong> National MSPs rotate offshore tier-1 helpdesk agents who know nothing about the client&apos;s business.</li>
-                  <li>• <strong className="text-[#14283F]">Zero Ticket Bureaucracy: </strong> No 4-hour SLA holding patterns for urgent executive issues.</li>
-                  <li>• <strong className="text-[#14283F]">Executive Attention: </strong> The actual business owner (Vish) is personally accountable.</li>
-                </ul>
-              </div>
-            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
+                <div className="p-4 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] space-y-1.5 text-[#52627A] leading-relaxed">
+                  <strong className="text-[#0B1324] block">Why This Protects Margin:</strong>
+                  <p>
+                    {isDemo
+                      ? 'Meet the flight-risk anchor client face-to-face to reinforce named engineer accountability and service responsiveness rather than offering desperate fee discounts.'
+                      : 'Speaking directly with your highest-value clients surfaces delivery friction early and builds trust ahead of any pricing or scope review.'}
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#14283F]">Vish&apos;s Meeting Invite Script:</span>
-                <button
-                  onClick={() => copyToClipboard(action2Script, 'action-2')}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#14283F] transition text-[11px] font-medium border border-[#CBD5E1]"
-                >
-                  {copiedKey === 'action-2' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-[#168C83]" />}
-                  <span>{copiedKey === 'action-2' ? 'Copied' : 'Copy Script'}</span>
-                </button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#0B1324]">Executive Check-In Message:</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(action2Script, 'action-2')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F3F6FB] hover:bg-[#E2E8F0] text-[#0B1324] border border-[#CBD5E1] text-[11px] font-semibold"
+                    >
+                      {copiedKey === 'action-2' ? (
+                        <Check className="w-3 h-3 text-[#15803D]" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-[#1D4ED8]" />
+                      )}
+                      <span>{copiedKey === 'action-2' ? 'Copied' : 'Copy Invite'}</span>
+                    </button>
+                  </div>
+                  <pre className="p-3 bg-[#F8FAFC] rounded-xl border border-[#CBD5E1] text-[#0B1324] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
+                    {action2Script}
+                  </pre>
+                </div>
               </div>
-              <pre className="p-3 bg-[#F8FAFC] rounded-xl border border-[#CBD5E1] text-[#14283F] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
-                {action2Script}
-              </pre>
             </div>
           </div>
         </div>
 
-        {/* Action 3 */}
-        <div className={`p-6 rounded-2xl border transition-all ${
-          completedActions['sprint-3'] 
-            ? 'bg-[#F8FAFC] border-emerald-300 opacity-80 shadow-none' 
-            : 'bg-white border-[#E5EBEF] shadow-sm'
-        }`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start space-x-3.5">
-              <button
-                onClick={() => toggleAction('sprint-3')}
-                className="mt-1 text-[#64748B] hover:text-[#168C83] transition"
-              >
-                {completedActions['sprint-3'] ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                ) : (
-                  <Circle className="w-6 h-6 text-[#CBD5E1] hover:text-[#168C83]" />
-                )}
-              </button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-[#E6F4F2] text-[#168C83] font-bold text-xs flex items-center justify-center border border-[#168C83]/30">
-                    #3
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#168C83] font-mono">
-                    Day 1–4 Priority (Operational Sanity)
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F1F5F9] text-[#14283F] font-medium border border-[#CBD5E1]">
-                    Owners: Senior Tech + Service Desk Dispatch
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-[#14283F] mt-2">
-                  Install the Service Desk Firewall & 10:00 AM – 2:00 PM Deep Work Shield
-                </h3>
+        {/* Card #3 */}
+        <div
+          className={`p-6 rounded-2xl border transition-all ${
+            completedActions['sprint-3']
+              ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+              : 'bg-white border-[#D9E2F0] shadow-xs'
+          }`}
+        >
+          <div className="flex items-start space-x-3.5">
+            <button
+              type="button"
+              onClick={() => handleToggle('sprint-3')}
+              className="mt-1 shrink-0"
+              aria-label="Toggle Sprint Item 3"
+            >
+              {completedActions['sprint-3'] ? (
+                <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
+              ) : (
+                <Circle className="w-6 h-6 text-[#94A3B8] hover:text-[#1D4ED8]" />
+              )}
+            </button>
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1D4ED8] font-bold text-xs border border-[#BFDBFE]">
+                  #3 · Day 1–7 Priority
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded bg-[#F3F6FB] text-[#0B1324] font-semibold border border-[#CBD5E1]">
+                  {isDemo
+                    ? 'Owners: Senior Tech + Service Desk'
+                    : `Owner: Operations & Delivery (${profile.name})`}
+                </span>
               </div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs text-[#14283F]">
-            <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E5EBEF] space-y-1">
-              <span className="font-bold text-[#168C83] block mb-1">1. Triage Gatekeeper</span>
-              <p className="leading-relaxed text-[#64748B]">
-                100% of phone calls and ticket queues route through the 2 service-desk staff. No customer can call the senior technician&apos;s mobile directly.
-              </p>
-            </div>
-
-            <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E5EBEF] space-y-1">
-              <span className="font-bold text-emerald-800 block mb-1">2. 4-Hour Deep Work Vault</span>
-              <p className="leading-relaxed text-[#64748B]">
-                Senior tech is blocked from routine tickets between 10:00 AM and 2:00 PM daily to focus exclusively on complex architecture, system outages, and SOP documentation.
-              </p>
-            </div>
-
-            <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E5EBEF] space-y-1">
-              <span className="font-bold text-amber-800 block mb-1">3. Technician Retention Signal</span>
-              <p className="leading-relaxed text-[#64748B]">
-                Gather the 2 at-risk technicians on Friday afternoon. Announce the new triage rules and tell them: &quot;We heard you. We are ending the chaotic interruption cycle starting now.&quot;
+              <h3 className="text-lg font-bold text-[#0B1324]">
+                {isDemo
+                  ? 'Install Service Desk Triage Firewall & 4-Hour Deep Work Shield'
+                  : 'Stabilize Delivery Workflow & Protect Core Team Capacity'}
+              </h3>
+              <p className="text-xs text-[#52627A] leading-relaxed bg-[#F3F6FB] p-4 rounded-xl border border-[#D9E2F0]">
+                {isDemo
+                  ? 'Route all incoming phone calls through the service desk queue so the senior technician gets uninterrupted 10:00 AM–2:00 PM project and outage resolution blocks.'
+                  : customRecCore}
               </p>
             </div>
           </div>

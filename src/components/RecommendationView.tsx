@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  RefreshCw, 
-  AlertOctagon, 
-  AlertTriangle, 
-  CheckCircle2, 
-  HelpCircle, 
-  ArrowRight, 
-  ShieldCheck, 
-  FileText, 
-  Scale, 
-  Clock, 
-  MessageSquare
+import {
+  Sparkles,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  HelpCircle,
+  ShieldAlert,
+  TrendingUp,
+  Coins,
+  FileText,
+  Scale,
+  Clock,
+  MessageSquare,
+  Send,
+  Circle,
+  Check,
 } from 'lucide-react';
-import { 
-  BusinessProfile, 
-  HealthDimensionKey, 
-  HealthDimensionInput, 
-  OverallHealthAssessment, 
-  FinancialData, 
-  RecommendationOutput 
+import {
+  BusinessProfile,
+  HealthDimensionKey,
+  HealthDimensionInput,
+  OverallHealthAssessment,
+  FinancialData,
+  RecommendationOutput,
+  UploadedDocument,
+  RecommendationChallenge,
 } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
@@ -28,8 +33,10 @@ interface RecommendationViewProps {
   healthInputs: Record<HealthDimensionKey, HealthDimensionInput>;
   financials: FinancialData | null;
   overallHealth: OverallHealthAssessment | null;
+  uploadedDocuments?: UploadedDocument[];
   recommendations: RecommendationOutput | null;
   onUpdateRecommendations: (rec: RecommendationOutput) => void;
+  onTrackUsage?: (field: 'coachMessagesCount' | 'recommendationsCount') => void;
   onNavigateToConsole: (initialPrompt?: string) => void;
 }
 
@@ -38,12 +45,19 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   healthInputs,
   financials,
   overallHealth,
+  uploadedDocuments = [],
   recommendations,
   onUpdateRecommendations,
+  onTrackUsage,
   onNavigateToConsole,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Challenge / Follow-up state
+  const [challengePrompt, setChallengePrompt] = useState('');
+  const [isChallenging, setIsChallenging] = useState(false);
+  const [challengeError, setChallengeError] = useState<string | null>(null);
 
   const handleGenerateRecommendation = async () => {
     setIsLoading(true);
@@ -53,9 +67,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
       const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/coach/generate-recommendation', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...authHeaders
+          ...authHeaders,
         },
         body: JSON.stringify({
           caseId: profile.caseId,
@@ -63,6 +77,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           healthInputs,
           financials,
           overallHealth,
+          uploadedDocuments,
         }),
       });
 
@@ -73,102 +88,248 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
       const data = await response.json();
       if (data.recommendation) {
-        onUpdateRecommendations(data.recommendation);
+        const merged: RecommendationOutput = {
+          ...data.recommendation,
+          challenges: recommendations?.challenges || [],
+        };
+        onUpdateRecommendations(merged);
+        onTrackUsage?.('recommendationsCount');
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Error communicating with Gemini recommendation engine.');
+      setError(err.message || 'Error communicating with AI coaching engine.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleToggleActionItem = (actionId: string) => {
+    if (!recommendations?.actionItems) return;
+    const updatedItems = recommendations.actionItems.map((item) =>
+      item.id === actionId ? { ...item, completed: !item.completed } : item
+    );
+    onUpdateRecommendations({
+      ...recommendations,
+      actionItems: updatedItems,
+    });
+  };
+
+  const handleSubmitChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recommendations || !challengePrompt.trim() || isChallenging) return;
+
+    setIsChallenging(true);
+    setChallengeError(null);
+
+    try {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch('/api/coach/challenge-recommendation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({
+          caseId: profile.caseId,
+          challengeQuestion: challengePrompt.trim(),
+          businessProfile: profile,
+          healthInputs,
+          financials,
+          overallHealth,
+          currentRecommendation: recommendations,
+          uploadedDocuments,
+        }),
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Unable to process follow-up question.');
+      }
+
+      const data = await response.json();
+      const newEntry: RecommendationChallenge = {
+        id: `chal-${Date.now()}`,
+        questionOrChallenge: challengePrompt.trim(),
+        coachResponse: data.reply || 'No response received.',
+        createdAt: data.createdAt || new Date().toISOString(),
+      };
+
+      onUpdateRecommendations({
+        ...recommendations,
+        challenges: [...(recommendations.challenges || []), newEntry],
+      });
+      setChallengePrompt('');
+      onTrackUsage?.('coachMessagesCount');
+    } catch (err: any) {
+      console.error(err);
+      setChallengeError(err.message || 'Failed to challenge recommendation.');
+    } finally {
+      setIsChallenging(false);
+    }
+  };
+
+  const completedActions = recommendations?.actionItems?.filter((a) => a.completed).length ?? 0;
+  const totalActions = recommendations?.actionItems?.length ?? 0;
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Top Banner Context Card */}
-      <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Black-to-Blue Executive Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/30 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#168C83]" />
-                Phase 3: Turnaround Diagnostic Engine
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#1D4ED8] text-white flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Step 4: Intelligent Business Coaching
               </span>
-              <span className="text-[#64748B] text-xs">Dynamic Commercial Advisory</span>
+              <span className="text-[#CBD5E1] text-xs font-medium">
+                {profile.name || 'Active Business'} · {profile.industry} ({profile.country})
+              </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14283F] tracking-tight">
-              Executive Recommendations
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Diagnostic Coaching &amp; Prioritized Action Plan
             </h2>
-            <p className="text-sm text-[#64748B] max-w-2xl leading-relaxed">
-              Grounded strictly in your business profile ({profile.industry}, {profile.country}) and 8 health inputs. Identifies the primary commercial issue, immediate actions, and key evidence gaps without lengthy questionnaires.
+            <p className="text-sm text-[#CBD5E1] max-w-2xl leading-relaxed">
+              Synthesizes your 8 health scores, primary concern, financial figures, and {uploadedDocuments.length} uploaded document{uploadedDocuments.length === 1 ? '' : 's'} into commercial sustainability risks, profit opportunities, and testable 48-hour steps.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <button
+              type="button"
               onClick={handleGenerateRecommendation}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#168C83] hover:bg-[#12726B] disabled:opacity-50 text-white font-bold text-xs shadow-xs transition transform active:scale-95"
+              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#2563EB] disabled:opacity-50 text-white font-bold text-xs shadow-sm transition border border-white/15"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>{isLoading ? 'Synthesizing...' : recommendations ? 'Regenerate Analysis' : 'Generate Recommendation'}</span>
+              <span>
+                {isLoading
+                  ? 'Analyzing Business...'
+                  : recommendations
+                  ? 'Refresh Coaching Plan'
+                  : 'Generate Coaching Plan'}
+              </span>
             </button>
           </div>
         </div>
 
         {error && (
-          <div className="mt-4 p-3.5 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded-xl flex items-center justify-between">
+          <div className="mt-4 p-3.5 bg-[#B91C1C]/20 border border-[#FCA5A5]/40 text-white text-xs rounded-xl flex items-center justify-between">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-[#64748B] hover:text-[#14283F]">✕</button>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="text-[#CBD5E1] hover:text-white font-semibold"
+            >
+              Dismiss
+            </button>
           </div>
         )}
       </div>
 
-      {/* Main Recommendation Content */}
+      {/* Main Coaching Output */}
       {recommendations ? (
         <div className="space-y-6">
           {/* 1: Primary Commercial Observation & Why It Matters */}
-          <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#E6F4F2] text-[#168C83] font-black text-xs flex items-center justify-center border border-[#168C83]/30">
+          <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-7 h-7 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center">
                 1
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#168C83]">
-                Primary Commercial Observation
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
+                Primary Commercial Diagnosis
               </span>
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-bold text-[#14283F] leading-snug">
+            <h3 className="text-xl sm:text-2xl font-bold text-[#0B1324] leading-snug">
               {recommendations.initialObservation}
             </h3>
 
-            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] text-xs text-[#14283F] space-y-1.5 leading-relaxed">
-              <strong className="text-[#D99A35] uppercase tracking-wider text-[11px] block">
-                Why This Matters Commercially (Profit, Solvency & Capacity):
+            <div className="p-4 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] text-xs sm:text-sm space-y-1.5 leading-relaxed">
+              <strong className="text-[#1D4ED8] uppercase tracking-wider text-[11px] block">
+                Commercial Impact (Profitability, Cash Flow &amp; Owner Capacity):
               </strong>
-              <p className="text-[#64748B] leading-relaxed">{recommendations.commercialWhy}</p>
+              <p className="text-[#0B1324] leading-relaxed">{recommendations.commercialWhy}</p>
             </div>
           </div>
 
-          {/* 2: Knowns vs Assumptions vs Unknowns */}
-          <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#F1F5F9] text-[#14283F] font-bold text-xs flex items-center justify-center border border-[#E2E8F0]">
+          {/* 2: Sustainability Risks, Hidden Profit Opportunities & Revenue Flow Improvements */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="bg-white border border-[#FECACA] rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#B91C1C]">
+                <ShieldAlert className="w-4 h-4" />
+                <span>Sustainability Risks</span>
+              </div>
+              {recommendations.sustainabilityRisks && recommendations.sustainabilityRisks.length > 0 ? (
+                <ul className="space-y-2 text-xs text-[#0B1324]">
+                  {recommendations.sustainabilityRisks.map((risk, idx) => (
+                    <li key={idx} className="p-2.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA]/70 leading-relaxed">
+                      • {risk}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[#52627A]">Refresh analysis to populate itemized sustainability risks.</p>
+              )}
+            </div>
+
+            <div className="bg-white border border-[#A7F3D0] rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#15803D]">
+                <TrendingUp className="w-4 h-4" />
+                <span>Hidden Profit Opportunities</span>
+              </div>
+              {recommendations.hiddenProfitOpportunities &&
+              recommendations.hiddenProfitOpportunities.length > 0 ? (
+                <ul className="space-y-2 text-xs text-[#0B1324]">
+                  {recommendations.hiddenProfitOpportunities.map((opp, idx) => (
+                    <li key={idx} className="p-2.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0]/70 leading-relaxed">
+                      • {opp}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[#52627A]">Refresh analysis to surface margin and pricing opportunities.</p>
+              )}
+            </div>
+
+            <div className="bg-white border border-[#BFDBFE] rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
+                <Coins className="w-4 h-4" />
+                <span>Revenue Flow Improvements</span>
+              </div>
+              {recommendations.revenueFlowImprovements &&
+              recommendations.revenueFlowImprovements.length > 0 ? (
+                <ul className="space-y-2 text-xs text-[#0B1324]">
+                  {recommendations.revenueFlowImprovements.map((rev, idx) => (
+                    <li key={idx} className="p-2.5 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE]/70 leading-relaxed">
+                      • {rev}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[#52627A]">Refresh analysis to surface cash collection improvements.</p>
+              )}
+            </div>
+          </div>
+
+          {/* 3: Evidence Audit — Knowns vs Assumptions vs Unknowns */}
+          <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-7 h-7 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center">
                 2
               </span>
-              <h4 className="font-bold text-[#14283F] text-base">
-                Evidence Audit: Knowns vs. Assumptions vs. Unknowns
+              <h4 className="font-bold text-[#0B1324] text-base">
+                Evidence Audit: Established Knowns vs. Assumptions vs. Missing Unknowns
               </h4>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              {/* Known Information */}
               <div className="p-4 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] space-y-2">
-                <span className="font-bold text-[#15803D] uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                <span className="font-bold text-[#15803D] uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Established Knowns
                 </span>
-                <ul className="space-y-1.5 text-[#14283F]">
+                <ul className="space-y-1.5 text-[#0B1324]">
                   {recommendations.knownsVsAssumptions.knowns.map((k, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-[#15803D] font-bold">•</span>
@@ -178,13 +339,12 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 </ul>
               </div>
 
-              {/* Working Assumptions */}
               <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] space-y-2">
-                <span className="font-bold text-[#B45309] uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                <span className="font-bold text-[#B45309] uppercase tracking-wider flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Working Assumptions
                 </span>
-                <ul className="space-y-1.5 text-[#14283F]">
+                <ul className="space-y-1.5 text-[#0B1324]">
                   {recommendations.knownsVsAssumptions.assumptions.map((a, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-[#B45309] font-bold">?</span>
@@ -194,16 +354,15 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 </ul>
               </div>
 
-              {/* Critical Unknowns */}
               <div className="p-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] space-y-2">
-                <span className="font-bold text-[#475569] uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                <span className="font-bold text-[#475569] uppercase tracking-wider flex items-center gap-1.5">
                   <HelpCircle className="w-3.5 h-3.5" />
-                  Missing Unknowns
+                  Missing Financial / Operational Data
                 </span>
-                <ul className="space-y-1.5 text-[#14283F]">
+                <ul className="space-y-1.5 text-[#0B1324]">
                   {recommendations.knownsVsAssumptions.unknowns.map((u, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-[#64748B] font-bold">!</span>
+                      <span className="text-[#475569] font-bold">!</span>
                       <span>{u}</span>
                     </li>
                   ))}
@@ -212,40 +371,44 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             </div>
           </div>
 
-          {/* 3: Contextual Questions & Missing Evidence */}
+          {/* 4: Contextual Questions & Critical Missing Evidence */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Contextual Questions */}
-            <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 shadow-xs space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#168C83] flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-[#168C83]" />
-                The 2–3 Essential Questions for the Next Decision
+            <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 shadow-xs space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-[#1D4ED8]" />
+                Essential Follow-Up Questions
               </span>
-              <p className="text-xs text-[#64748B]">
-                To prevent questionnaire fatigue, answer only these few questions to finalize your action plan:
+              <p className="text-xs text-[#52627A]">
+                Clarifying these specific points sharpens your commercial action plan:
               </p>
               <div className="space-y-2 pt-1 text-xs">
                 {recommendations.contextualQuestions.map((q, idx) => (
-                  <div key={idx} className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] text-[#14283F] font-medium leading-relaxed">
-                    <span className="text-[#168C83] font-bold mr-1.5">{idx + 1}.</span>
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-xl bg-[#F3F6FB] border border-[#E8EEF7] text-[#0B1324] font-medium leading-relaxed"
+                  >
+                    <span className="text-[#1D4ED8] font-bold mr-1.5">{idx + 1}.</span>
                     {q}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Critical Missing Evidence */}
-            <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 shadow-xs space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#14283F] flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-[#64748B]" />
-                Critical Evidence Required Before Major Outlays
+            <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 shadow-xs space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0B1324] flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-[#52627A]" />
+                Missing Evidence Before Major Commitments
               </span>
-              <p className="text-xs text-[#64748B]">
-                Data sources that will materially confirm or alter strategic direction:
+              <p className="text-xs text-[#52627A]">
+                Upload or verify these records in the Documents tab before spending capital:
               </p>
-              <ul className="space-y-2 pt-1 text-xs text-[#14283F]">
+              <ul className="space-y-2 pt-1 text-xs text-[#0B1324]">
                 {recommendations.missingEvidence.map((ev, idx) => (
-                  <li key={idx} className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E5EBEF] flex items-start gap-2 leading-relaxed">
-                    <span className="text-[#168C83] font-bold">→</span>
+                  <li
+                    key={idx}
+                    className="p-3 rounded-xl bg-[#F3F6FB] border border-[#E8EEF7] flex items-start gap-2 leading-relaxed"
+                  >
+                    <span className="text-[#1D4ED8] font-bold">→</span>
                     <span>{ev}</span>
                   </li>
                 ))}
@@ -253,79 +416,218 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             </div>
           </div>
 
-          {/* 4: Strategic Action Plan & Immediate Action */}
-          <div className="bg-white border border-[#E5EBEF] rounded-2xl p-6 sm:p-8 shadow-xs space-y-5">
-            <div className="flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-lg bg-[#E6F4F2] text-[#168C83] font-black text-xs flex items-center justify-center border border-[#168C83]/30">
-                3
-              </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#168C83]">
-                Strategic Action Plan & Immediate 48-Hour Step
-              </span>
+          {/* 5: Prioritized Practical Actions Checklist */}
+          <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center">
+                  3
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
+                  Core Strategy &amp; Prioritized Action Steps
+                </span>
+              </div>
+              {totalActions > 0 && (
+                <span className="text-xs font-mono font-bold text-[#0B1324] bg-[#F3F6FB] px-3 py-1 rounded-lg border border-[#D9E2F0] tabular-nums">
+                  {completedActions} of {totalActions} Completed
+                </span>
+              )}
             </div>
 
-            <div className="p-5 rounded-xl bg-[#F8FAFC] border border-[#E5EBEF] space-y-2">
-              <span className="font-bold text-[#14283F] text-sm block">Core Turnaround Recommendation:</span>
-              <p className="text-xs text-[#14283F] leading-relaxed">
+            <div className="p-5 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] space-y-2">
+              <span className="font-bold text-[#0B1324] text-sm block">Core Turnaround Recommendation:</span>
+              <p className="text-xs sm:text-sm text-[#0B1324] leading-relaxed">
                 {recommendations.initialRecommendation}
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-[#E6F4F2] border border-[#168C83]/30 space-y-1.5">
-              <span className="font-bold text-[#168C83] text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-5 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] space-y-1.5">
+              <span className="font-bold text-[#1D4ED8] text-xs uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
-                Immediate Action (Next 48–72 Hours):
+                Immediate Priority Action (Next 48–72 Hours):
               </span>
-              <p className="text-xs text-[#14283F] leading-relaxed font-semibold">
+              <p className="text-xs sm:text-sm text-[#0B1324] leading-relaxed font-semibold">
                 {recommendations.immediateAction}
               </p>
             </div>
 
-            {/* Specialist Advice Callout */}
+            {recommendations.actionItems && recommendations.actionItems.length > 0 && (
+              <div className="space-y-2.5 pt-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#52627A] block">
+                  Practical Sequenced Action Plan (Click to Track Execution):
+                </span>
+                {recommendations.actionItems.map((act) => (
+                  <div
+                    key={act.id}
+                    onClick={() => handleToggleActionItem(act.id)}
+                    className={`p-4 rounded-xl border cursor-pointer transition flex items-start justify-between gap-4 ${
+                      act.completed
+                        ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-75'
+                        : 'bg-white border-[#D9E2F0] hover:border-[#1D4ED8]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        className="mt-0.5 shrink-0"
+                        aria-label={`Mark ${act.action} completed`}
+                      >
+                        {act.completed ? (
+                          <CheckCircle2 className="w-5 h-5 text-[#15803D]" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-[#94A3B8]" />
+                        )}
+                      </button>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
+                              act.priority.includes('Urgent')
+                                ? 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
+                                : act.priority.includes('High')
+                                ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                                : 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
+                            }`}
+                          >
+                            {act.priority}
+                          </span>
+                          <span className="text-[11px] font-semibold text-[#52627A]">
+                            Owner: {act.ownerRole} · {act.timeframe}
+                          </span>
+                        </div>
+                        <p
+                          className={`text-xs sm:text-sm font-bold ${
+                            act.completed ? 'line-through text-[#52627A]' : 'text-[#0B1324]'
+                          }`}
+                        >
+                          {act.action}
+                        </p>
+                        <p className="text-xs text-[#52627A]">
+                          Expected Impact: {act.expectedImpact}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {recommendations.specialistAdviceNeeded && (
-              <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#14283F] flex items-start gap-2.5">
-                <Scale className="w-4 h-4 text-[#D99A35] shrink-0 mt-0.5" />
+              <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#0B1324] flex items-start gap-2.5">
+                <Scale className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-[#B45309]">Specialist Advisory Trigger: </strong>
+                  <strong className="text-[#B45309]">Specialist Advisory Check: </strong>
                   {recommendations.specialistAdviceNeeded}
                 </div>
               </div>
             )}
 
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#E5EBEF]">
-              <span className="text-[11px] text-[#64748B] font-mono">
+            <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#E8EEF7]">
+              <span className="text-[11px] text-[#52627A] font-mono tabular-nums">
                 Generated {new Date(recommendations.generatedAt).toLocaleString()}
               </span>
 
               <button
-                onClick={() => onNavigateToConsole(`Regarding the recommendation: "${recommendations.initialRecommendation.substring(0, 80)}..." How do I execute this step?`)}
-                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-[#F5F6F3] text-[#14283F] text-xs font-semibold border border-[#CBD5E1] transition shadow-2xs"
+                type="button"
+                onClick={() =>
+                  onNavigateToConsole(
+                    `Regarding our turnaround priority "${recommendations.initialRecommendation.substring(
+                      0,
+                      90
+                    )}...", help me prepare step-by-step execution details for ${profile.name}.`
+                  )
+                }
+                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-[#F3F6FB] text-[#0B1324] text-xs font-bold border border-[#CBD5E1] transition"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-[#168C83]" />
-                <span>Discuss with Coach in Console</span>
+                <MessageSquare className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <span>Open Full AI Coach Console</span>
               </button>
             </div>
+          </div>
+
+          {/* 6: Challenge Recommendation / Follow-Up Questions Inline Thread */}
+          <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center">
+                  4
+                </span>
+                <h4 className="font-bold text-[#0B1324] text-base">
+                  Challenge Recommendation or Ask a Follow-Up Question
+                </h4>
+              </div>
+              <p className="text-xs text-[#52627A]">
+                Push back on any assumption, test an alternative commercial trade-off, or clarify how a step fits your staffing and cash constraints.
+              </p>
+            </div>
+
+            {recommendations.challenges && recommendations.challenges.length > 0 && (
+              <div className="space-y-3 pt-1">
+                {recommendations.challenges.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded-xl border border-[#D9E2F0] overflow-hidden text-xs"
+                  >
+                    <div className="bg-[#0F172A] text-white px-4 py-2.5 flex items-center justify-between gap-2">
+                      <span className="font-semibold">Owner Challenge / Follow-up: {c.questionOrChallenge}</span>
+                      <span className="text-[10px] text-[#93C5FD] font-mono shrink-0">
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="bg-[#F8FAFC] p-4 text-[#0B1324] whitespace-pre-wrap leading-relaxed">
+                      {c.coachResponse}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {challengeError && (
+              <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded-xl">
+                {challengeError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitChallenge} className="flex flex-col sm:flex-row gap-2.5">
+              <input
+                type="text"
+                value={challengePrompt}
+                onChange={(e) => setChallengePrompt(e.target.value)}
+                disabled={isChallenging}
+                placeholder="e.g., What if our top client refuses a 10% increase? Or how do we cut overtime without delaying jobs?"
+                className="flex-1 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-xs sm:text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+              />
+              <button
+                type="submit"
+                disabled={isChallenging || !challengePrompt.trim()}
+                className="px-5 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shrink-0"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isChallenging ? 'Analyzing...' : 'Submit Challenge'}</span>
+              </button>
+            </form>
           </div>
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-white border border-[#E5EBEF] rounded-2xl p-12 text-center space-y-4 shadow-xs">
-          <div className="w-12 h-12 rounded-2xl bg-[#E6F4F2] text-[#168C83] border border-[#168C83]/20 flex items-center justify-center mx-auto">
+        <div className="bg-white border border-[#D9E2F0] rounded-2xl p-12 text-center space-y-4 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE] flex items-center justify-center mx-auto">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-[#14283F]">
-            Ready to Generate Custom Turnaround Recommendations
+          <h3 className="text-lg font-bold text-[#0B1324]">
+            Ready to Generate Business Coaching &amp; Action Plan
           </h3>
-          <p className="text-xs text-[#64748B] max-w-md mx-auto leading-relaxed">
-            BizPulse will analyze your {profile.name} profile ({profile.industry}) and your 8 health inputs to deliver an actionable, evidence-based turnaround diagnostic.
+          <p className="text-xs sm:text-sm text-[#52627A] max-w-lg mx-auto leading-relaxed">
+            BizPulse will analyze {profile.name || 'this business'} ({profile.industry}), all 8 health ratings, and any uploaded documents to deliver prioritized commercial actions, sustainability risks, and profit opportunities.
           </p>
           <button
+            type="button"
             onClick={handleGenerateRecommendation}
             disabled={isLoading}
-            className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[#168C83] hover:bg-[#12726B] disabled:opacity-50 text-white text-xs font-bold shadow-xs transition"
+            className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] disabled:opacity-50 text-white text-xs font-bold shadow-sm transition"
           >
             <Sparkles className="w-4 h-4" />
-            <span>{isLoading ? 'Analyzing Business...' : 'Generate AI Diagnostic Now'}</span>
+            <span>{isLoading ? 'Analyzing Business...' : 'Generate Coaching Plan Now'}</span>
           </button>
         </div>
       )}

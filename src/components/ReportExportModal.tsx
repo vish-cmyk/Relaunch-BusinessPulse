@@ -1,27 +1,24 @@
 import React, { useState } from 'react';
-import { 
-  Download, 
-  Printer, 
-  FileText, 
-  FileCode, 
-  Check, 
-  X, 
-  Sparkles,
+import {
+  Download,
+  Printer,
+  FileText,
+  FileCode,
+  Check,
+  X,
   Activity,
-  Layers,
-  Calendar,
-  Building2,
-  PieChart,
   Presentation,
-  ShieldCheck,
   Image as ImageIcon,
   Database,
-  FileSpreadsheet
+  FileSpreadsheet,
 } from 'lucide-react';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 import pptxgen from 'pptxgenjs';
-import { jsPDF } from 'jspdf';
 import { CaseRecord } from '../types/bizpulse';
+import {
+  generateDocxReportUint8Array,
+  generatePdfReportBytes,
+  renderHealthChartCanvasPng,
+} from '../services/reportGenerator';
 
 interface ReportExportModalProps {
   caseRecord: CaseRecord;
@@ -43,271 +40,214 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   caseRecord,
   isOpen,
   onClose,
-  onPrintReport
+  onPrintReport,
 }) => {
   const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
-  const { profile, healthInputs, overallHealth, recommendations, financials } = caseRecord;
-  const safeFilename = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+  const { profile, healthInputs, overallHealth, recommendations, financials, uploadedDocuments } =
+    caseRecord;
+  const safeFilename = (profile.name || 'Business').replace(/[^a-zA-Z0-9]/g, '_');
 
-  // 1. Generate Genuine OpenXML Microsoft Word Document (.docx)
+  const notifySuccess = (msg: string) => {
+    setDownloadError(null);
+    setDownloadStatus(msg);
+    setTimeout(() => setDownloadStatus(null), 4000);
+  };
+
+  // 1. Genuine Microsoft Word Document (.docx) with embedded chart, wrapped tables & document evidence
   const handleDownloadWordDoc = async () => {
     setIsGenerating(true);
+    setDownloadError(null);
     try {
-      const tableRows = [
-        new TableRow({
-          tableHeader: true,
-          children: [
-            new TableCell({
-              width: { size: 2500, type: WidthType.DXA },
-              children: [new Paragraph({ children: [new TextRun({ text: 'Dimension', bold: true })] })],
-            }),
-            new TableCell({
-              width: { size: 1800, type: WidthType.DXA },
-              children: [new Paragraph({ children: [new TextRun({ text: 'Status', bold: true })] })],
-            }),
-            new TableCell({
-              width: { size: 2000, type: WidthType.DXA },
-              children: [new Paragraph({ children: [new TextRun({ text: 'Evidence Basis', bold: true })] })],
-            }),
-            new TableCell({
-              width: { size: 3700, type: WidthType.DXA },
-              children: [new Paragraph({ children: [new TextRun({ text: 'Owner-Entered Notes', bold: true })] })],
-            }),
-          ],
-        }),
-        ...Object.values(healthInputs).map(item => new TableRow({
-          children: [
-            new TableCell({
-              children: [new Paragraph({ children: [new TextRun({ text: item.title, bold: true })] })],
-            }),
-            new TableCell({
-              children: [new Paragraph({ children: [new TextRun({ text: item.status.toUpperCase(), bold: item.status === 'at_risk' })] })],
-            }),
-            new TableCell({
-              children: [new Paragraph({ children: [new TextRun({ text: item.evidenceType })] })],
-            }),
-            new TableCell({
-              children: [new Paragraph({ children: [new TextRun({ text: item.notes || 'No specific notes recorded.' })] })],
-            }),
-          ],
-        }))
-      ];
-
-      const children: Paragraph[] = [
-        new Paragraph({
-          text: profile.name,
-          heading: HeadingLevel.TITLE,
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({ text: 'Commercial Turnaround Diagnostic & Strategic Action Report', bold: true, size: 28 }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({ text: `Date: ${new Date().toLocaleDateString()} | Case ID: ${profile.caseId} | Currency: ${profile.currency}\n`, italics: true }),
-            new TextRun({ text: `Industry: ${profile.industry} (${profile.businessType}) | Country: ${profile.country}\n`, italics: true }),
-            new TextRun({ text: `Workforce: ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors | Operating: ${profile.yearsOperating} years\n`, italics: true }),
-          ],
-        }),
-        new Paragraph({
-          text: '1. Executive Summary & Health Assessment',
-          heading: HeadingLevel.HEADING_1,
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({ text: 'Overall Business Health: ', bold: true }),
-            new TextRun({ text: `${overallHealth?.overallRating || 'Pending Evaluation'} (Score: ${overallHealth?.overallScore ?? 'N/A'}/100)\n` }),
-            new TextRun({ text: 'Primary Commercial Objective: ', bold: true }),
-            new TextRun({ text: `${profile.primaryObjective}\n` }),
-            new TextRun({ text: 'Stated Primary Concern: ', bold: true }),
-            new TextRun({ text: `${profile.primaryConcern || 'Unspecified commercial pressure'}\n` }),
-          ],
-        }),
-        new Paragraph({
-          text: '2. The Eight Commercial Health Dimensions',
-          heading: HeadingLevel.HEADING_1,
-        }),
-      ];
-
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            ...children,
-            new Table({
-              rows: tableRows,
-              width: { size: 10000, type: WidthType.DXA },
-            }),
-            new Paragraph({
-              text: '3. Turnaround Diagnostic & Action Plan',
-              heading: HeadingLevel.HEADING_1,
-            }),
-            new Paragraph({
-              children: recommendations ? [
-                new TextRun({ text: 'Primary Commercial Observation:\n', bold: true }),
-                new TextRun({ text: `${recommendations.initialObservation}\n\n` }),
-                new TextRun({ text: 'Why This Matters Commercially:\n', bold: true }),
-                new TextRun({ text: `${recommendations.commercialWhy}\n\n` }),
-                new TextRun({ text: 'Core Turnaround Recommendation:\n', bold: true }),
-                new TextRun({ text: `${recommendations.initialRecommendation}\n\n` }),
-                new TextRun({ text: 'Immediate 48–72 Hour Action:\n', bold: true }),
-                new TextRun({ text: `${recommendations.immediateAction}\n\n` }),
-                ...(recommendations.specialistAdviceNeeded ? [
-                  new TextRun({ text: 'Specialist Advisory Trigger:\n', bold: true }),
-                  new TextRun({ text: `${recommendations.specialistAdviceNeeded}\n\n` }),
-                ] : []),
-              ] : [
-                new TextRun({ text: 'Diagnostic recommendations pending generation in the AI Advisory Engine.' }),
-              ],
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Generated via Relaunch BizPulse Executive Coaching & Diagnostic OS • Confidential SME Diagnostic for ${profile.name}`,
-                  italics: true,
-                  size: 18,
-                }),
-              ],
-            }),
-          ],
-        }],
+      const chartPng = await renderHealthChartCanvasPng(caseRecord);
+      const docxBytes = await generateDocxReportUint8Array(caseRecord, chartPng || undefined);
+      const blob = new Blob([new Uint8Array(docxBytes)], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       });
-
-      const blob = await Packer.toBlob(doc);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${safeFilename}_Turnaround_Report.docx`;
+      link.download = `${safeFilename}_Diagnostic_Report.docx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
-      setDownloadStatus('Genuine Word document (.docx) generated and downloaded!');
-      setTimeout(() => setDownloadStatus(null), 3500);
+      notifySuccess('Word report (.docx) with embedded health chart downloaded successfully.');
     } catch (err: any) {
       console.error('Word export error:', err);
-      setDownloadStatus('Error creating .docx: ' + (err.message || 'Check inputs.'));
+      setDownloadError('Error creating Word report: ' + (err.message || 'Check inputs.'));
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // 2. Generate Genuine Microsoft PowerPoint Slide Deck (.pptx)
+  // 2. Clean Paginated PDF Report via reportGenerator.ts (zero text overlap or clipped tables)
+  const handleDownloadDirectPdf = () => {
+    setIsGenerating(true);
+    setDownloadError(null);
+    try {
+      const pdfBytes = generatePdfReportBytes(caseRecord);
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${safeFilename}_Diagnostic_Report.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      notifySuccess('Paginated PDF diagnostic report with charts downloaded successfully.');
+    } catch (err: any) {
+      console.error('PDF export error:', err);
+      setDownloadError('Error creating PDF report: ' + (err.message || 'Check inputs.'));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // 3. PowerPoint Slide Deck (.pptx) styled in Black-to-Blue Executive palette
   const handleDownloadPowerPointDeck = async () => {
     setIsGenerating(true);
+    setDownloadError(null);
     try {
       const pres = new pptxgen();
       pres.layout = 'LAYOUT_16x9';
 
       // Slide 1: Title Slide
       const slide1 = pres.addSlide();
-      slide1.background = { color: '0F172A' };
-      slide1.addText('Relaunch BizPulse • Executive Diagnostic OS', {
+      slide1.background = { color: '070B14' };
+      slide1.addText('Relaunch BizPulse • Executive Coaching & Diagnostic OS', {
         x: 0.8,
         y: 1.0,
-        fontSize: 14,
-        color: 'F59E0B',
+        fontSize: 13,
+        color: '60A5FA',
         bold: true,
       });
-      slide1.addText(profile.name, {
+      slide1.addText(profile.name || 'Business Diagnostic', {
         x: 0.8,
         y: 1.6,
         fontSize: 32,
         color: 'FFFFFF',
         bold: true,
       });
-      slide1.addText('Commercial Turnaround Diagnostic & Strategic Action Report', {
+      slide1.addText('Executive Health Diagnostic & Commercial Action Briefing', {
         x: 0.8,
         y: 2.5,
         fontSize: 18,
-        color: '38BDF8',
+        color: 'CBD5E1',
       });
-      slide1.addText(`Industry: ${profile.industry} (${profile.businessType}) | Country: ${profile.country} (${profile.currency})\nDate: ${new Date().toLocaleDateString()} | Case ID: ${profile.caseId}`, {
-        x: 0.8,
-        y: 3.5,
-        fontSize: 12,
-        color: '94A3B8',
-        lineSpacing: 18,
-      });
+      slide1.addText(
+        `Industry: ${profile.industry} (${profile.businessType}) | Country: ${profile.country} (${profile.currency})\nDate: ${new Date().toLocaleDateString()} | Case ID: ${profile.caseId}`,
+        {
+          x: 0.8,
+          y: 3.5,
+          fontSize: 12,
+          color: '94A3B8',
+          lineSpacing: 18,
+        }
+      );
 
       // Slide 2: Overall Health Summary
       const slide2 = pres.addSlide();
       slide2.background = { color: '0F172A' };
-      slide2.addText('Executive Health Assessment & Commercial Baseline', {
+      slide2.addText('Executive Health Summary & Commercial Baseline', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
-        color: 'F59E0B',
+        color: '60A5FA',
         bold: true,
       });
-      slide2.addText(`Overall Health: ${overallHealth?.overallRating || 'In Progress'} (${overallHealth?.overallScore ?? 0}/100)`, {
-        x: 0.8,
-        y: 1.4,
-        fontSize: 16,
-        color: 'FFFFFF',
-        bold: true,
-      });
-      slide2.addText(`Primary Objective: ${profile.primaryObjective}\nStated Concern: ${profile.primaryConcern || 'Unspecified'}\nOperating Track Record: ${profile.yearsOperating} years | Workforce: ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors`, {
-        x: 0.8,
-        y: 2.0,
-        fontSize: 12,
-        color: 'CBD5E1',
-        lineSpacing: 20,
-      });
+      const scoreDisplay =
+        overallHealth?.overallScore !== null && overallHealth?.overallScore !== undefined
+          ? `${overallHealth.overallScore}/100`
+          : 'Unrated';
+      slide2.addText(
+        `Overall Health: ${overallHealth?.overallRating || 'Pending'} (${scoreDisplay})`,
+        {
+          x: 0.8,
+          y: 1.4,
+          fontSize: 16,
+          color: 'FFFFFF',
+          bold: true,
+        }
+      );
+      slide2.addText(
+        `Summary: ${overallHealth?.overallExplanation || 'Complete all 8 dimensions for diagnostic synthesis.'}\n\nPrimary Objective: ${profile.primaryObjective}\nStated Concern: ${profile.primaryConcern || 'Unspecified'}\nWorkforce: ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors`,
+        {
+          x: 0.8,
+          y: 2.0,
+          w: 11.5,
+          fontSize: 12,
+          color: 'CBD5E1',
+          lineSpacing: 20,
+        }
+      );
 
-      // Slide 3: 8 Commercial Dimensions Scorecard Table
+      // Slide 3: 8 Dimensions Scorecard Table
       const slide3 = pres.addSlide();
       slide3.background = { color: '0F172A' };
-      slide3.addText('The 8 Commercial Health Dimensions', {
+      slide3.addText('Eight Commercial Health Dimensions', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
-        color: '38BDF8',
+        color: '60A5FA',
         bold: true,
       });
       const tableData: any[][] = [
         [
-          { text: 'Dimension', options: { bold: true, color: 'FFFFFF', fill: '1E293B' } },
-          { text: 'Status', options: { bold: true, color: 'FFFFFF', fill: '1E293B' } },
-          { text: 'Evidence Basis', options: { bold: true, color: 'FFFFFF', fill: '1E293B' } },
-          { text: 'Owner-Reported Context', options: { bold: true, color: 'FFFFFF', fill: '1E293B' } },
+          { text: 'Dimension', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
+          { text: 'Status', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
+          { text: 'Score', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
+          { text: 'Owner Notes', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
         ],
-        ...Object.values(healthInputs).map(item => [
-          { text: item.title, options: { color: 'FFFFFF', fill: '0F172A' } },
-          { text: item.status.toUpperCase(), options: { color: item.status === 'healthy' ? '10B981' : item.status === 'at_risk' ? 'EF4444' : 'F59E0B', bold: true, fill: '0F172A' } },
-          { text: item.evidenceType, options: { color: '94A3B8', fill: '0F172A' } },
-          { text: item.notes || 'No specific notes', options: { color: 'CBD5E1', fill: '0F172A' } },
-        ]),
+        ...Object.values(healthInputs).map((item) => {
+          const detail = overallHealth?.dimensionScores?.find((d) => d.key === item.key);
+          const color =
+            item.status === 'healthy'
+              ? '34D399'
+              : item.status === 'at_risk'
+              ? 'F87171'
+              : item.status === 'needs_attention'
+              ? 'FBBF24'
+              : '94A3B8';
+          return [
+            { text: item.title, options: { color: 'FFFFFF', fill: '0F172A' } },
+            { text: item.status.replace('_', ' ').toUpperCase(), options: { color, bold: true, fill: '0F172A' } },
+            { text: detail && detail.score !== null ? `${detail.score}/100` : '—', options: { color: 'CBD5E1', fill: '0F172A' } },
+            { text: item.notes || 'No notes supplied', options: { color: 'CBD5E1', fill: '0F172A' } },
+          ];
+        }),
       ];
       slide3.addTable(tableData, { x: 0.8, y: 1.2, w: 11.5, fontSize: 10 });
 
-      // Slide 4: Turnaround Recommendations
+      // Slide 4: Coaching Recommendations
       const slide4 = pres.addSlide();
       slide4.background = { color: '0F172A' };
-      slide4.addText('Diagnostic Recommendations & Commercial Rationale', {
+      slide4.addText('Diagnostic Coaching & Immediate Priority Actions', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
-        color: 'F59E0B',
+        color: '60A5FA',
         bold: true,
       });
       if (recommendations) {
-        slide4.addText(`Primary Observation:\n${recommendations.initialObservation}\n\nCommercial Impact:\n${recommendations.commercialWhy}\n\nTurnaround Recommendation:\n${recommendations.initialRecommendation}`, {
-          x: 0.8,
-          y: 1.4,
-          w: 11.5,
-          fontSize: 13,
-          color: 'E2E8F0',
-          lineSpacing: 18,
-        });
+        slide4.addText(
+          `Primary Observation:\n${recommendations.initialObservation}\n\nCommercial Why:\n${recommendations.commercialWhy}\n\nCore Recommendation:\n${recommendations.initialRecommendation}\n\nImmediate 48–72h Action:\n${recommendations.immediateAction}`,
+          {
+            x: 0.8,
+            y: 1.3,
+            w: 11.5,
+            fontSize: 12,
+            color: 'E2E8F0',
+            lineSpacing: 17,
+          }
+        );
       } else {
-        slide4.addText('Turnaround recommendations awaiting generation in the Recommendation Engine tab.', {
+        slide4.addText('Coaching recommendations not yet generated for this session.', {
           x: 0.8,
           y: 2.0,
           fontSize: 14,
@@ -315,208 +255,91 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         });
       }
 
-      // Slide 5: Immediate 48-Hour Decision Gates
-      const slide5 = pres.addSlide();
-      slide5.background = { color: '0F172A' };
-      slide5.addText('Immediate 48–72 Hour Action Plan & Decision Gates', {
-        x: 0.8,
-        y: 0.6,
-        fontSize: 22,
-        color: '10B981',
-        bold: true,
-      });
-      if (recommendations) {
-        slide5.addText(`Immediate Action (Next 48–72 Hours):\n${recommendations.immediateAction}\n\nSpecialist Advisory Trigger:\n${recommendations.specialistAdviceNeeded || 'None flagged for immediate legal/statutory risk.'}`, {
-          x: 0.8,
-          y: 1.5,
-          w: 11.5,
-          fontSize: 14,
-          color: 'F1F5F9',
-          lineSpacing: 22,
-        });
-      }
-
       await pres.writeFile({ fileName: `${safeFilename}_Presentation.pptx` });
-      setDownloadStatus('Genuine PowerPoint presentation (.pptx) downloaded successfully!');
-      setTimeout(() => setDownloadStatus(null), 3500);
+      notifySuccess('PowerPoint deck (.pptx) downloaded successfully.');
     } catch (err: any) {
       console.error('PowerPoint export error:', err);
-      setDownloadStatus('Error creating .pptx: ' + (err.message || 'Check inputs.'));
+      setDownloadError('Error creating PowerPoint deck: ' + (err.message || 'Check inputs.'));
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // 3. Generate Valid PDF Document via jsPDF
-  const handleDownloadDirectPdf = () => {
-    try {
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-      });
-
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 40;
-      let y = 50;
-
-      doc.setFillColor(15, 23, 42); // slate-900
-      doc.rect(0, 0, pageWidth, 80, 'F');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.setTextColor(245, 158, 11); // amber-500
-      doc.text(profile.name, margin, 40);
-
-      doc.setFontSize(11);
-      doc.setTextColor(226, 232, 240);
-      doc.text('Commercial Turnaround Diagnostic & Strategic Action Report', margin, 60);
-
-      y = 110;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(71, 85, 105);
-      doc.text(`Date: ${new Date().toLocaleDateString()}   |   Case ID: ${profile.caseId}   |   Currency: ${profile.currency}`, margin, y);
-      y += 14;
-      doc.text(`Industry: ${profile.industry} (${profile.businessType})   |   Workforce: ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors`, margin, y);
-      y += 24;
-
-      // Executive Health Box
-      doc.setFillColor(248, 250, 252);
-      doc.rect(margin, y, pageWidth - (margin * 2), 65, 'F');
-      doc.setDrawColor(203, 213, 225);
-      doc.rect(margin, y, pageWidth - (margin * 2), 65, 'D');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Executive Health Assessment & Stated Objective', margin + 12, y + 20);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(51, 65, 85);
-      doc.text(`Overall Rating: ${overallHealth?.overallRating || 'In Progress'} (${overallHealth?.overallScore ?? 0}/100)`, margin + 12, y + 36);
-      doc.text(`Objective: ${profile.primaryObjective.substring(0, 85)}...`, margin + 12, y + 50);
-
-      y += 85;
-
-      // 8 Dimensions Table
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Eight Commercial Health Dimensions', margin, y);
-      y += 15;
-
-      doc.setFillColor(241, 245, 249);
-      doc.rect(margin, y, pageWidth - (margin * 2), 20, 'F');
-      doc.setFontSize(8);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Dimension', margin + 8, y + 13);
-      doc.text('Status', margin + 140, y + 13);
-      doc.text('Notes', margin + 230, y + 13);
-      y += 20;
-
-      Object.values(healthInputs).forEach((dim) => {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(30, 41, 59);
-        doc.text(dim.title, margin + 8, y + 12);
-        
-        doc.setFont('helvetica', 'bold');
-        if (dim.status === 'healthy') doc.setTextColor(16, 185, 129);
-        else if (dim.status === 'at_risk') doc.setTextColor(239, 68, 68);
-        else doc.setTextColor(245, 158, 11);
-        doc.text(dim.status.toUpperCase(), margin + 140, y + 12);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 116, 139);
-        doc.text((dim.notes || 'No specific notes recorded.').substring(0, 55), margin + 230, y + 12);
-
-        doc.setDrawColor(241, 245, 249);
-        doc.line(margin, y + 18, pageWidth - margin, y + 18);
-        y += 20;
-      });
-
-      y += 15;
-      if (recommendations) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(15, 23, 42);
-        doc.text('Turnaround Strategy & 48-Hour Decision Gate', margin, y);
-        y += 15;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.5);
-        doc.setTextColor(51, 65, 85);
-
-        const recLines = doc.splitTextToSize(`Recommendation: ${recommendations.initialRecommendation}`, pageWidth - (margin * 2));
-        doc.text(recLines, margin, y);
-        y += (recLines.length * 11) + 8;
-
-        const actionLines = doc.splitTextToSize(`Immediate Action (48-72h): ${recommendations.immediateAction}`, pageWidth - (margin * 2));
-        doc.text(actionLines, margin, y);
-      }
-
-      doc.save(`${safeFilename}_Diagnostic_Report.pdf`);
-      setDownloadStatus('Genuine PDF document downloaded successfully!');
-      setTimeout(() => setDownloadStatus(null), 3500);
-    } catch (err: any) {
-      console.error('PDF export error:', err);
-      setDownloadStatus('Error creating PDF: ' + (err.message || 'Check browser permissions.'));
-    }
-  };
-
-  // 4. Generate XML-Escaped Business Health Infographic (SVG)
+  // 4. Business Health Infographic (SVG) with strict semantic colors
   const handleDownloadInfographic = () => {
-    const score = overallHealth?.overallScore ?? 50;
+    const scoreText =
+      overallHealth?.overallScore !== null && overallHealth?.overallScore !== undefined
+        ? `${overallHealth.overallScore}/100`
+        : 'Pending';
+    const scoreNum = overallHealth?.overallScore ?? 0;
     const rating = overallHealth?.overallRating ?? 'Pending';
     const dims = Object.values(healthInputs);
 
-    const safeName = escapeXml(profile.name);
+    const safeName = escapeXml(profile.name || 'Business');
     const safeIndustry = escapeXml(profile.industry);
     const safeCountry = escapeXml(profile.country);
     const safeCurrency = escapeXml(profile.currency);
     const safeCaseId = escapeXml(profile.caseId);
-    const safeObjective = escapeXml(profile.primaryObjective);
+    const safeObjective = escapeXml(profile.primaryObjective || 'Commercial sustainability');
+
+    const scoreColor =
+      overallHealth?.overallScore === null || overallHealth?.overallScore === undefined
+        ? '#94A3B8'
+        : scoreNum >= 72
+        ? '#34D399'
+        : scoreNum >= 45
+        ? '#FBBF24'
+        : '#F87171';
 
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600" style="background:#0f172a; font-family:sans-serif;">
-  <rect width="900" height="600" fill="#0f172a"/>
-  <text x="40" y="50" fill="#f59e0b" font-size="20" font-weight="bold">Relaunch BizPulse • Business Health Infographic</text>
-  <text x="40" y="80" fill="#ffffff" font-size="24" font-weight="bold">${safeName}</text>
-  <text x="40" y="105" fill="#94a3b8" font-size="13">${safeIndustry} • ${safeCountry} (${safeCurrency}) • Case: ${safeCaseId}</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" style="background:#070B14; font-family:sans-serif;">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070B14"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" fill="url(#bg)"/>
+  <text x="40" y="48" fill="#60A5FA" font-size="16" font-weight="bold">Relaunch BizPulse • Executive Health Infographic</text>
+  <text x="40" y="80" fill="#FFFFFF" font-size="24" font-weight="bold">${safeName}</text>
+  <text x="40" y="106" fill="#CBD5E1" font-size="13">${safeIndustry} • ${safeCountry} (${safeCurrency}) • Case: ${safeCaseId}</text>
 
-  <!-- Score Box -->
-  <rect x="660" y="30" width="200" height="90" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="760" y="55" fill="#94a3b8" font-size="11" text-anchor="middle" font-weight="bold">OVERALL HEALTH</text>
-  <text x="760" y="90" fill="${score >= 70 ? '#34d399' : score >= 45 ? '#fbbf24' : '#f87171'}" font-size="26" text-anchor="middle" font-weight="bold">${score}/100</text>
-  <text x="760" y="110" fill="#e2e8f0" font-size="11" text-anchor="middle">${escapeXml(rating)}</text>
+  <rect x="650" y="28" width="210" height="92" rx="12" fill="#172554" stroke="#1D4ED8" stroke-width="1.5"/>
+  <text x="755" y="54" fill="#93C5FD" font-size="11" text-anchor="middle" font-weight="bold">OVERALL HEALTH</text>
+  <text x="755" y="90" fill="${scoreColor}" font-size="26" text-anchor="middle" font-weight="bold">${escapeXml(scoreText)}</text>
+  <text x="755" y="110" fill="#E2E8F0" font-size="11" text-anchor="middle">${escapeXml(rating)}</text>
 
-  <!-- 8 Dimensions Visual Grid -->
-  <text x="40" y="148" fill="#38bdf8" font-size="15" font-weight="bold">The Eight Commercial Health Dimensions</text>
-  ${dims.map((d, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = 40 + col * 420;
-    const y = 165 + row * 88;
-    const color = d.status === 'healthy' ? '#10b981' : d.status === 'needs_attention' ? '#f59e0b' : d.status === 'at_risk' ? '#ef4444' : '#3b82f6';
-    const safeTitle = escapeXml(d.title);
-    const safeStatus = escapeXml(d.status.toUpperCase());
-    const safeNotes = escapeXml((d.notes || 'No specific notes entered').substring(0, 48));
-    return `
+  <text x="40" y="152" fill="#93C5FD" font-size="15" font-weight="bold">The Eight Commercial Health Dimensions</text>
+  ${dims
+    .map((d, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = 40 + col * 420;
+      const y = 170 + row * 90;
+      const color =
+        d.status === 'healthy'
+          ? '#10B981'
+          : d.status === 'needs_attention'
+          ? '#F59E0B'
+          : d.status === 'at_risk'
+          ? '#EF4444'
+          : '#64748B';
+      const safeTitle = escapeXml(d.title);
+      const safeStatus = escapeXml(d.status.replace('_', ' ').toUpperCase());
+      const safeNotes = escapeXml((d.notes || 'No specific notes entered').substring(0, 52));
+      return `
       <g>
-        <rect x="${x}" y="${y}" width="400" height="74" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-        <circle cx="${x + 24}" cy="${y + 24}" r="7" fill="${color}"/>
-        <text x="${x + 42}" y="${y + 28}" fill="#ffffff" font-size="13" font-weight="bold">${safeTitle}</text>
-        <text x="${x + 380}" y="${y + 28}" fill="${color}" font-size="11" font-weight="bold" text-anchor="end">${safeStatus}</text>
-        <text x="${x + 42}" y="${y + 51}" fill="#94a3b8" font-size="10">${safeNotes}...</text>
-      </g>
-    `;
-  }).join('')}
+        <rect x="${x}" y="${y}" width="400" height="76" rx="8" fill="#111C33" stroke="#1E3A8A" stroke-width="1"/>
+        <circle cx="${x + 22}" cy="${y + 24}" r="7" fill="${color}"/>
+        <text x="${x + 38}" y="${y + 28}" fill="#FFFFFF" font-size="13" font-weight="bold">${safeTitle}</text>
+        <text x="${x + 382}" y="${y + 28}" fill="${color}" font-size="11" font-weight="bold" text-anchor="end">${safeStatus}</text>
+        <text x="${x + 38}" y="${y + 52}" fill="#CBD5E1" font-size="10">${safeNotes}</text>
+      </g>`;
+    })
+    .join('')}
 
-  <!-- Footer -->
-  <rect x="40" y="535" width="820" height="40" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="55" y="560" fill="#94a3b8" font-size="11">Primary Objective: ${safeObjective.substring(0, 60)}... • Confirmed Evidence-Based Assessment</text>
+  <rect x="40" y="545" width="820" height="44" rx="8" fill="#111C33" stroke="#1E3A8A" stroke-width="1"/>
+  <text x="56" y="572" fill="#CBD5E1" font-size="11">Objective: ${safeObjective.substring(0, 75)}</text>
 </svg>`;
 
     const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -528,20 +351,18 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    setDownloadStatus('Business Health Infographic (.svg) downloaded successfully!');
-    setTimeout(() => setDownloadStatus(null), 3500);
+    notifySuccess('Health Infographic (.svg) downloaded.');
   };
 
-  // 5. Generate clean Markdown Summary (.md)
+  // 5. Markdown Briefing (.md)
   const handleDownloadMarkdown = () => {
-    let md = `# ${profile.name} — Commercial Turnaround Report\n\n`;
+    let md = `# ${profile.name} — Executive Coaching & Diagnostic Report\n\n`;
     md += `**Date:** ${new Date().toLocaleDateString()}  \n`;
     md += `**Case ID:** ${profile.caseId}  \n`;
     md += `**Industry:** ${profile.industry} (${profile.businessType})  \n`;
     md += `**Location:** ${profile.country} (${profile.currency})  \n`;
     md += `**Workforce:** ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors  \n\n`;
-    
+
     md += `## 1. Business Essentials\n`;
     md += `- **Primary Objective:** ${profile.primaryObjective}\n`;
     md += `- **Primary Concern:** ${profile.primaryConcern || 'Unspecified'}\n`;
@@ -550,31 +371,38 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
     if (overallHealth) {
       md += `## 2. Business Health Summary\n`;
-      md += `- **Overall Rating:** ${overallHealth.overallRating} (${overallHealth.overallScore}/100)\n`;
-      md += `- **Assessment Date:** ${overallHealth.assessmentDate}\n`;
-      md += `- **Critical Risks:**\n`;
-      overallHealth.criticalRisksIdentified.forEach(r => md += `  * ${r}\n`);
-      md += `- **Core Strengths:**\n`;
-      overallHealth.strongestAreas.forEach(s => md += `  * ${s}\n`);
-      md += `\n`;
+      md += `- **Overall Rating:** ${overallHealth.overallRating} (${overallHealth.overallScore ?? 'N/A'}/100)\n`;
+      md += `- **Explanation:** ${overallHealth.overallExplanation}\n`;
+      md += `- **Assessment Date:** ${overallHealth.assessmentDate}\n\n`;
     }
 
     md += `## 3. Eight Commercial Health Dimensions\n\n`;
-    Object.values(healthInputs).forEach(h => {
+    Object.values(healthInputs).forEach((h) => {
       md += `### ${h.title}\n`;
-      md += `- **Status:** ${h.status.toUpperCase()}\n`;
-      md += `- **Operational Notes:** ${h.notes || 'None provided'}\n\n`;
+      md += `- **Status:** ${h.status.replace('_', ' ').toUpperCase()}\n`;
+      md += `- **Notes:** ${h.notes || 'None provided'}\n\n`;
     });
 
     if (recommendations) {
-      md += `## 4. Turnaround Recommendations\n\n`;
+      md += `## 4. Coaching Recommendations & Actions\n\n`;
       md += `### Primary Observation\n${recommendations.initialObservation}\n\n`;
       md += `### Commercial Why\n${recommendations.commercialWhy}\n\n`;
       md += `### Strategic Recommendation\n${recommendations.initialRecommendation}\n\n`;
-      md += `### Immediate 48-Hour Action\n${recommendations.immediateAction}\n\n`;
-      if (recommendations.specialistAdviceNeeded) {
-        md += `### Specialist Advice Trigger\n${recommendations.specialistAdviceNeeded}\n\n`;
+      md += `### Immediate 48–72 Hour Action\n${recommendations.immediateAction}\n\n`;
+      if (recommendations.actionItems?.length) {
+        md += `### Prioritized Action Checklist\n`;
+        recommendations.actionItems.forEach((a) => {
+          md += `- [${a.completed ? 'x' : ' '}] **${a.priority}** (${a.ownerRole}, ${a.timeframe}): ${a.action}\n`;
+        });
+        md += `\n`;
       }
+    }
+
+    if (uploadedDocuments && uploadedDocuments.length > 0) {
+      md += `## 5. Uploaded Documents Audit\n\n`;
+      uploadedDocuments.forEach((doc) => {
+        md += `### ${doc.fileName} (${doc.fileType.toUpperCase()})\n${doc.summary}\n\n`;
+      });
     }
 
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
@@ -586,12 +414,10 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    setDownloadStatus('Markdown report downloaded successfully!');
-    setTimeout(() => setDownloadStatus(null), 3500);
+    notifySuccess('Markdown briefing (.md) downloaded.');
   };
 
-  // 6. Generate JSON Raw Data Backup (.json)
+  // 6. Full Case JSON
   const handleDownloadJson = () => {
     const jsonStr = JSON.stringify(caseRecord, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -603,21 +429,23 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    setDownloadStatus('JSON data export downloaded successfully!');
-    setTimeout(() => setDownloadStatus(null), 3500);
+    notifySuccess('Case backup (.json) downloaded.');
   };
 
-  // 7. Generate CSV Spreadsheet (.csv)
+  // 7. CSV Spreadsheet
   const handleDownloadCsv = () => {
-    const rows = [
-      ['Dimension', 'Status', 'Evidence Basis', 'Notes'],
-      ...Object.values(healthInputs).map(h => [
-        `"${h.title.replace(/"/g, '""')}"`,
-        `"${h.status}"`,
-        `"${h.evidenceType}"`,
-        `"${(h.notes || '').replace(/"/g, '""')}"`
-      ])
+    const rows: string[][] = [
+      ['Dimension', 'Status', 'Score', 'Evidence Basis', 'Notes'],
+      ...Object.values(healthInputs).map((h) => {
+        const detail = overallHealth?.dimensionScores?.find((d) => d.key === h.key);
+        return [
+          `"${h.title.replace(/"/g, '""')}"`,
+          `"${h.status}"`,
+          `"${detail?.score ?? ''}"`,
+          `"${h.evidenceType}"`,
+          `"${(h.notes || '').replace(/"/g, '""')}"`,
+        ];
+      }),
     ];
 
     if (financials) {
@@ -628,11 +456,11 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       rows.push(['Accounts Receivable', financials.accountsReceivable?.toString() || '', profile.currency]);
       rows.push(['Overdue Receivables', financials.overdueReceivables?.toString() || '', profile.currency]);
       rows.push(['Available Cash', financials.cashInBank?.toString() || '', profile.currency]);
-      rows.push(['Overdraft / Credit Drawn', financials.creditFacilityUsed?.toString() || '', profile.currency]);
-      rows.push(['Overdraft / Credit Limit', financials.creditFacilityLimit?.toString() || '', profile.currency]);
+      rows.push(['Credit Facility Drawn', financials.creditFacilityUsed?.toString() || '', profile.currency]);
+      rows.push(['Credit Facility Limit', financials.creditFacilityLimit?.toString() || '', profile.currency]);
     }
 
-    const csvContent = rows.map(r => r.join(',')).join('\n');
+    const csvContent = rows.map((r) => r.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -642,166 +470,185 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    setDownloadStatus('CSV scorecard exported successfully!');
-    setTimeout(() => setDownloadStatus(null), 3500);
+    notifySuccess('Scorecard (.csv) exported.');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-      <div className="bg-white border border-[#E5EBEF] rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden text-[#14283F] space-y-5 p-6">
-        <div className="flex items-center justify-between border-b border-[#E5EBEF] pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#070B14]/65 backdrop-blur-xs p-4">
+      <div className="bg-white border border-[#D9E2F0] rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden text-[#0B1324]">
+        {/* Black-to-Blue Modal Header */}
+        <div className="bizpulse-bar-gradient text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#E6F4F2] border border-[#168C83]/30 text-[#168C83] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#1D4ED8] text-white flex items-center justify-center">
               <Download className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-[#14283F] text-base">Export Executive Reports & Presentation Deck</h3>
-              <p className="text-xs text-[#64748B]">Current case: {profile.name} ({profile.country})</p>
+              <h3 className="font-bold text-white text-base">
+                Export Executive Reports &amp; Presentations
+              </h3>
+              <p className="text-xs text-[#CBD5E1]">
+                Isolated Export for {profile.name} ({profile.country})
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-[#64748B] hover:text-[#14283F] hover:bg-[#F1F5F9] transition">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-[#CBD5E1] hover:text-white hover:bg-white/10 transition"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {downloadStatus && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600" />
-            <span className="font-medium">{downloadStatus}</span>
-          </div>
-        )}
+        <div className="p-6 space-y-5">
+          {downloadStatus && (
+            <div className="p-3 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs rounded-xl flex items-center gap-2 font-semibold">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{downloadStatus}</span>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Option 1: PDF Download */}
-          <button
-            onClick={handleDownloadDirectPdf}
-            disabled={isGenerating}
-            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
-          >
-            <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center border border-red-200">
-              <Printer className="w-4 h-4" />
+          {downloadError && (
+            <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded-xl font-semibold">
+              {downloadError}
             </div>
-            <div>
-              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
-                PDF Document (.pdf)
-              </span>
-              <span className="text-[11px] text-[#64748B]">
-                Formatted executive summary report
-              </span>
-            </div>
-          </button>
+          )}
 
-          {/* Option 2: Genuine Word Document */}
-          <button
-            onClick={handleDownloadWordDoc}
-            disabled={isGenerating}
-            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200">
-              <FileText className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
-                Word Document (.docx)
-              </span>
-              <span className="text-[11px] text-[#64748B]">
-                Genuine OpenXML editable document
-              </span>
-            </div>
-          </button>
-
-          {/* Option 3: Genuine PowerPoint Deck */}
-          <button
-            onClick={handleDownloadPowerPointDeck}
-            disabled={isGenerating}
-            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
-          >
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#D99A35] flex items-center justify-center border border-amber-200">
-              <Presentation className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
-                PowerPoint (.pptx)
-              </span>
-              <span className="text-[11px] text-[#64748B]">
-                6-slide executive briefing deck
-              </span>
-            </div>
-          </button>
-
-          {/* Option 4: Business Health Infographic */}
-          <button
-            onClick={handleDownloadInfographic}
-            disabled={isGenerating}
-            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] hover:border-[#168C83] hover:bg-white transition text-left flex flex-col justify-between space-y-2 group disabled:opacity-50 shadow-xs"
-          >
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
-              <ImageIcon className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-[#14283F] text-xs block group-hover:text-[#168C83]">
-                Health Infographic
-              </span>
-              <span className="text-[11px] text-[#64748B]">
-                Vector 8D scorecard infographic (.svg)
-              </span>
-            </div>
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#E5EBEF] text-xs">
-          <div className="flex items-center gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* PDF */}
             <button
-              onClick={() => {
-                onClose();
-                onPrintReport();
-              }}
-              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
-              title="Open full print view for memo"
+              type="button"
+              onClick={handleDownloadDirectPdf}
+              disabled={isGenerating}
+              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <Printer className="w-3.5 h-3.5 text-rose-600" />
-              <span>Print View</span>
+              <div className="w-8 h-8 rounded-lg bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center border border-[#FECACA]">
+                <Printer className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                  PDF Report (.pdf)
+                </span>
+                <span className="text-[11px] text-[#52627A]">
+                  Paginated layout with radar &amp; bar charts
+                </span>
+              </div>
             </button>
 
+            {/* Word */}
             <button
-              onClick={handleDownloadMarkdown}
-              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
-              title="Download structured Markdown summary"
+              type="button"
+              onClick={handleDownloadWordDoc}
+              disabled={isGenerating}
+              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <FileCode className="w-3.5 h-3.5 text-purple-600" />
-              <span>Markdown (.md)</span>
+              <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center border border-[#BFDBFE]">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                  Word (.docx)
+                </span>
+                <span className="text-[11px] text-[#52627A]">
+                  Editable OpenXML report + chart image
+                </span>
+              </div>
             </button>
 
+            {/* PowerPoint */}
             <button
-              onClick={handleDownloadCsv}
-              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
-              title="Export scorecard & financials as CSV spreadsheet"
+              type="button"
+              onClick={handleDownloadPowerPointDeck}
+              disabled={isGenerating}
+              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Scorecard (.csv)</span>
+              <div className="w-8 h-8 rounded-lg bg-[#FFFBEB] text-[#B45309] flex items-center justify-center border border-[#FDE68A]">
+                <Presentation className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                  Slides (.pptx)
+                </span>
+                <span className="text-[11px] text-[#52627A]">
+                  Executive presentation briefing deck
+                </span>
+              </div>
             </button>
 
+            {/* Infographic */}
             <button
-              onClick={handleDownloadJson}
-              className="text-[#64748B] hover:text-[#14283F] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-white transition font-medium"
-              title="Download full case data as portable JSON"
+              type="button"
+              onClick={handleDownloadInfographic}
+              disabled={isGenerating}
+              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <Database className="w-3.5 h-3.5 text-cyan-600" />
-              <span>Full Data (.json)</span>
+              <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] text-[#15803D] flex items-center justify-center border border-[#A7F3D0]">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                  Infographic (.svg)
+                </span>
+                <span className="text-[11px] text-[#52627A]">
+                  Vector 8-dimension health summary
+                </span>
+              </div>
             </button>
           </div>
 
-          <span className="text-[11px] text-[#64748B] font-mono">
-            Case ID: {profile.caseId}
-          </span>
-        </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#E8EEF7] text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onPrintReport();
+                }}
+                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <span>Print View</span>
+              </button>
 
-        <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E5EBEF] text-[11px] text-[#64748B] flex items-start gap-2">
-          <Activity className="w-4 h-4 text-[#D99A35] shrink-0 mt-0.5" />
-          <span>
-            Every export is strictly compiled from the active case (<strong>{profile.name}</strong>) and excludes information from other businesses.
-          </span>
+              <button
+                type="button"
+                onClick={handleDownloadMarkdown}
+                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+              >
+                <FileCode className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <span>Markdown (.md)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadCsv}
+                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#15803D]" />
+                <span>Scorecard (.csv)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadJson}
+                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+              >
+                <Database className="w-3.5 h-3.5 text-[#475569]" />
+                <span>Full Data (.json)</span>
+              </button>
+            </div>
+
+            <span className="text-[11px] text-[#52627A] font-mono">
+              Case ID: {profile.caseId}
+            </span>
+          </div>
+
+          <div className="p-3 bg-[#F3F6FB] rounded-xl border border-[#D9E2F0] text-[11px] text-[#52627A] flex items-start gap-2">
+            <Activity className="w-4 h-4 text-[#1D4ED8] shrink-0 mt-0.5" />
+            <span>
+              All exports compile strictly from <strong>{profile.name}</strong> and never mix figures from other saved businesses.
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -429,7 +429,7 @@ COACHING & EVIDENCE RULES:
     }
   });
 
-  app.post('/api/payment/verify-session', requireAuth, async (req: AuthenticatedRequest, res) => {
+  app.post('/api/payment/verify-session', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const { sessionId, caseId } = req.body;
       if (!sessionId || !caseId) {
@@ -444,8 +444,16 @@ COACHING & EVIDENCE RULES:
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       if (session.payment_status === 'paid') {
-        if (session.metadata?.userId && session.metadata.userId !== req.user?.uid) {
-          return res.status(403).json({ error: 'Payment session belongs to another authenticated account.' });
+        // A paid session is valid only for the exact signed-in account and case
+        // that originally created it. Missing metadata is not trusted.
+        if (
+          session.metadata?.userId !== req.user?.uid ||
+          session.metadata?.caseId !== caseId
+        ) {
+          return res.status(403).json({
+            error: 'Payment session does not belong to this account and business case.',
+            code: 'PAYMENT_SESSION_SCOPE_MISMATCH',
+          });
         }
 
         const record = {
@@ -460,7 +468,7 @@ COACHING & EVIDENCE RULES:
           paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as 'stripe_live' | 'stripe_test',
         };
 
-        verifiedPaidCases.set(caseId, record);
+        verifiedPaidCases.set(`${req.user!.uid}:${caseId}`, record);
 
         if (req.user?.uid && hasAdminCredentials) {
           try {
@@ -555,7 +563,7 @@ COACHING & EVIDENCE RULES:
 
   app.get('/api/payment/status/:caseId', requireAuth, verifyCaseOwnership, (req: AuthenticatedRequest, res) => {
     const { caseId } = req.params;
-    const record = verifiedPaidCases.get(caseId);
+    const record = verifiedPaidCases.get(`${req.user!.uid}:${caseId}`);
     if (record) {
       return res.json({ isUnlocked: true, paymentStatus: 'paid', record });
     }

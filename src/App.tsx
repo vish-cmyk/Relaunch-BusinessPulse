@@ -16,6 +16,7 @@ import { AICoachConsole } from './components/AICoachConsole';
 import { ReportExportModal } from './components/ReportExportModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthScreen } from './components/AuthScreen';
+import { GrowthRoadmapView } from './components/GrowthRoadmapView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import {
@@ -459,12 +460,12 @@ function BizPulseWorkspace() {
   // 1. Auth verification screen
   if (authLoading) {
     return (
-      <div className="min-h-screen bizpulse-hero-gradient flex flex-col items-center justify-center text-white font-sans">
-        <div className="w-14 h-14 rounded-2xl bg-[#1D4ED8] flex items-center justify-center font-extrabold text-white text-2xl shadow-lg mb-4 border border-white/20">
+      <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center text-[#111113] font-sans">
+        <div className="w-12 h-12 rounded bg-[#111113] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#D97706]">
           BP
         </div>
-        <div className="flex items-center gap-2 text-sm text-[#CBD5E1]">
-          <RefreshCw className="w-4 h-4 animate-spin text-[#93C5FD]" />
+        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#52525B] font-mono">
+          <RefreshCw className="w-4 h-4 animate-spin text-[#D97706]" />
           <span>Verifying session...</span>
         </div>
       </div>
@@ -479,12 +480,12 @@ function BizPulseWorkspace() {
   // 3. Initial Firestore load
   if (casesLoading || !activeCase) {
     return (
-      <div className="min-h-screen bizpulse-hero-gradient flex flex-col items-center justify-center text-white font-sans">
-        <div className="w-14 h-14 rounded-2xl bg-[#1D4ED8] flex items-center justify-center font-extrabold text-white text-2xl shadow-lg mb-4 border border-white/20">
+      <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center text-[#111113] font-sans">
+        <div className="w-12 h-12 rounded bg-[#111113] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#D97706]">
           BP
         </div>
-        <div className="flex items-center gap-2 text-sm text-[#CBD5E1]">
-          <Database className="w-4 h-4 text-[#93C5FD]" />
+        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#52525B] font-mono">
+          <Database className="w-4 h-4 text-[#D97706]" />
           <span>Loading your private SME workspace...</span>
         </div>
       </div>
@@ -493,7 +494,7 @@ function BizPulseWorkspace() {
 
   // 4. Authenticated Workspace
   return (
-    <div className="min-h-screen bg-[#F3F6FB] text-[#0B1324] flex flex-col font-sans selection:bg-[#1D4ED8]/20 selection:text-[#0B1324]">
+    <div className="min-h-screen bg-[#F8F7F4] text-[#111113] flex flex-col font-sans selection:bg-[#D97706]/20 selection:text-[#111113]">
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -554,7 +555,7 @@ function BizPulseWorkspace() {
             <button
               type="button"
               onClick={() => setFirestoreError(null)}
-              className="text-[#B45309] hover:text-[#0B1324] text-xs px-2 py-0.5 rounded font-semibold"
+              className="text-[#B45309] hover:text-[#111113] text-xs px-2 py-0.5 rounded font-semibold"
             >
               Dismiss
             </button>
@@ -622,6 +623,8 @@ function BizPulseWorkspace() {
             key={`memo-${activeCase.id}`}
             activeCase={activeCase}
             onSwitchTab={(tab) => setActiveTab(tab)}
+            onUpdateCase={(updated) => persistCase(updated)}
+            onOpenExportModal={() => setIsExportModalOpen(true)}
             onOpenCoachWithPrompt={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -686,6 +689,13 @@ function BizPulseWorkspace() {
             }}
           />
         )}
+
+        {activeTab === 'growthroadmap' && (
+          <GrowthRoadmapView
+            businessName={activeCase.profile.name}
+            onNavigateTab={(tab) => setActiveTab(tab)}
+          />
+        )}
       </main>
 
       <ReportExportModal
@@ -704,14 +714,14 @@ function BizPulseWorkspace() {
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#D9E2F0] py-5 text-center text-xs text-[#52627A] print:hidden">
+      <footer className="bg-white border-t border-[#111113]/10 py-5 text-center text-xs text-[#52525B] print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             Relaunch BizPulse © 2026 • Executive Coaching &amp; Diagnostic OS
           </span>
           <div className="flex items-center gap-2">
             <span>Active Session:</span>
-            <strong className="text-[#0B1324]">{activeCase.profile.name}</strong>
+            <strong className="text-[#111113]">{activeCase.profile.name}</strong>
           </div>
         </div>
       </footer>

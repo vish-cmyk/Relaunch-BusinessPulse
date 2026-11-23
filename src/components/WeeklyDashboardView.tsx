@@ -118,30 +118,30 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Black-to-Blue Hero Banner */}
-      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
+      {/* Charcoal Hero Banner */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 border border-[#111113]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#1D4ED8] text-white">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#D97706] text-white">
                 Weekly Operating Rhythm
               </span>
-              <span className="text-[#CBD5E1] text-xs font-medium">{businessName}</span>
+              <span className="text-[#D4D4D8] text-xs font-medium">{businessName}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Monday 9:00 AM Management Scoreboard
             </h2>
-            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed">
+            <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed">
               Six practical vital signs reviewed in 45 minutes every Monday morning to replace guesswork with calm, factual control.
             </p>
           </div>
 
-          <div className="bg-white/10 border border-white/15 rounded-xl p-4 min-w-[230px] text-center shrink-0">
-            <span className="text-[11px] text-[#93C5FD] uppercase tracking-wider font-bold block">
+          <div className="bg-white/5 border border-white/15 rounded p-4 min-w-[230px] text-center shrink-0">
+            <span className="text-[11px] text-[#FBBF24] uppercase tracking-wider font-bold block">
               Weekly Cadence
             </span>
-            <div className="text-xl font-extrabold text-white mt-1">Every Monday</div>
-            <div className="text-xs text-[#CBD5E1] font-mono mt-0.5">
+            <div className="text-xl font-bold text-white mt-1">Every Monday</div>
+            <div className="text-xs text-[#D4D4D8] font-mono mt-0.5">
               9:00 AM – 9:45 AM (45 Mins)
             </div>
           </div>
@@ -149,8 +149,8 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
       </div>
 
       {!isDemo && !fin && (
-        <div className="p-4 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#0B1324] flex items-start gap-2.5">
-          <Info className="w-4 h-4 text-[#1D4ED8] shrink-0 mt-0.5" />
+        <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#111113] flex items-start gap-2.5">
+          <Info className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
           <span>
             Metrics below reflect your actual ratings and any numbers entered for <strong>{businessName}</strong>. Missing accounting figures are shown as &ldquo;Not supplied yet&rdquo; rather than fabricated defaults.
           </span>
@@ -166,38 +166,38 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
           return (
             <div
               key={kpi.id}
-              className="bg-white border border-[#D9E2F0] rounded-2xl p-6 shadow-xs flex flex-col justify-between transition-all hover:border-[#93C5FD]"
+              className="bg-white border border-[#111113]/12 rounded p-6 flex flex-col justify-between transition-all hover:border-[#D97706]"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#0B1324] px-2.5 py-0.5 rounded bg-[#F3F6FB] border border-[#D9E2F0] font-mono">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#111113] px-2.5 py-0.5 rounded bg-[#F8F7F4] border border-[#111113]/15 font-mono">
                     {kpi.area}
                   </span>
-                  <span className="text-[11px] font-semibold text-[#1D4ED8] bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#BFDBFE]">
+                  <span className="text-[11px] font-semibold text-[#B45309] bg-[#FFFBEB] px-2 py-0.5 rounded border border-[#FDE68A]">
                     {kpi.accountableRole}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-[#0B1324] text-base leading-snug">
+                  <h3 className="font-bold text-[#111113] text-base leading-snug">
                     {index + 1}. {kpi.name}
                   </h3>
-                  <p className="text-xs text-[#52627A] mt-1 leading-relaxed">{kpi.explanation}</p>
+                  <p className="text-xs text-[#52525B] mt-1 leading-relaxed">{kpi.explanation}</p>
                 </div>
 
                 <div
-                  className={`p-3.5 rounded-xl border space-y-1 ${
+                  className={`p-3.5 rounded border space-y-1 ${
                     isAlert
                       ? 'bg-[#FEF2F2] border-[#FECACA]'
-                      : 'bg-[#F3F6FB] border-[#D9E2F0]'
+                      : 'bg-[#F8F7F4] border-[#111113]/12'
                   }`}
                 >
-                  <span className="text-[10px] font-bold text-[#52627A] block uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-[#52525B] block uppercase tracking-wider">
                     Current Reported Position
                   </span>
                   <div
-                    className={`text-base sm:text-lg font-extrabold font-mono tabular-nums ${
-                      isAlert ? 'text-[#B91C1C]' : 'text-[#0B1324]'
+                    className={`text-base sm:text-lg font-bold font-mono tabular-nums ${
+                      isAlert ? 'text-[#B91C1C]' : 'text-[#111113]'
                     }`}
                   >
                     {kpi.currentReportedValue}
@@ -205,27 +205,27 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-3 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0]">
+                  <div className="p-3 rounded bg-[#ECFDF5] border border-[#A7F3D0]">
                     <span className="text-[#15803D] font-bold block mb-1 uppercase tracking-wider text-[10px]">
                       Healthy Target
                     </span>
-                    <span className="text-[#0B1324] font-medium text-[11px] block">
+                    <span className="text-[#111113] font-medium text-[11px] block">
                       {kpi.targetBenchmark}
                     </span>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA]">
+                  <div className="p-3 rounded bg-[#FEF2F2] border border-[#FECACA]">
                     <span className="text-[#B91C1C] font-bold block mb-1 uppercase tracking-wider text-[10px]">
                       Redline Alert
                     </span>
-                    <span className="text-[#0B1324] font-medium text-[11px] block">
+                    <span className="text-[#111113] font-medium text-[11px] block">
                       {kpi.criticalThreshold}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-[#E8EEF7] text-xs text-[#52627A] leading-relaxed">
-                <strong className="text-[#0B1324] font-semibold">Review Basis: </strong>
+              <div className="mt-5 pt-3 border-t border-[#111113]/10 text-xs text-[#52525B] leading-relaxed">
+                <strong className="text-[#111113] font-semibold">Review Basis: </strong>
                 {kpi.criteriaExplanation}
               </div>
             </div>
@@ -234,34 +234,34 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
       </div>
 
       {/* 45-Minute Monday Meeting Protocol */}
-      <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs">
-        <h3 className="text-lg font-bold text-[#0B1324] mb-4 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-[#1D4ED8]" />
+      <div className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8">
+        <h3 className="text-lg font-bold text-[#111113] mb-4 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-[#D97706]" />
           <span>45-Minute Monday Meeting Protocol</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-          <div className="p-5 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] space-y-2">
+          <div className="p-5 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-2">
             <span className="font-bold text-[#B45309] text-sm block">
               1. Minutes 0–15: Cash &amp; Debtors
             </span>
-            <p className="text-[#52627A] leading-relaxed">
+            <p className="text-[#52525B] leading-relaxed">
               Check bank balance, facility headroom, and overdue invoices past terms. Confirm collection calls and follow-up dates.
             </p>
           </div>
-          <div className="p-5 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] space-y-2">
-            <span className="font-bold text-[#1D4ED8] text-sm block">
+          <div className="p-5 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-2">
+            <span className="font-bold text-[#111113] text-sm block">
               2. Minutes 15–30: Delivery &amp; Clients
             </span>
-            <p className="text-[#52627A] leading-relaxed">
+            <p className="text-[#52525B] leading-relaxed">
               Review key customer status, overdue jobs or tickets, and senior staff capacity protection.
             </p>
           </div>
-          <div className="p-5 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] space-y-2">
+          <div className="p-5 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-2">
             <span className="font-bold text-[#15803D] text-sm block">
               3. Minutes 30–45: 3 Weekly Commitments
             </span>
-            <p className="text-[#52627A] leading-relaxed">
+            <p className="text-[#52525B] leading-relaxed">
               Assign 3 clear non-negotiable actions with accountable owners and Friday completion check-ins.
             </p>
           </div>

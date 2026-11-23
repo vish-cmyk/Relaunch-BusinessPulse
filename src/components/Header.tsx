@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   Users,
   Crown,
+  Compass,
 } from 'lucide-react';
 import { BusinessProfile, OverallHealthAssessment, SubscriptionTier } from '../types/bizpulse';
 
@@ -56,13 +57,14 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'roadmap', label: 'Action Plan', icon: Calendar },
     { id: 'dashboard', label: 'Scoreboard', icon: TrendingUp },
     { id: 'aicoach', label: 'AI Coach', icon: Bot },
+    { id: 'growthroadmap', label: 'Growth Roadmap', icon: Compass },
   ];
 
   const getHealthBadgeStyle = (score: number | null) => {
-    if (score === null) return 'bg-white/10 text-[#CBD5E1] border-white/15';
-    if (score >= 72) return 'bg-[#15803D]/25 text-[#86EFAC] border-[#15803D]/50';
-    if (score >= 45) return 'bg-[#B45309]/25 text-[#FCD34D] border-[#D97706]/50';
-    return 'bg-[#B91C1C]/30 text-[#FCA5A5] border-[#EF4444]/50';
+    if (score === null) return 'bg-[#F8F7F4] text-[#52525B] border-[#111113]/15';
+    if (score >= 72) return 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]';
+    if (score >= 45) return 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]';
+    return 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]';
   };
 
   const tierLabel =
@@ -70,32 +72,29 @@ export const Header: React.FC<HeaderProps> = ({
       ? 'Founding Member'
       : subscriptionTier === 'essential_monthly' || isUnlocked
       ? 'Essential Monthly'
-      : 'Plans & Membership';
+      : 'Plans';
 
   return (
-    <header className="sticky top-0 z-40 shadow-sm print:hidden">
-      {/* Top Black-to-Blue Executive Header Bar */}
-      <div className="bizpulse-bar-gradient text-white border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
-          {/* Brand & Active Client Context */}
+    <header className="sticky top-0 z-40 bg-white print:hidden">
+      {/* Top Architectural Header Bar (Variation 1) */}
+      <div className="bg-white text-[#111113] border-b border-[#111113]/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+          {/* Brand Lockup */}
           <div className="flex items-center space-x-3.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#1D4ED8] flex items-center justify-center shadow-sm text-white font-extrabold text-lg shrink-0 border border-white/20">
+            <div className="w-9 h-9 rounded bg-[#111113] flex items-center justify-center text-white font-bold text-base shrink-0 border-b-2 border-[#D97706]">
               BP
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-base sm:text-lg text-white tracking-tight whitespace-nowrap">
-                  Relaunch BizPulse
+              <div className="flex items-center gap-2.5">
+                <span className="font-bold text-base sm:text-lg text-[#111113] tracking-tight whitespace-nowrap" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  RELAUNCH BIZPULSE <span className="font-light text-[#111113]/45">OS</span>
                 </span>
-                <span className="hidden md:inline-block text-[11px] px-2 py-0.5 rounded font-semibold bg-white/10 text-[#93C5FD] border border-white/15 whitespace-nowrap">
-                  Executive Coaching &amp; Diagnostic OS
-                </span>
-                <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded font-medium bg-white/5 text-[#CBD5E1] border border-white/10 whitespace-nowrap">
-                  {activeProfile.industry} · {activeProfile.currency}
+                <span className="hidden md:inline-block text-[11px] text-[#52525B] whitespace-nowrap">
+                  · {activeProfile.industry} · {activeProfile.currency}
                 </span>
               </div>
-              <p className="text-xs text-[#CBD5E1] mt-0.5 truncate max-w-xl">
-                Active Business: <strong className="text-white">{activeProfile.name || 'Unnamed Business'}</strong>
+              <p className="text-xs text-[#52525B] mt-0.5 truncate max-w-xl">
+                Active Business: <strong className="text-[#111113]">{activeProfile.name || 'Unnamed Business'}</strong>
                 {activeProfile.primaryObjective ? ` · Goal: ${activeProfile.primaryObjective}` : ''}
               </p>
             </div>
@@ -103,12 +102,11 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Executive Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Compact Health Score Summary */}
             {overallHealth && (
               <button
                 type="button"
                 onClick={() => setActiveTab('health')}
-                className={`hidden xl:flex items-center space-x-2 px-3 py-1.5 rounded-lg border text-xs whitespace-nowrap shrink-0 transition hover:opacity-90 ${getHealthBadgeStyle(overallHealth.overallScore)}`}
+                className={`hidden xl:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs whitespace-nowrap shrink-0 transition hover:opacity-90 ${getHealthBadgeStyle(overallHealth.overallScore)}`}
                 title="View Business Health Breakdown"
               >
                 <span className="opacity-80 font-medium">Health:</span>
@@ -120,45 +118,41 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Membership / Plans Trigger */}
             {onOpenCheckoutModal && (
               <button
                 type="button"
                 onClick={onOpenCheckoutModal}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white border border-white/20 text-xs font-semibold transition whitespace-nowrap shrink-0"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] border border-[#111113]/15 text-xs font-semibold transition whitespace-nowrap shrink-0"
                 title="View Two-Tier Monthly Plans & Founding Membership"
               >
-                <Crown className="w-3.5 h-3.5 text-[#93C5FD]" />
+                <Crown className="w-3.5 h-3.5 text-[#D97706]" />
                 <span>{tierLabel}</span>
               </button>
             )}
 
-            {/* Export Report Trigger */}
             <button
               type="button"
               onClick={onOpenExportModal}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap shrink-0"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] text-xs font-semibold border border-[#111113]/15 transition whitespace-nowrap shrink-0"
               title="Download PDF, Word (.docx), PowerPoint (.pptx), or Scorecard (.csv)"
             >
-              <Download className="w-3.5 h-3.5 text-[#CBD5E1]" />
+              <Download className="w-3.5 h-3.5 text-[#52525B]" />
               <span className="hidden sm:inline">Reports</span>
             </button>
 
-            {/* Consult AI Coach Action */}
             <button
               type="button"
               onClick={onOpenCoachModal}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#1D4ED8] hover:bg-[#2563EB] text-white text-xs font-bold shadow-sm transition whitespace-nowrap shrink-0 border border-white/15"
+              className="flex items-center space-x-1.5 px-4 py-1.5 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
               <span>Consult Coach</span>
             </button>
 
-            {/* Signed-In User & Sign Out */}
             {userEmail && onSignOut && (
-              <div className="flex items-center pl-2 ml-0.5 border-l border-white/15 space-x-2 shrink-0">
+              <div className="flex items-center pl-2 ml-0.5 border-l border-[#111113]/10 space-x-2 shrink-0">
                 <span
-                  className="hidden 2xl:inline-block max-w-[140px] truncate text-[11px] text-[#CBD5E1] font-medium"
+                  className="hidden 2xl:inline-block max-w-[140px] truncate text-[11px] text-[#52525B] font-medium"
                   title={userEmail}
                 >
                   {userEmail}
@@ -166,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   type="button"
                   onClick={onSignOut}
-                  className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-[#B91C1C]/40 text-[#CBD5E1] hover:text-white text-xs font-medium border border-white/15 transition whitespace-nowrap shrink-0"
+                  className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-white hover:bg-[#FEF2F2] text-[#52525B] hover:text-[#B91C1C] text-xs font-medium border border-[#111113]/12 transition whitespace-nowrap shrink-0"
                   title="Sign out of workspace"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -178,10 +172,10 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Crisp White Sub-Navigation Tab Strip */}
-      <div className="bg-white border-b border-[#D9E2F0]">
+      {/* Variation 1 Clean Underline Navigation Bar */}
+      <div className="bg-[#F8F7F4] border-b border-[#111113]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center space-x-1 overflow-x-auto py-2 scrollbar-none" aria-label="Workspace navigation">
+          <nav className="flex items-center space-x-5 overflow-x-auto scrollbar-none" aria-label="Workspace navigation">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -190,13 +184,13 @@ export const Header: React.FC<HeaderProps> = ({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs rounded-lg whitespace-nowrap shrink-0 transition-all ${
+                  className={`flex items-center space-x-1.5 py-2.5 text-xs whitespace-nowrap shrink-0 border-b-2 transition-colors ${
                     isActive
-                      ? 'bg-[#0F172A] text-white font-bold shadow-xs'
-                      : 'text-[#52627A] hover:text-[#0B1324] hover:bg-[#F3F6FB] font-medium'
+                      ? 'border-[#D97706] text-[#111113] font-bold'
+                      : 'border-transparent text-[#111113]/65 hover:text-[#111113] font-medium'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#93C5FD]' : 'text-[#52627A]'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#D97706]' : 'text-[#111113]/55'}`} />
                   <span>{tab.label}</span>
                 </button>
               );

@@ -1,22 +1,26 @@
 @import "tailwindcss";
 
-@theme {
-  /* Black-to-Blue Executive SME Coaching Identity */
-  --color-canvas: #F3F6FB;
-  --color-panel: #FFFFFF;
-  --color-obsidian: #070B14;
-  --color-midnight: #0F172A;
-  --color-sapphire: #172554;
-  --color-cobalt: #1D4ED8;
-  --color-cobalt-hover: #1E40AF;
-  --color-cobalt-soft: #EFF6FF;
-  --color-sky-accent: #2563EB;
-  --color-ink: #0B1324;
-  --color-slate-muted: #52627A;
-  --color-border-soft: #D9E2F0;
-  --color-border-subtle: #E8EEF7;
+:root {
+  --bg: #F8F7F4;
+  --ink: #111113;
+  --accent: #D97706;
+  --border: rgba(17, 17, 19, 0.1);
+}
 
-  /* Semantic Health State Tokens (Distinct — Never All Blue) */
+@theme {
+  /* Variation 1 Architectural Palette */
+  --color-canvas: #F8F7F4;
+  --color-panel: #FFFFFF;
+  --color-obsidian: #111113;
+  --color-midnight: #18181B;
+  --color-amber-accent: #D97706;
+  --color-amber-hover: #B45309;
+  --color-ink: #111113;
+  --color-slate-muted: #52525B;
+  --color-border-soft: rgba(17, 17, 19, 0.12);
+  --color-border-subtle: rgba(17, 17, 19, 0.08);
+
+  /* Semantic Health State Tokens (Distinct — Never Collapsed) */
   --color-status-green-text: #15803D;
   --color-status-green-bg: #ECFDF5;
   --color-status-green-border: #A7F3D0;
@@ -36,14 +40,16 @@
 
 @layer base {
   body {
-    background-color: #F3F6FB;
-    color: #0B1324;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F8F7F4;
+    color: #111113;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3 {
+  h1, h2, h3, h4 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.03em;
     text-wrap: balance;
   }
 
@@ -56,17 +62,21 @@
   }
 }
 
-/* Custom Black-to-Blue Executive Surfaces */
+/* Variation 1 Architectural Surfaces */
 .bizpulse-hero-gradient {
-  background: linear-gradient(135deg, #070B14 0%, #0F172A 48%, #1E3A8A 100%);
+  background: linear-gradient(135deg, #111113 0%, #1C1C21 75%, #27231F 100%);
 }
 
 .bizpulse-bar-gradient {
-  background: linear-gradient(90deg, #070B14 0%, #0D1629 55%, #172554 100%);
+  background-color: #FFFFFF;
 }
 
-.bizpulse-cta-blue {
-  background: linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%);
+.bizpulse-label {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(17, 17, 19, 0.6);
 }
 
 /* Custom Scrollbar */
@@ -75,14 +85,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F3F6FB;
+  background: #F8F7F4;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 9999px;
+  background: rgba(17, 17, 19, 0.2);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748B;
+  background: rgba(17, 17, 19, 0.4);
 }
 
 @media print {

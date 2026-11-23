@@ -5,8 +5,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import Stripe from 'stripe';
-import JSZip from 'jszip';
-import * as XLSX from 'xlsx';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -158,6 +156,7 @@ async function extractDocumentContent(fileName: string, mimeType: string, base64
   }
 
   if (ext === '.docx') {
+    const { default: JSZip } = await import('jszip');
     const zip = await JSZip.loadAsync(buffer);
     const docXml = await zip.file('word/document.xml')?.async('string');
     if (!docXml) {
@@ -178,6 +177,7 @@ async function extractDocumentContent(fileName: string, mimeType: string, base64
   }
 
   if (ext === '.xlsx' || ext === '.xls') {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetsText: string[] = [];
     for (const sheetName of workbook.SheetNames.slice(0, 6)) {
@@ -198,8 +198,12 @@ async function extractDocumentContent(fileName: string, mimeType: string, base64
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
   const isProduction = process.env.NODE_ENV === 'production';
+  const envPort = Number(process.env.PORT);
+  const defaultAppPort = Number(process.env.DEFAULT_APP_PORT) || 3000;
+  const PORT = isProduction
+    ? (envPort || 3000)
+    : (envPort && envPort !== 8080 ? envPort : defaultAppPort);
 
   app.use(
     express.json({
@@ -210,15 +214,21 @@ async function startServer() {
     })
   );
 
-  // Server-side Gemini Client with required telemetry header
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
+  // Lazy server-side Gemini Client with required telemetry header
+  let aiClient: GoogleGenAI | null = null;
+  function getAiClient(): GoogleGenAI {
+    if (!aiClient) {
+      aiClient = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+    }
+    return aiClient;
+  }
 
   // Stripe Client Initialization
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -262,6 +272,7 @@ async function startServer() {
     delete cleanConfig.topK;
     delete cleanConfig.candidateCount;
 
+    const ai = getAiClient();
     let lastError: any;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
@@ -901,15 +912,44 @@ Include:
     }
   });
 
+  app.get('/api/health', (_req, res) => {
+    res.status(200).json({ ok: true });
+  });
+
   if (!isProduction) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
+    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
+    let viteMiddleware: express.RequestHandler | null = null;
+    const viteReadyPromise = createViteServer({
+      server: {
+        middlewareMode: true,
+        allowedHosts: true,
+        hmr: !isHmrDisabled,
+        ws: isHmrDisabled ? false : undefined,
+      },
       appType: 'spa',
+    })
+      .then((vite) => {
+        viteMiddleware = vite.middlewares;
+        return vite;
+      })
+      .catch((err) => {
+        console.error('Vite middleware initialization failed:', err);
+        throw err;
+      });
+
+    app.use(async (req, res, next) => {
+      try {
+        if (!viteMiddleware) {
+          await viteReadyPromise;
+        }
+        return viteMiddleware!(req, res, next);
+      } catch (err) {
+        next(err);
+      }
     });
-    app.use(vite.middlewares);
   } else {
     app.use(express.static(path.resolve(__dirname, 'dist')));
-    app.get('*', (req, res) => {
+    app.get('*', (_req, res) => {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   }

@@ -14,8 +14,20 @@ import {
   AlignmentType,
 } from 'docx';
 import { jsPDF } from 'jspdf';
-import { CaseRecord, HealthDimensionInput, HealthStatus } from '../types/bizpulse';
+import { CaseRecord, HealthDimensionInput, HealthStatus, ReportFontFamily } from '../types/bizpulse';
 import { calculateOverallHealth, HEALTH_DIMENSION_ORDER } from './healthScoring';
+
+function resolvePdfFont(font: ReportFontFamily = 'sans'): 'helvetica' | 'times' | 'courier' {
+  if (font === 'serif') return 'times';
+  if (font === 'mono') return 'courier';
+  return 'helvetica';
+}
+
+function resolveDocxFont(font: ReportFontFamily = 'sans'): string {
+  if (font === 'serif') return 'Georgia';
+  if (font === 'mono') return 'Consolas';
+  return 'Calibri';
+}
 
 function formatStatusLabel(status: HealthStatus): string {
   switch (status) {
@@ -240,7 +252,16 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
   });
 
   const computedHealth = rawCase.overallHealth || calculateOverallHealth(rawCase.healthInputs, rawCase.financials);
-  const { profile, healthInputs, recommendations, financials, uploadedDocuments = [] } = rawCase;
+  const {
+    profile,
+    healthInputs,
+    recommendations,
+    financials,
+    uploadedDocuments = [],
+    reportBlocks = [],
+    reportEditorSettings,
+  } = rawCase;
+  const pdfFont = resolvePdfFont(reportEditorSettings?.fontFamily);
 
   const pageWidth = doc.internal.pageSize.getWidth(); // ~595.28
   const pageHeight = doc.internal.pageSize.getHeight(); // ~841.89
@@ -317,21 +338,33 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
 
   const drawWrappedParagraph = (
     text: string,
-    opts?: { fontSize?: number; bold?: boolean; color?: [number, number, number]; indent?: number; lineHeight?: number; gapAfter?: number }
+    opts?: {
+      fontSize?: number;
+      bold?: boolean;
+      italic?: boolean;
+      font?: 'helvetica' | 'times' | 'courier';
+      align?: 'left' | 'center' | 'justify';
+      color?: [number, number, number];
+      indent?: number;
+      lineHeight?: number;
+      gapAfter?: number;
+    }
   ) => {
     const fontSize = opts?.fontSize ?? 9;
     const indent = opts?.indent ?? 0;
     const lineHeight = opts?.lineHeight ?? fontSize * 1.38;
     const gapAfter = opts?.gapAfter ?? 6;
-    doc.setFont('helvetica', opts?.bold ? 'bold' : 'normal');
+    const fontStyle = opts?.bold && opts?.italic ? 'bolditalic' : opts?.bold ? 'bold' : opts?.italic ? 'italic' : 'normal';
+    doc.setFont(opts?.font || pdfFont, fontStyle);
     doc.setFontSize(fontSize);
     const [r, g, b] = opts?.color ?? [30, 41, 59];
     doc.setTextColor(r, g, b);
 
     const lines: string[] = doc.splitTextToSize(String(text || ''), contentWidth - indent);
+    const xPos = opts?.align === 'center' ? pageWidth / 2 : margin + indent;
     for (const line of lines) {
       ensureSpace(lineHeight + 2);
-      doc.text(line, margin + indent, y);
+      doc.text(line, xPos, y, opts?.align === 'center' ? { align: 'center' } : undefined);
       y += lineHeight;
     }
     y += gapAfter;
@@ -710,6 +743,40 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     });
   }
 
+  if (reportBlocks.length > 0) {
+    const baseNum = uploadedDocuments.length > 0 ? Number(recSectionNum) + 2 : Number(recSectionNum) + 1;
+    drawSectionHeading(String(baseNum), 'Custom Commentary & Owner Paragraphs');
+    reportBlocks.forEach((blk) => {
+      const blkPdfFont = resolvePdfFont(blk.fontFamily);
+      const blkFontSize = blk.fontSize === 'sm' ? 8.5 : blk.fontSize === 'lg' ? 11 : 9.5;
+      const accentRgb: [number, number, number] =
+        blk.accent === 'blue'
+          ? [29, 78, 216]
+          : blk.accent === 'green'
+          ? [21, 128, 61]
+          : blk.accent === 'amber'
+          ? [180, 83, 9]
+          : [15, 23, 42];
+      drawWrappedParagraph(blk.heading, {
+        font: blkPdfFont,
+        fontSize: blkFontSize + 0.5,
+        bold: true,
+        color: accentRgb,
+        align: blk.align || 'left',
+        gapAfter: 2,
+      });
+      drawWrappedParagraph(blk.body, {
+        font: blkPdfFont,
+        fontSize: blkFontSize,
+        bold: blk.bold,
+        italic: blk.italic,
+        align: blk.align || 'left',
+        indent: blk.align === 'center' ? 0 : 8,
+        gapAfter: 7,
+      });
+    });
+  }
+
   // Running Footers across all pages
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
@@ -740,7 +807,16 @@ export async function generateDocxReportUint8Array(
   chartPngBytes?: Uint8Array | null
 ): Promise<Uint8Array> {
   const computedHealth = rawCase.overallHealth || calculateOverallHealth(rawCase.healthInputs, rawCase.financials);
-  const { profile, healthInputs, recommendations, financials, uploadedDocuments = [] } = rawCase;
+  const {
+    profile,
+    healthInputs,
+    recommendations,
+    financials,
+    uploadedDocuments = [],
+    reportBlocks = [],
+    reportEditorSettings,
+  } = rawCase;
+  const docxDefaultFont = resolveDocxFont(reportEditorSettings?.fontFamily);
 
   const borderStyle = {
     style: BorderStyle.SINGLE,
@@ -1119,6 +1195,65 @@ export async function generateDocxReportUint8Array(
     });
   }
 
+  if (reportBlocks.length > 0) {
+    const customSecNum = uploadedDocuments.length > 0 ? 6 : 5;
+    sectionsChildren.push(
+      new Paragraph({
+        text: `${customSecNum}. Custom Commentary & Owner Paragraphs`,
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 240, after: 80 },
+      })
+    );
+    reportBlocks.forEach((blk) => {
+      const blkFont = resolveDocxFont(blk.fontFamily);
+      const blkSizeHalfPt = blk.fontSize === 'sm' ? 18 : blk.fontSize === 'lg' ? 24 : 20;
+      const alignMap =
+        blk.align === 'center'
+          ? AlignmentType.CENTER
+          : blk.align === 'justify'
+          ? AlignmentType.BOTH
+          : AlignmentType.LEFT;
+      const accentHex =
+        blk.accent === 'blue'
+          ? '1D4ED8'
+          : blk.accent === 'green'
+          ? '15803D'
+          : blk.accent === 'amber'
+          ? 'B45309'
+          : '0F172A';
+
+      sectionsChildren.push(
+        new Paragraph({
+          alignment: alignMap,
+          children: [
+            new TextRun({
+              text: blk.heading,
+              bold: true,
+              font: blkFont,
+              size: blkSizeHalfPt + 2,
+              color: accentHex,
+            }),
+          ],
+          spacing: { before: 120, after: 40 },
+        }),
+        new Paragraph({
+          alignment: alignMap,
+          children: [
+            new TextRun({
+              text: blk.body,
+              bold: Boolean(blk.bold),
+              italics: Boolean(blk.italic),
+              font: blkFont,
+              size: blkSizeHalfPt,
+              color: '1E293B',
+            }),
+          ],
+          spacing: { after: 140 },
+        })
+      );
+    });
+  }
+
   sectionsChildren.push(
     new Paragraph({
       children: [
@@ -1134,6 +1269,15 @@ export async function generateDocxReportUint8Array(
   );
 
   const wordDoc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: docxDefaultFont,
+          },
+        },
+      },
+    },
     sections: [
       {
         properties: {

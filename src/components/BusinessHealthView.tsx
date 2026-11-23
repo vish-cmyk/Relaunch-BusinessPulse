@@ -191,7 +191,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
               cy={center}
               r={radius * level}
               fill="none"
-              stroke="#CBD5E1"
+              stroke="rgba(17, 17, 19, 0.14)"
               strokeDasharray={level < 1 ? '2 3' : 'none'}
               strokeWidth="1"
             />
@@ -208,7 +208,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                 y1={center}
                 x2={x2}
                 y2={y2}
-                stroke="#CBD5E1"
+                stroke="rgba(17, 17, 19, 0.14)"
                 strokeWidth="1"
               />
             );
@@ -216,8 +216,8 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
           <polygon
             points={polygonPoints}
-            fill="rgba(29, 78, 216, 0.16)"
-            stroke="#1D4ED8"
+            fill="rgba(217, 119, 6, 0.15)"
+            stroke="#D97706"
             strokeWidth="2"
           />
 
@@ -242,7 +242,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                   x={lx}
                   y={ly + 3}
                   textAnchor="middle"
-                  className="text-[10px] font-bold fill-[#0B1324]"
+                  className="text-[10px] font-bold fill-[#111113]"
                 >
                   {SHORT_LABELS[p.key]}
                 </text>
@@ -260,22 +260,22 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Black-to-Blue Hero Header Card */}
-      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
+      {/* Architectural Charcoal Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#111113]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#1D4ED8] text-white">
-                Step 2: 8-Dimension Business Health Check
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="bizpulse-label text-[#FBBF24]">
+                [02] 8-Dimension Diagnostic
               </span>
-              <span className="text-[#CBD5E1] text-xs font-medium">
+              <span className="text-[#A1A1AA] text-xs font-medium">
                 {profile.name || 'Active Business'} · {profile.industry}
               </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Business Health Assessment
             </h2>
-            <p className="text-sm text-[#CBD5E1] max-w-2xl leading-relaxed">
+            <p className="text-sm text-[#D4D4D8] max-w-2xl leading-relaxed">
               Rate every dimension honestly using your current evidence. Healthy (100), Needs Attention (55), At Risk (15), or Not Sure (40) immediately updates your overall score, semantic risk indicators, and coaching priorities.
             </p>
           </div>
@@ -284,15 +284,15 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             <button
               type="button"
               onClick={onRecalculateOverall}
-              className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition"
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-[#93C5FD]" />
+              <RefreshCw className="w-3.5 h-3.5 text-[#FBBF24]" />
               <span>Recalculate Score</span>
             </button>
             <button
               type="button"
               onClick={onProceedToRecommendations}
-              className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#2563EB] text-white text-xs font-bold shadow-sm transition border border-white/15"
+              className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-semibold uppercase tracking-wider shadow-sm transition whitespace-nowrap"
             >
               <span>Generate Coaching Plan</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -301,14 +301,14 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
         </div>
 
         {/* Completion Progress Bar */}
-        <div className="mt-6 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 text-xs text-[#CBD5E1]">
+        <div className="mt-6 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 text-xs text-[#D4D4D8]">
           <span>
             Completion Status:{' '}
             <strong className="text-white tabular-nums">{answeredCount} of 8 Dimensions Rated</strong>
           </span>
-          <div className="w-56 bg-white/10 rounded-full h-2.5 overflow-hidden border border-white/15">
+          <div className="w-56 bg-white/10 rounded-full h-2 overflow-hidden border border-white/15">
             <div
-              className="bg-[#60A5FA] h-full rounded-full transition-all duration-300"
+              className="bg-[#D97706] h-full rounded-full transition-all duration-300"
               style={{ width: `${(answeredCount / 8) * 100}%` }}
             />
           </div>
@@ -317,22 +317,22 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
       {/* OVERALL BUSINESS HEALTH SUMMARY + RADAR + BAR CHART */}
       {overallHealth && (
-        <div className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E8EEF7]">
+        <div className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#111113]/10">
             <div className="space-y-2 max-w-2xl">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-[#1D4ED8]" />
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D97706] flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-[#D97706]" />
                 Overall Health Summary
               </span>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-[#0B1324]">
+              <h3 className="text-xl sm:text-2xl font-bold text-[#111113]">
                 {overallHealth.scoreLabel}
               </h3>
-              <p className="text-xs sm:text-sm text-[#52627A] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">
                 {overallHealth.overallExplanation}
               </p>
-              <p className="text-xs text-[#52627A]">
-                Assessed: <strong className="text-[#0B1324]">{overallHealth.assessmentDate}</strong> ·
-                Rated: <strong className="text-[#0B1324] tabular-nums">{overallHealth.answeredCount}/8</strong> ·{' '}
+              <p className="text-xs text-[#52525B]">
+                Assessed: <strong className="text-[#111113]">{overallHealth.assessmentDate}</strong> ·
+                Rated: <strong className="text-[#111113] tabular-nums">{overallHealth.answeredCount}/8</strong> ·{' '}
                 {overallHealth.isProvisional
                   ? 'Provisional (incomplete data or Not Sure responses present)'
                   : 'Confirmed Full 8-Dimension Assessment'}
@@ -340,18 +340,18 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             </div>
 
             {/* Numeric Score Card */}
-            <div className="bg-[#F3F6FB] px-7 py-5 rounded-2xl border border-[#D9E2F0] text-center min-w-[180px] shrink-0">
-              <span className="text-[11px] text-[#52627A] uppercase tracking-wider font-bold block">
+            <div className="bg-[#F8F7F4] px-7 py-5 rounded border border-[#111113]/12 text-center min-w-[180px] shrink-0">
+              <span className="text-[11px] font-mono text-[#52525B] uppercase tracking-wider font-bold block">
                 Overall Health Score
               </span>
               <div
-                className={`text-4xl font-extrabold mt-1 font-mono tabular-nums ${getScoreTextColor(
+                className={`text-4xl font-bold mt-1 font-mono tabular-nums ${getScoreTextColor(
                   overallHealth.overallScore
                 )}`}
               >
                 {overallHealth.overallScore !== null ? overallHealth.overallScore : '—'}
                 {overallHealth.overallScore !== null && (
-                  <span className="text-xs font-normal text-[#52627A]"> /100</span>
+                  <span className="text-xs font-normal text-[#52525B]"> /100</span>
                 )}
               </div>
               <span
@@ -367,12 +367,12 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
           {/* Radar Chart + Semantic Bar Comparison */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Radar */}
-            <div className="bg-[#F8FAFC] rounded-2xl border border-[#E8EEF7] p-5 flex flex-col items-center justify-between">
+            <div className="bg-[#F8F7F4] rounded border border-[#111113]/10 p-5 flex flex-col items-center justify-between">
               <div className="w-full flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-[#0B1324] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#111113] uppercase tracking-wider">
                   8-Dimension Balance Map
                 </span>
-                <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-[#52627A]">
+                <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-[#52525B]">
                   <span className="flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#15803D]" /> Healthy
                   </span>
@@ -391,13 +391,13 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             </div>
 
             {/* Horizontal Dimension Score Bars */}
-            <div className="bg-[#F8FAFC] rounded-2xl border border-[#E8EEF7] p-5 space-y-3">
+            <div className="bg-[#F8F7F4] rounded border border-[#111113]/10 p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0B1324] uppercase tracking-wider flex items-center gap-1.5">
-                  <BarChart2 className="w-4 h-4 text-[#1D4ED8]" />
+                <span className="text-xs font-bold text-[#111113] uppercase tracking-wider flex items-center gap-1.5">
+                  <BarChart2 className="w-4 h-4 text-[#D97706]" />
                   Dimension Score Comparison
                 </span>
-                <span className="text-[11px] text-[#52627A] tabular-nums">Scale 0–100</span>
+                <span className="text-[11px] text-[#52525B] font-mono tabular-nums">Scale 0–100</span>
               </div>
 
               <div className="space-y-2.5 pt-1">
@@ -411,17 +411,17 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                   return (
                     <div key={key} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-[#0B1324] truncate pr-2">
+                        <span className="font-semibold text-[#111113] truncate pr-2">
                           {item.title}
                         </span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={`text-[11px] font-bold ${cfg.text}`}>{cfg.label}</span>
-                          <span className="font-mono font-bold text-[#0B1324] tabular-nums w-10 text-right">
+                          <span className="font-mono font-bold text-[#111113] tabular-nums w-10 text-right">
                             {dimScore === null ? '—' : `${dimScore}`}
                           </span>
                         </div>
                       </div>
-                      <div className="w-full h-2.5 bg-[#E2E8F0] rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-[#E5E5E5] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-300"
                           style={{
@@ -439,55 +439,55 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
           {/* Critical Risks, Strengths & Missing Evidence */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] space-y-1.5">
+            <div className="p-4 rounded bg-[#FEF2F2] border border-[#FECACA] space-y-1.5">
               <span className="font-bold text-[#B91C1C] uppercase tracking-wider flex items-center gap-1.5">
                 <AlertOctagon className="w-3.5 h-3.5" />
                 Urgent Risks &amp; Bottlenecks
               </span>
               {overallHealth.criticalRisksIdentified.length > 0 ? (
-                <ul className="space-y-1 text-[#0B1324]">
+                <ul className="space-y-1 text-[#111113]">
                   {overallHealth.criticalRisksIdentified.map((risk, i) => (
                     <li key={i}>• {risk}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-[#52627A]">No At-Risk dimensions flagged from current answers.</p>
+                <p className="text-[#52525B]">No At-Risk dimensions flagged from current answers.</p>
               )}
             </div>
 
-            <div className="p-4 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] space-y-1.5">
+            <div className="p-4 rounded bg-[#ECFDF5] border border-[#A7F3D0] space-y-1.5">
               <span className="font-bold text-[#15803D] uppercase tracking-wider block">
                 Core Strengths
               </span>
               {overallHealth.strongestAreas.length > 0 ? (
-                <ul className="space-y-1 text-[#0B1324]">
+                <ul className="space-y-1 text-[#111113]">
                   {overallHealth.strongestAreas.map((area, i) => (
                     <li key={i}>• {area}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-[#52627A]">Rate healthy pillars above to surface operational strengths.</p>
+                <p className="text-[#52525B]">Rate healthy pillars above to surface operational strengths.</p>
               )}
             </div>
 
-            <div className="p-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] space-y-1.5">
+            <div className="p-4 rounded bg-[#F1F5F9] border border-[#CBD5E1] space-y-1.5">
               <span className="font-bold text-[#475569] uppercase tracking-wider block">
                 Missing / Unverified Areas
               </span>
               {overallHealth.missingEvidenceAreas.length > 0 ? (
-                <ul className="space-y-1 text-[#0B1324]">
+                <ul className="space-y-1 text-[#111113]">
                   {overallHealth.missingEvidenceAreas.map((gap, i) => (
                     <li key={i}>• {gap}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-[#52627A]">All 8 dimensions have direct owner ratings.</p>
+                <p className="text-[#52525B]">All 8 dimensions have direct owner ratings.</p>
               )}
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] text-[11px] text-[#52627A]">
-            <strong className="text-[#0B1324]">Scoring Safeguards: </strong>
+          <div className="p-3.5 rounded bg-[#F8F7F4] border border-[#111113]/10 text-[11px] text-[#52525B]">
+            <strong className="text-[#111113]">Scoring Safeguards: </strong>
             {overallHealth.scoringWeightRules}
           </div>
         </div>
@@ -496,11 +496,11 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
       {/* THE EIGHT HEALTH DIMENSIONS INTERACTIVE CARDS */}
       <div className="space-y-3.5">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
-          <h3 className="text-base font-bold text-[#0B1324] flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#1D4ED8]" />
+          <h3 className="text-base font-bold text-[#111113] flex items-center gap-2">
+            <Layers className="w-4 h-4 text-[#D97706]" />
             <span>The Eight Commercial Health Dimensions</span>
           </h3>
-          <span className="text-xs text-[#52627A]">
+          <span className="text-xs text-[#52525B]">
             Select any parameter to update status, view score explanation, and enter evidence
           </span>
         </div>
@@ -516,10 +516,10 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
           return (
             <div
               key={key}
-              className={`rounded-2xl border transition-all ${
+              className={`rounded border transition-all ${
                 isExpanded
-                  ? 'bg-white border-[#1D4ED8]/50 shadow-sm'
-                  : 'bg-white border-[#D9E2F0] hover:border-[#93C5FD]'
+                  ? 'bg-white border-[#D97706] shadow-sm'
+                  : 'bg-white border-[#111113]/12 hover:border-[#111113]/30'
               }`}
             >
               {/* Header Bar */}
@@ -528,17 +528,17 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                 className="p-5 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none"
               >
                 <div className="flex items-center space-x-3.5 min-w-0 flex-1">
-                  <span className="w-7 h-7 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center shrink-0 tabular-nums">
+                  <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 tabular-nums">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <h4 className="font-bold text-[#0B1324] text-sm">{item.title}</h4>
-                    <p className="text-xs text-[#52627A] line-clamp-1">{item.description}</p>
+                    <h4 className="font-bold text-[#111113] text-sm">{item.title}</h4>
+                    <p className="text-xs text-[#52525B] line-clamp-1">{item.description}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2.5 shrink-0">
-                  <span className="font-mono font-bold text-xs text-[#0B1324] tabular-nums bg-[#F3F6FB] px-2.5 py-1 rounded-lg border border-[#D9E2F0]">
+                  <span className="font-mono font-bold text-xs text-[#111113] tabular-nums bg-[#F8F7F4] px-2.5 py-1 rounded border border-[#111113]/12">
                     {dimScore === null ? '— / 100' : `${dimScore} / 100`}
                   </span>
                   <span
@@ -548,19 +548,19 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                     <span>{statusConfig.label}</span>
                   </span>
                   {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-[#52627A]" />
+                    <ChevronUp className="w-4 h-4 text-[#52525B]" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-[#52627A]" />
+                    <ChevronDown className="w-4 h-4 text-[#52525B]" />
                   )}
                 </div>
               </div>
 
               {/* Expanded Edit Form */}
               {isExpanded && (
-                <div className="px-5 pb-5 pt-3 border-t border-[#E8EEF7] space-y-4">
+                <div className="px-5 pb-5 pt-3 border-t border-[#111113]/10 space-y-4">
                   {/* Plain-English Diagnostic Explanation */}
                   {detail && (
-                    <div className={`p-3.5 rounded-xl border text-xs leading-relaxed ${statusConfig.bg} ${statusConfig.border} text-[#0B1324]`}>
+                    <div className={`p-3.5 rounded border text-xs leading-relaxed ${statusConfig.bg} ${statusConfig.border} text-[#111113]`}>
                       <strong className={`${statusConfig.text} uppercase tracking-wider text-[11px] block mb-0.5`}>
                         Diagnostic Assessment ({statusConfig.label}):
                       </strong>
@@ -569,7 +569,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                   )}
 
                   <div>
-                    <label className="text-xs font-semibold text-[#0B1324] block mb-2">
+                    <label className="text-xs font-semibold text-[#111113] block mb-2">
                       Rate Current Business State for {item.title}:
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -584,14 +584,14 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                               key={st}
                               type="button"
                               onClick={() => handleStatusChange(key, st)}
-                              className={`p-3 rounded-xl border text-left flex items-center space-x-2 transition ${
+                              className={`p-3 rounded border text-left flex items-center space-x-2 transition ${
                                 isSelected
-                                  ? `${cfg.bg} ${cfg.activeBorder} ring-2 ring-[#1D4ED8]/20 ${cfg.text} font-bold shadow-2xs`
-                                  : 'bg-[#F8FAFC] border-[#D9E2F0] text-[#52627A] hover:text-[#0B1324] hover:bg-[#F3F6FB]'
+                                  ? `${cfg.bg} ${cfg.activeBorder} ring-1 ring-[#D97706]/30 ${cfg.text} font-bold shadow-2xs`
+                                  : 'bg-[#FCFCFC] border-[#111113]/12 text-[#52525B] hover:text-[#111113] hover:bg-[#F8F7F4]'
                               }`}
                             >
                               <StIcon
-                                className={`w-4 h-4 shrink-0 ${isSelected ? cfg.text : 'text-[#52627A]'}`}
+                                className={`w-4 h-4 shrink-0 ${isSelected ? cfg.text : 'text-[#52525B]'}`}
                               />
                               <span className="text-xs">{cfg.label}</span>
                             </button>
@@ -603,9 +603,9 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
                   {/* Written Explanation Note */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-[#0B1324] flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-[#111113] flex flex-wrap items-center justify-between gap-2">
                       <span>Owner&apos;s Evidence &amp; Notes:</span>
-                      <span className="text-[11px] text-[#52627A]">
+                      <span className="text-[11px] text-[#52525B]">
                         Included in coaching analysis &amp; downloadable reports
                       </span>
                     </label>
@@ -614,7 +614,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                       value={item.notes}
                       onChange={(e) => handleNotesChange(key, e.target.value)}
                       placeholder={`Describe concrete facts or bottlenecks in ${item.title.toLowerCase()}...`}
-                      className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-xs text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+                      className="w-full bg-[#FCFCFC] border border-[#111113]/15 rounded px-4 py-2.5 text-xs text-[#111113] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706]"
                     />
                   </div>
                 </div>

@@ -405,6 +405,13 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       });
     }
 
+    if (caseRecord.reportBlocks && caseRecord.reportBlocks.length > 0) {
+      md += `## 6. Custom Commentary & Owner Paragraphs\n\n`;
+      caseRecord.reportBlocks.forEach((blk) => {
+        md += `### ${blk.heading}\n${blk.body}\n\n`;
+      });
+    }
+
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -474,19 +481,19 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#070B14]/65 backdrop-blur-xs p-4">
-      <div className="bg-white border border-[#D9E2F0] rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden text-[#0B1324]">
-        {/* Black-to-Blue Modal Header */}
-        <div className="bizpulse-bar-gradient text-white px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111113]/65 backdrop-blur-xs p-4">
+      <div className="bg-white border border-[#111113]/15 rounded w-full max-w-2xl shadow-2xl overflow-hidden text-[#111113]">
+        {/* Architectural Charcoal Modal Header */}
+        <div className="bizpulse-bar-gradient text-white px-6 py-4 flex items-center justify-between border-b border-white/10">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#1D4ED8] text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-[#D97706] text-white flex items-center justify-center">
               <Download className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-bold text-white text-base">
                 Export Executive Reports &amp; Presentations
               </h3>
-              <p className="text-xs text-[#CBD5E1]">
+              <p className="text-xs text-[#D4D4D8]">
                 Isolated Export for {profile.name} ({profile.country})
               </p>
             </div>
@@ -494,7 +501,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#CBD5E1] hover:text-white hover:bg-white/10 transition"
+            className="p-1.5 rounded text-[#D4D4D8] hover:text-white hover:bg-white/10 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -502,14 +509,14 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
         <div className="p-6 space-y-5">
           {downloadStatus && (
-            <div className="p-3 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs rounded-xl flex items-center gap-2 font-semibold">
+            <div className="p-3 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs rounded flex items-center gap-2 font-semibold">
               <Check className="w-4 h-4 shrink-0" />
               <span>{downloadStatus}</span>
             </div>
           )}
 
           {downloadError && (
-            <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded-xl font-semibold">
+            <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded font-semibold">
               {downloadError}
             </div>
           )}
@@ -520,16 +527,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadDirectPdf}
               disabled={isGenerating}
-              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center border border-[#FECACA]">
+              <div className="w-8 h-8 rounded bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center border border-[#FECACA]">
                 <Printer className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
                   PDF Report (.pdf)
                 </span>
-                <span className="text-[11px] text-[#52627A]">
+                <span className="text-[11px] text-[#52525B]">
                   Paginated layout with radar &amp; bar charts
                 </span>
               </div>
@@ -540,16 +547,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadWordDoc}
               disabled={isGenerating}
-              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center border border-[#BFDBFE]">
+              <div className="w-8 h-8 rounded bg-[#111113] text-[#FBBF24] flex items-center justify-center border border-[#111113]">
                 <FileText className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
                   Word (.docx)
                 </span>
-                <span className="text-[11px] text-[#52627A]">
+                <span className="text-[11px] text-[#52525B]">
                   Editable OpenXML report + chart image
                 </span>
               </div>
@@ -560,16 +567,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadPowerPointDeck}
               disabled={isGenerating}
-              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#FFFBEB] text-[#B45309] flex items-center justify-center border border-[#FDE68A]">
+              <div className="w-8 h-8 rounded bg-[#FFFBEB] text-[#B45309] flex items-center justify-center border border-[#FDE68A]">
                 <Presentation className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
                   Slides (.pptx)
                 </span>
-                <span className="text-[11px] text-[#52627A]">
+                <span className="text-[11px] text-[#52525B]">
                   Executive presentation briefing deck
                 </span>
               </div>
@@ -580,23 +587,23 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadInfographic}
               disabled={isGenerating}
-              className="p-4 rounded-xl bg-[#F3F6FB] border border-[#CBD5E1] hover:border-[#1D4ED8] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] text-[#15803D] flex items-center justify-center border border-[#A7F3D0]">
+              <div className="w-8 h-8 rounded bg-[#ECFDF5] text-[#15803D] flex items-center justify-center border border-[#A7F3D0]">
                 <ImageIcon className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0B1324] text-xs block group-hover:text-[#1D4ED8]">
+                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
                   Infographic (.svg)
                 </span>
-                <span className="text-[11px] text-[#52627A]">
+                <span className="text-[11px] text-[#52525B]">
                   Vector 8-dimension health summary
                 </span>
               </div>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#E8EEF7] text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#111113]/10 text-xs">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -604,25 +611,25 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
                   onClose();
                   onPrintReport();
                 }}
-                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
               >
-                <Printer className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <Printer className="w-3.5 h-3.5 text-[#D97706]" />
                 <span>Print View</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleDownloadMarkdown}
-                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
               >
-                <FileCode className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                <FileCode className="w-3.5 h-3.5 text-[#111113]" />
                 <span>Markdown (.md)</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleDownloadCsv}
-                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-[#15803D]" />
                 <span>Scorecard (.csv)</span>
@@ -631,20 +638,20 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadJson}
-                className="text-[#52627A] hover:text-[#0B1324] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F3F6FB] border border-[#CBD5E1] hover:bg-white transition font-medium"
+                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
               >
-                <Database className="w-3.5 h-3.5 text-[#475569]" />
+                <Database className="w-3.5 h-3.5 text-[#52525B]" />
                 <span>Full Data (.json)</span>
               </button>
             </div>
 
-            <span className="text-[11px] text-[#52627A] font-mono">
+            <span className="text-[11px] text-[#52525B] font-mono">
               Case ID: {profile.caseId}
             </span>
           </div>
 
-          <div className="p-3 bg-[#F3F6FB] rounded-xl border border-[#D9E2F0] text-[11px] text-[#52627A] flex items-start gap-2">
-            <Activity className="w-4 h-4 text-[#1D4ED8] shrink-0 mt-0.5" />
+          <div className="p-3 bg-[#F8F7F4] rounded border border-[#111113]/10 text-[11px] text-[#52525B] flex items-start gap-2">
+            <Activity className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
             <span>
               All exports compile strictly from <strong>{profile.name}</strong> and never mix figures from other saved businesses.
             </span>

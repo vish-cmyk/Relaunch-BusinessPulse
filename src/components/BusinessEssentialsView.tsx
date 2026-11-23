@@ -72,43 +72,32 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Black-to-Blue Executive Hero Card */}
-      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#1D4ED8] text-white">
-                Step 1: Business Foundation
-              </span>
-              <span className="text-[#CBD5E1] text-xs font-medium">
-                Isolated Business Profile
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Business Essentials
-            </h2>
-            <p className="text-sm text-[#CBD5E1] max-w-2xl leading-relaxed">
-              Every SME session starts clean with zero carry-over from previous clients. Enter your real business context below so every health score, coaching action, and financial report is grounded in your business reality.
-            </p>
-          </div>
+    <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Variation 1 Editorial Foundation Heading */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#111113]/10 pb-6">
+        <div className="space-y-2">
+          <div className="bizpulse-label">[01] Foundation · Isolated Business Session</div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#111113] tracking-tight">
+            Business Essentials
+          </h2>
+          <p className="text-sm text-[#52525B] max-w-2xl leading-relaxed">
+            Every SME session starts clean with zero carry-over from previous clients. Enter your real business context below so every health score, coaching action, and financial report stays grounded in reality.
+          </p>
+        </div>
 
-          <div className="bg-white/10 border border-white/15 rounded-xl p-4 min-w-[210px] text-center shrink-0">
-            <span className="text-[11px] text-[#93C5FD] uppercase tracking-wider font-bold block">
-              Isolated Session ID
-            </span>
-            <div className="text-xs font-mono font-bold text-white mt-1 truncate max-w-[190px] mx-auto">
-              {formData.caseId}
-            </div>
-            <div className="text-[11px] text-[#CBD5E1] mt-1">
-              {formData.isDemonstrationCase ? 'Benchmark Demo Case' : 'Private Client Assessment'}
-            </div>
+        <div className="bg-white border border-[#111113]/10 rounded px-4 py-3 text-left md:text-right shrink-0">
+          <span className="bizpulse-label block">Session Reference</span>
+          <div className="text-xs font-mono font-bold text-[#111113] mt-1 truncate max-w-[200px]">
+            {formData.caseId}
+          </div>
+          <div className="text-[11px] text-[#D97706] font-semibold mt-0.5">
+            {formData.isDemonstrationCase ? 'Benchmark Demo Case' : 'Private Client Assessment'}
           </div>
         </div>
       </div>
 
       {isSaved && (
-        <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center justify-between">
+        <div className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>Business essentials saved to your isolated session ({formData.name || 'Active Business'}).</span>
@@ -123,17 +112,17 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
         </div>
       )}
 
-      {/* Main Profile Form */}
+      {/* Variation 1 Clean White Architectural Form Card */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white border border-[#D9E2F0] rounded-2xl p-6 sm:p-8 shadow-xs space-y-6"
+        className="bg-white border border-[#111113]/10 rounded p-6 sm:p-8 space-y-6"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Business Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#0B1324] flex items-center justify-between">
-              <span>Business / Trading Name *</span>
-              <span className="text-[11px] text-[#52627A] font-normal">Legal or Trading</span>
+            <label className="flex items-center justify-between">
+              <span className="bizpulse-label">Business / Trading Name *</span>
+              <span className="text-[11px] text-[#52525B]">Legal or Trading</span>
             </label>
             <input
               type="text"
@@ -141,19 +130,19 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="e.g., Tasman Plumbing & Gas Ltd, Harbourside Cafe"
-              className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+              className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
             />
           </div>
 
           {/* Industry Type */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#0B1324]">
+            <label className="bizpulse-label block">
               Industry &amp; Sector *
             </label>
             <select
               value={formData.industry}
               onChange={(e) => handleChange('industry', e.target.value as IndustryType)}
-              className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+              className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
             >
               {INDUSTRIES.map((ind) => (
                 <option key={ind} value={ind}>
@@ -165,13 +154,13 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
 
           {/* Business Structure */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#0B1324]">
+            <label className="bizpulse-label block">
               Business Structure *
             </label>
             <select
               value={formData.businessType}
               onChange={(e) => handleChange('businessType', e.target.value as BusinessStructureType)}
-              className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+              className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
             >
               {BUSINESS_STRUCTURES.map((struct) => (
                 <option key={struct} value={struct}>
@@ -184,22 +173,22 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
           {/* Country & Currency */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0B1324]">Country *</label>
+              <label className="bizpulse-label block">Country *</label>
               <input
                 type="text"
                 required
                 value={formData.country}
                 onChange={(e) => handleChange('country', e.target.value)}
                 placeholder="New Zealand, Australia..."
-                className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-3 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+                className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0B1324]">Currency *</label>
+              <label className="bizpulse-label block">Currency *</label>
               <select
                 value={formData.currency}
                 onChange={(e) => handleChange('currency', e.target.value)}
-                className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-3 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+                className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -213,42 +202,42 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
           {/* Years Operating & Workforce */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0B1324]">Years Operating</label>
+              <label className="bizpulse-label block">Years Operating</label>
               <input
                 type="number"
                 min="0"
                 value={formData.yearsOperating}
                 onChange={(e) => handleChange('yearsOperating', Number(e.target.value))}
-                className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-3 py-2.5 text-sm text-[#0B1324] tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+                className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3 py-2.5 text-sm text-[#111113] tabular-nums focus:bg-white focus:outline-none focus:border-[#D97706]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0B1324]">Employees</label>
+              <label className="bizpulse-label block">Employees</label>
               <input
                 type="number"
                 min="0"
                 value={formData.employeeCount}
                 onChange={(e) => handleChange('employeeCount', Number(e.target.value))}
-                className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-3 py-2.5 text-sm text-[#0B1324] tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+                className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3 py-2.5 text-sm text-[#111113] tabular-nums focus:bg-white focus:outline-none focus:border-[#D97706]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#0B1324]">Subcontractors</label>
+              <label className="bizpulse-label block">Subcontractors</label>
               <input
                 type="number"
                 min="0"
                 value={formData.subcontractorCount}
                 onChange={(e) => handleChange('subcontractorCount', Number(e.target.value))}
-                className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-3 py-2.5 text-sm text-[#0B1324] tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+                className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3 py-2.5 text-sm text-[#111113] tabular-nums focus:bg-white focus:outline-none focus:border-[#D97706]"
               />
             </div>
           </div>
 
           {/* Main Customer Types */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#0B1324]">
+            <label className="bizpulse-label block">
               Main Customer Types *
             </label>
             <input
@@ -257,14 +246,14 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               value={formData.mainCustomerTypes}
               onChange={(e) => handleChange('mainCustomerTypes', e.target.value)}
               placeholder="e.g., Commercial builders, residential homeowners, B2B SMBs"
-              className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+              className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
             />
           </div>
         </div>
 
         {/* Main Products / Services */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#0B1324]">
+          <label className="bizpulse-label block">
             Main Products or Services Provided *
           </label>
           <textarea
@@ -273,15 +262,15 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
             value={formData.mainProductsServices}
             onChange={(e) => handleChange('mainProductsServices', e.target.value)}
             placeholder="Describe what your business sells, installs, or delivers..."
-            className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+            className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
           />
         </div>
 
         {/* Owner's Primary Objective */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#0B1324] flex items-center gap-1.5">
-            <Target className="w-3.5 h-3.5 text-[#1D4ED8]" />
-            <span>Owner&apos;s Primary Objective (Next 6–12 Months) *</span>
+          <label className="flex items-center gap-1.5">
+            <Target className="w-3.5 h-3.5 text-[#D97706]" />
+            <span className="bizpulse-label">Owner&apos;s Primary Objective (Next 6–12 Months) *</span>
           </label>
           <input
             type="text"
@@ -289,39 +278,39 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
             value={formData.primaryObjective}
             onChange={(e) => handleChange('primaryObjective', e.target.value)}
             placeholder="e.g., Stabilize cash flow, improve net margin, reduce owner reliance"
-            className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+            className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
           />
         </div>
 
         {/* The Most Important Concern */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#B45309] flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-[#B45309]" />
-            <span>The Single Most Important Concern or Pressure Facing the Business *</span>
+          <label className="flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+            <span className="bizpulse-label text-[#B45309]">Single Most Important Concern or Pressure *</span>
           </label>
           <textarea
-            rows={3}
+            rows={4}
             required
             value={formData.primaryConcern}
             onChange={(e) => handleChange('primaryConcern', e.target.value)}
             placeholder="What is the biggest operational or financial pressure right now?"
-            className="w-full bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0B1324] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8]"
+            className="w-full bg-[#FCFCFC] border border-[#111113]/12 rounded-xs px-3.5 py-2.5 text-sm text-[#111113] focus:bg-white focus:outline-none focus:border-[#D97706]"
           />
         </div>
 
         {/* Form Actions */}
-        <div className="pt-4 border-t border-[#E8EEF7] flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-2 text-xs text-[#52627A]">
+        <div className="pt-5 border-t border-[#111113]/10 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-[#15803D] shrink-0" />
-            <span>Isolated to this business session only. Never shared with other cases.</span>
+            <span className="bizpulse-label">Isolated session active · Zero cross-client leakage</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="submit"
-              className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-[#F3F6FB] text-[#0B1324] text-xs font-bold border border-[#CBD5E1] transition"
+              className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] text-xs font-semibold uppercase tracking-wider border border-[#111113]/15 transition"
             >
-              <Save className="w-4 h-4 text-[#1D4ED8]" />
+              <Save className="w-4 h-4 text-[#D97706]" />
               <span>{isSaved ? 'Saved' : 'Save Essentials'}</span>
             </button>
 
@@ -332,10 +321,10 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                   onUpdateProfile(formData);
                   onProceedToDocuments();
                 }}
-                className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] text-xs font-bold border border-[#BFDBFE] transition"
+                className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] text-xs font-semibold uppercase tracking-wider border border-[#FDE68A] transition"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span>Upload Documents (Optional)</span>
+                <span>Upload Documents</span>
               </button>
             )}
 
@@ -345,10 +334,10 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 onUpdateProfile(formData);
                 onProceedToHealth();
               }}
-              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white text-xs font-bold shadow-sm transition"
+              className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition"
             >
               <span>Proceed to Health Assessment</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 text-[#D97706]" />
             </button>
           </div>
         </div>

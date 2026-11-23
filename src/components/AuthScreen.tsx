@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Lock,
   Mail,
@@ -9,9 +9,11 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Database,
+  Check,
+  Compass,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { BIZPULSE_VISION, GROWTH_ROADMAP_PILLARS } from '../data/growthRoadmap';
 
 interface AuthScreenProps {
   onSuccess?: () => void;
@@ -28,12 +30,28 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedPillarId, setSelectedPillarId] = useState<string>('all');
+
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+  const authPanelRef = useRef<HTMLDivElement | null>(null);
 
   const handleSwitchMode = (newMode: 'signin' | 'register' | 'forgot') => {
     clearAuthError();
     setValidationError(null);
     setSuccessNotice(null);
     setMode(newMode);
+  };
+
+  const focusAuthPanel = (targetMode: 'signin' | 'register') => {
+    handleSwitchMode(targetMode);
+    authPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      emailInputRef.current?.focus();
+    }, 200);
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,250 +116,534 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
     }
   };
 
+  const visiblePillars =
+    selectedPillarId === 'all'
+      ? GROWTH_ROADMAP_PILLARS
+      : GROWTH_ROADMAP_PILLARS.filter((p) => p.id === selectedPillarId);
+
   return (
-    <div className="min-h-screen bizpulse-hero-gradient flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans text-[#0B1324]">
-      {/* Header Branding */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center px-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1D4ED8] text-white font-extrabold text-2xl shadow-lg mb-4 border border-white/20">
-          BP
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-          Relaunch BizPulse
-        </h1>
-        <p className="mt-1.5 text-sm text-[#CBD5E1]">
-          Executive Coaching &amp; Diagnostic OS for SMEs
-        </p>
-        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/10 text-[#93C5FD] border border-white/15">
-          <Database className="w-3.5 h-3.5 text-[#93C5FD]" />
-          <span>Private Multi-Business Cloud Workspace</span>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#F8F7F4] text-[#111113] flex flex-col font-sans selection:bg-[#D97706]/20 selection:text-[#111113]">
+      {/* Top Bar (3-zone architectural header) */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xs border-b border-[#111113]/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+          <a
+            href="#top"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-3 whitespace-nowrap shrink-0"
+          >
+            <span className="w-8 h-8 rounded bg-[#111113] text-white font-bold text-sm inline-flex items-center justify-center border-b-2 border-[#D97706]">
+              BP
+            </span>
+            <span
+              className="font-bold text-base sm:text-lg tracking-tight text-[#111113]"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              Relaunch BizPulse
+            </span>
+          </a>
 
-      {/* Main Form Card */}
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-white border border-[#D9E2F0] py-8 px-6 sm:px-10 shadow-2xl rounded-2xl">
-          {/* Mode Switcher Tabs */}
-          <div className="flex border-b border-[#E8EEF7] pb-4 mb-6">
+          <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-[#52525B]" aria-label="Landing navigation">
             <button
               type="button"
-              onClick={() => handleSwitchMode('signin')}
-              className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
-                mode === 'signin'
-                  ? 'border-[#1D4ED8] text-[#1D4ED8]'
-                  : 'border-transparent text-[#52627A] hover:text-[#0B1324]'
-              }`}
+              onClick={() => scrollToSection('platform-today')}
+              className="hover:text-[#111113] transition whitespace-nowrap shrink-0"
             >
-              Sign In
+              Platform Today
             </button>
             <button
               type="button"
-              onClick={() => handleSwitchMode('register')}
-              className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
-                mode === 'register'
-                  ? 'border-[#1D4ED8] text-[#1D4ED8]'
-                  : 'border-transparent text-[#52627A] hover:text-[#0B1324]'
-              }`}
+              onClick={() => scrollToSection('development-roadmap')}
+              className="hover:text-[#111113] transition whitespace-nowrap shrink-0"
             >
-              Create Account
+              Development Roadmap
             </button>
             <button
               type="button"
-              onClick={() => handleSwitchMode('forgot')}
-              className={`flex-1 text-center pb-2 text-xs font-bold tracking-wide transition border-b-2 ${
-                mode === 'forgot'
-                  ? 'border-[#1D4ED8] text-[#1D4ED8]'
-                  : 'border-transparent text-[#52627A] hover:text-[#0B1324]'
-              }`}
+              onClick={() => scrollToSection('our-commitment')}
+              className="hover:text-[#111113] transition whitespace-nowrap shrink-0"
             >
-              Reset Password
+              Our Commitment
+            </button>
+          </nav>
+
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => focusAuthPanel(mode === 'register' ? 'signin' : 'register')}
+              className="px-4 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+            >
+              {mode === 'register' ? 'Sign In' : 'Create Account'}
             </button>
           </div>
+        </div>
+      </header>
 
-          {/* Context Notice */}
-          <div className="mb-5 text-xs text-[#52627A] bg-[#F3F6FB] p-3.5 rounded-xl border border-[#E8EEF7] leading-relaxed">
-            {mode === 'signin' && (
-              <p>
-                Sign in to resume your saved SME health diagnostics, uploaded document reviews, and executive action plans.
-              </p>
-            )}
-            {mode === 'register' && (
-              <p>
-                Create your private coaching account. Each business you add stays isolated inside your personal workspace vault.
-              </p>
-            )}
-            {mode === 'forgot' && (
-              <p>
-                Enter your registered email address to receive a password reset link via Firebase Authentication.
-              </p>
-            )}
-          </div>
-
-          {/* Feedback Alerts */}
-          {(authError || validationError) && (
-            <div className="mb-5 p-3.5 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded-xl flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-[#B91C1C] shrink-0 mt-0.5" />
-              <div className="flex-1 font-medium">{validationError || authError}</div>
-            </div>
-          )}
-
-          {successNotice && (
-            <div className="mb-5 p-3.5 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs rounded-xl flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
-              <div className="flex-1 font-medium">{successNotice}</div>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#0B1324] mb-1.5">
-                Work Email Address
-              </label>
-              <div className="relative rounded-xl">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52627A]">
-                  <Mail className="w-4 h-4" />
+      {/* Main Public Hero + Auth Workspace Split */}
+      <main id="top" className="flex-1">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+            {/* Left Column: Proposition & Current Diagnostic Platform */}
+            <div className="lg:col-span-7 space-y-8">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[#52525B] font-mono uppercase tracking-widest">
+                  <Compass className="w-3.5 h-3.5 text-[#D97706]" />
+                  <span>AI-Powered Business Health, Growth &amp; Development Platform</span>
                 </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="name@business.co.nz"
-                  className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] text-xs sm:text-sm transition"
-                />
+
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#111113] leading-[1.08] max-w-2xl">
+                  {BIZPULSE_VISION.headline}
+                </h1>
+
+                <p className="text-lg sm:text-xl font-semibold text-[#B45309]">
+                  {BIZPULSE_VISION.subheading}
+                </p>
+
+                <div className="space-y-4 text-sm sm:text-base text-[#52525B] leading-relaxed max-w-2xl pt-1">
+                  {BIZPULSE_VISION.introParagraphs.map((para, idx) => (
+                    <p key={idx}>{para}</p>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Strip */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('development-roadmap')}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                >
+                  <span>Explore Development Roadmap</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => focusAuthPanel('signin')}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded bg-white hover:bg-[#EFECE6] text-[#111113] border border-[#111113]/15 text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                >
+                  <span>Access Private Workspace</span>
+                </button>
+              </div>
+
+              {/* Available Today Summary (Clarifies live workspace features vs planned roadmap) */}
+              <div id="platform-today" className="pt-6 border-t border-[#111113]/10 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="bizpulse-label">Available Inside Your Workspace Today</span>
+                  <span className="text-xs text-[#15803D] font-semibold">Live Today</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white border border-[#111113]/12 rounded p-4 space-y-1.5">
+                    <span className="text-xs font-mono font-bold text-[#D97706]">01</span>
+                    <h2 className="text-sm font-bold text-[#111113]">8-Dimension Health Audit</h2>
+                    <p className="text-xs text-[#52525B] leading-relaxed">
+                      Structured diagnostic across cash flow, margins, customers, staff, systems, and owner dependency.
+                    </p>
+                  </div>
+                  <div className="bg-white border border-[#111113]/12 rounded p-4 space-y-1.5">
+                    <span className="text-xs font-mono font-bold text-[#D97706]">02</span>
+                    <h2 className="text-sm font-bold text-[#111113]">Evidence &amp; Cash Calculators</h2>
+                    <p className="text-xs text-[#52525B] leading-relaxed">
+                      Upload financial statements for verified fact extraction alongside cash flow and client matrix models.
+                    </p>
+                  </div>
+                  <div className="bg-white border border-[#111113]/12 rounded p-4 space-y-1.5">
+                    <span className="text-xs font-mono font-bold text-[#D97706]">03</span>
+                    <h2 className="text-sm font-bold text-[#111113]">Executive Coaching &amp; Reports</h2>
+                    <p className="text-xs text-[#52525B] leading-relaxed">
+                      Practical 90-day turnarounds, 7-day sprints, AI coaching, and custom-edited PDF &amp; Word exports.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {mode !== 'forgot' && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-[#0B1324]">
-                    Password
-                  </label>
-                  {mode === 'signin' && (
-                    <button
-                      type="button"
-                      onClick={() => handleSwitchMode('forgot')}
-                      className="text-[11px] text-[#1D4ED8] hover:text-[#1E40AF] font-semibold transition"
-                    >
-                      Forgot password?
-                    </button>
-                  )}
+            {/* Right Column: Private Workspace Auth Card */}
+            <div ref={authPanelRef} className="lg:col-span-5 w-full">
+              <div className="bg-white border border-[#111113]/12 py-7 px-6 sm:px-8 rounded">
+                <div className="mb-5">
+                  <span className="bizpulse-label block mb-1">Private Business Vault</span>
+                  <h2 className="text-lg font-bold text-[#111113]">
+                    {mode === 'signin'
+                      ? 'Sign In to Your Workspace'
+                      : mode === 'register'
+                      ? 'Create Your Account'
+                      : 'Reset Your Password'}
+                  </h2>
                 </div>
-                <div className="relative rounded-xl">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52627A]">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Enter password"
-                    className="block w-full pl-10 pr-10 py-2.5 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] text-xs sm:text-sm transition"
-                  />
+
+                {/* Mode Switcher Tabs */}
+                <div className="flex border-b border-[#111113]/10 pb-3 mb-5">
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#52627A] hover:text-[#0B1324] transition"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => handleSwitchMode('signin')}
+                    className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
+                      mode === 'signin'
+                        ? 'border-[#D97706] text-[#111113]'
+                        : 'border-transparent text-[#52525B] hover:text-[#111113]'
+                    }`}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchMode('register')}
+                    className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
+                      mode === 'register'
+                        ? 'border-[#D97706] text-[#111113]'
+                        : 'border-transparent text-[#52525B] hover:text-[#111113]'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchMode('forgot')}
+                    className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
+                      mode === 'forgot'
+                        ? 'border-[#D97706] text-[#111113]'
+                        : 'border-transparent text-[#52525B] hover:text-[#111113]'
+                    }`}
+                  >
+                    Reset
                   </button>
                 </div>
-              </div>
-            )}
 
-            {mode === 'register' && (
-              <div>
-                <label className="block text-xs font-semibold text-[#0B1324] mb-1.5">
-                  Confirm Password
-                </label>
-                <div className="relative rounded-xl">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52627A]">
-                    <KeyRound className="w-4 h-4" />
-                  </div>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    placeholder="Repeat password"
-                    className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] text-xs sm:text-sm transition"
-                  />
+                {/* Context Notice */}
+                <div className="mb-5 text-xs text-[#52525B] bg-[#F8F7F4] p-3.5 rounded border border-[#111113]/10 leading-relaxed">
+                  {mode === 'signin' && (
+                    <p>
+                      Sign in to resume your saved SME health diagnostics, uploaded document reviews, and executive action plans.
+                    </p>
+                  )}
+                  {mode === 'register' && (
+                    <p>
+                      Create your private coaching account. Each business you add stays isolated inside your personal workspace vault.
+                    </p>
+                  )}
+                  {mode === 'forgot' && (
+                    <p>
+                      Enter your registered email address to receive a password reset link via Firebase Authentication.
+                    </p>
+                  )}
                 </div>
-                <p className="mt-1.5 text-[11px] text-[#52627A]">
-                  Minimum 6 characters required.
-                </p>
+
+                {/* Feedback Alerts */}
+                {(authError || validationError) && (
+                  <div className="mb-5 p-3.5 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-[#B91C1C] shrink-0 mt-0.5" />
+                    <div className="flex-1 font-medium">{validationError || authError}</div>
+                  </div>
+                )}
+
+                {successNotice && (
+                  <div className="mb-5 p-3.5 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs rounded flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
+                    <div className="flex-1 font-medium">{successNotice}</div>
+                  </div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#111113] mb-1.5">
+                      Work Email Address
+                    </label>
+                    <div className="relative rounded">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52525B]">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <input
+                        ref={emailInputRef}
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        placeholder="name@business.co.nz"
+                        className="block w-full pl-10 pr-3.5 py-2.5 bg-[#FCFCFC] border border-[#111113]/15 rounded text-[#111113] placeholder-[#71717A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706] text-xs sm:text-sm transition"
+                      />
+                    </div>
+                  </div>
+
+                  {mode !== 'forgot' && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-[#111113]">
+                          Password
+                        </label>
+                        {mode === 'signin' && (
+                          <button
+                            type="button"
+                            onClick={() => handleSwitchMode('forgot')}
+                            className="text-[11px] text-[#D97706] hover:text-[#B45309] font-semibold transition"
+                          >
+                            Forgot password?
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative rounded">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52525B]">
+                          <Lock className="w-4 h-4" />
+                        </div>
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          placeholder="Enter password"
+                          className="block w-full pl-10 pr-10 py-2.5 bg-[#FCFCFC] border border-[#111113]/15 rounded text-[#111113] placeholder-[#71717A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706] text-xs sm:text-sm transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#52525B] hover:text-[#111113] transition"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mode === 'register' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111113] mb-1.5">
+                        Confirm Password
+                      </label>
+                      <div className="relative rounded">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#52525B]">
+                          <KeyRound className="w-4 h-4" />
+                        </div>
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          placeholder="Repeat password"
+                          className="block w-full pl-10 pr-3.5 py-2.5 bg-[#FCFCFC] border border-[#111113]/15 rounded text-[#111113] placeholder-[#71717A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706] text-xs sm:text-sm transition"
+                        />
+                      </div>
+                      <p className="mt-1.5 text-[11px] text-[#52525B]">
+                        Minimum 6 characters required.
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : mode === 'signin' ? (
+                      <>
+                        <span>Sign In to Workspace</span>
+                        <ArrowRight className="w-4 h-4 text-[#D97706]" />
+                      </>
+                    ) : mode === 'register' ? (
+                      <>
+                        <span>Create Account &amp; Start Diagnostic</span>
+                        <ArrowRight className="w-4 h-4 text-[#D97706]" />
+                      </>
+                    ) : (
+                      <>
+                        <span>Send Reset Link</span>
+                        <ArrowRight className="w-4 h-4 text-[#D97706]" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Quick toggle at bottom */}
+                <div className="mt-5 pt-4 border-t border-[#111113]/10 text-center text-xs text-[#52525B]">
+                  {mode === 'signin' ? (
+                    <p>
+                      Need an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchMode('register')}
+                        className="text-[#D97706] hover:text-[#B45309] font-bold transition"
+                      >
+                        Register here
+                      </button>
+                    </p>
+                  ) : (
+                    <p>
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchMode('signin')}
+                        className="text-[#D97706] hover:text-[#B45309] font-bold transition"
+                      >
+                        Sign in
+                      </button>
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-[#111113]/10 flex items-center justify-center gap-1.5 text-[11px] text-[#52525B]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#15803D]" />
+                  <span>Confidential Multi-Business Isolation · Firebase Secured</span>
+                </div>
               </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] text-white text-xs sm:text-sm font-bold shadow-sm transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Processing...</span>
-                </>
-              ) : mode === 'signin' ? (
-                <>
-                  <span>Sign In to Workspace</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              ) : mode === 'register' ? (
-                <>
-                  <span>Create Account &amp; Start Diagnostic</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              ) : (
-                <>
-                  <span>Send Reset Link</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Quick toggle at bottom */}
-          <div className="mt-6 pt-4 border-t border-[#E8EEF7] text-center text-xs text-[#52627A]">
-            {mode === 'signin' ? (
-              <p>
-                Need an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => handleSwitchMode('register')}
-                  className="text-[#1D4ED8] hover:text-[#1E40AF] font-bold transition"
-                >
-                  Register here
-                </button>
-              </p>
-            ) : (
-              <p>
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => handleSwitchMode('signin')}
-                  className="text-[#1D4ED8] hover:text-[#1E40AF] font-bold transition"
-                >
-                  Sign in
-                </button>
-              </p>
-            )}
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* Security footer */}
-        <div className="mt-6 text-center text-[11px] text-[#CBD5E1] space-y-1">
-          <p className="flex items-center justify-center gap-1.5 text-white font-medium">
-            <ShieldCheck className="w-4 h-4 text-[#93C5FD]" />
-            <span>Confidential Multi-Business Isolation</span>
-          </p>
-          <p className="text-[#94A3B8]">Relaunch BizPulse © 2026 • Executive Coaching &amp; Diagnostic OS</p>
+        {/* Development Roadmap Section */}
+        <section
+          id="development-roadmap"
+          className="border-t border-[#111113]/10 bg-white py-14 lg:py-18"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#111113]/10 pb-5">
+              <div className="space-y-1.5">
+                <span className="bizpulse-label block">Future Platform Evolution</span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#111113]">
+                  Our Development Roadmap
+                </h2>
+              </div>
+
+              <div
+                className="flex flex-wrap items-center gap-1 p-1 bg-[#F8F7F4] rounded border border-[#111113]/10"
+                role="tablist"
+                aria-label="Filter development roadmap pillars"
+              >
+                <button
+                  type="button"
+                  onClick={() => setSelectedPillarId('all')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
+                    selectedPillarId === 'all'
+                      ? 'bg-[#111113] text-white'
+                      : 'text-[#52525B] hover:text-[#111113]'
+                  }`}
+                >
+                  All 4 Pillars
+                </button>
+                {GROWTH_ROADMAP_PILLARS.map((pillar) => (
+                  <button
+                    key={pillar.id}
+                    type="button"
+                    onClick={() => setSelectedPillarId(pillar.id)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
+                      selectedPillarId === pillar.id
+                        ? 'bg-[#111113] text-white'
+                        : 'text-[#52525B] hover:text-[#111113]'
+                    }`}
+                  >
+                    {pillar.number}. {pillar.title.split('&')[0].trim()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`grid grid-cols-1 ${
+                visiblePillars.length > 1 ? 'md:grid-cols-2' : 'md:grid-cols-1'
+              } gap-6`}
+            >
+              {visiblePillars.map((pillar) => (
+                <article
+                  key={pillar.id}
+                  className="bg-[#F8F7F4] border border-[#111113]/12 rounded p-6 sm:p-8 flex flex-col justify-between space-y-6"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2 text-xs text-[#52525B]">
+                      <span className="font-mono font-bold text-[#D97706] tracking-wider">
+                        {pillar.number}.
+                      </span>
+                      <span>Planned Release</span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xl font-bold text-[#111113]">
+                        {pillar.number}. {pillar.title}
+                      </h3>
+                      <p className="text-sm font-semibold text-[#B45309] mt-1">
+                        {pillar.tagline}
+                      </p>
+                      <p className="text-sm text-[#52525B] mt-3 leading-relaxed">
+                        {pillar.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-[#111113]/10 space-y-2.5">
+                      <span className="bizpulse-label block">Planned Capabilities</span>
+                      <ul className="space-y-2">
+                        {pillar.capabilities.map((cap) => (
+                          <li
+                            key={cap}
+                            className="flex items-start gap-2.5 text-xs sm:text-sm text-[#111113]"
+                          >
+                            <Check className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
+                            <span>{cap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Our Commitment & Simple Ambition */}
+        <section id="our-commitment" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <div className="bizpulse-hero-gradient text-white rounded p-8 sm:p-10 lg:p-12 border border-[#111113]/15 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-7 space-y-4">
+                <span className="text-xs font-mono uppercase tracking-widest text-[#FBBF24] block">
+                  Practical &amp; Progressive
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                  {BIZPULSE_VISION.commitmentTitle}
+                </h2>
+                <div className="space-y-3 text-sm sm:text-base text-[#D4D4D8] leading-relaxed">
+                  {BIZPULSE_VISION.commitmentParagraphs.map((para, idx) => (
+                    <p key={idx}>{para}</p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 bg-white/5 border border-white/15 rounded p-6 space-y-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#FBBF24] block">
+                  {BIZPULSE_VISION.ambitionLead}
+                </span>
+                <p className="text-sm sm:text-base font-medium text-white leading-relaxed">
+                  {BIZPULSE_VISION.ambitionStatement}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => focusAuthPanel('register')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                >
+                  <span>Start Your Diagnostic</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <p className="pt-6 border-t border-white/15 text-xs italic text-[#D4D4D8]">
+              {BIZPULSE_VISION.disclaimer}
+            </p>
+          </div>
+        </section>
+      </main>
+
+      {/* Quiet Footer */}
+      <footer className="bg-white border-t border-[#111113]/10 py-6 text-xs text-[#52525B]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span>Relaunch BizPulse © 2026 · Executive Coaching &amp; Diagnostic OS</span>
+          <span>Gain Clarity. Shape Your Future, Here and Now.</span>
         </div>
-      </div>
+      </footer>
     </div>
   );
 };

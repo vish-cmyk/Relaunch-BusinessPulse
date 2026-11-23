@@ -218,33 +218,33 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Black-to-Blue Hero Header */}
-      <div className="bizpulse-hero-gradient text-white rounded-2xl p-6 sm:p-8 shadow-md border border-white/10">
+      {/* Charcoal Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 border border-[#111113]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#1D4ED8] text-white flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#D97706] text-white flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
                 Live Executive Coach
               </span>
-              <span className="text-[#CBD5E1] text-xs font-medium">
+              <span className="text-[#D4D4D8] text-xs font-medium">
                 Evidence-Based SME Advisory
               </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Executive Coaching Console ({profile.name})
             </h2>
-            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed">
+            <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed">
               Grounded strictly in {profile.name} ({profile.industry}, {profile.country}) — including your 8 health scores, primary concern, and {caseRecord.uploadedDocuments?.length || 0} uploaded document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
             </p>
           </div>
 
-          <div className="flex items-center space-x-2.5 bg-white/10 px-4 py-2.5 rounded-xl border border-white/15 shrink-0">
-            <span className="text-xs text-[#CBD5E1] font-medium whitespace-nowrap">Role:</span>
+          <div className="flex items-center space-x-2.5 bg-white/5 px-4 py-2.5 rounded border border-white/15 shrink-0">
+            <span className="text-xs text-[#D4D4D8] font-medium whitespace-nowrap">Role:</span>
             <select
               value={userRole}
               onChange={(e) => setUserRole(e.target.value)}
-              className="bg-[#0F172A] text-xs font-bold text-white border border-white/20 rounded-lg px-2.5 py-1.5 focus:outline-none max-w-[220px]"
+              className="bg-[#18181B] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#D97706] max-w-[220px]"
             >
               {roleOptions.map((role) => (
                 <option key={role} value={role}>
@@ -257,13 +257,13 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
       </div>
 
       {/* Quick Script Presets Bar */}
-      <div className="bg-white border border-[#D9E2F0] rounded-2xl p-5 shadow-xs">
+      <div className="bg-white border border-[#111113]/12 rounded p-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#0B1324] flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#1D4ED8]" />
+          <span className="bizpulse-label text-[#111113] font-bold flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-[#D97706]" />
             Commercial Script Drafts ({profile.country})
           </span>
-          <span className="text-xs text-[#52627A]">1-Click Custom Draft</span>
+          <span className="text-xs text-[#52525B]">1-Click Custom Draft</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -272,18 +272,18 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
               key={preset.id}
               type="button"
               onClick={() => handleGeneratePresetScript(preset)}
-              className="p-3 rounded-xl bg-[#F3F6FB] border border-[#D9E2F0] hover:border-[#1D4ED8] hover:bg-white transition text-left space-y-1 group"
+              className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left space-y-1 group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#1D4ED8] border border-[#D9E2F0]">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#B45309] border border-[#111113]/12">
                   {preset.category}
                 </span>
-                <Sparkles className="w-3 h-3 text-[#94A3B8] group-hover:text-[#1D4ED8] transition" />
+                <Sparkles className="w-3 h-3 text-[#71717A] group-hover:text-[#D97706] transition" />
               </div>
-              <h4 className="font-bold text-[#0B1324] text-xs line-clamp-1 group-hover:text-[#1D4ED8]">
+              <h4 className="font-bold text-[#111113] text-xs line-clamp-1 group-hover:text-[#D97706]">
                 {preset.title}
               </h4>
-              <p className="text-[11px] text-[#52627A] line-clamp-2">{preset.description}</p>
+              <p className="text-[11px] text-[#52525B] line-clamp-2">{preset.description}</p>
             </button>
           ))}
         </div>
@@ -291,15 +291,15 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
 
       {/* Generated Script Drawer */}
       {selectedPreset && (
-        <div className="bg-white border border-[#1D4ED8]/40 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between pb-4 border-b border-[#E8EEF7]">
+        <div className="bg-white border border-[#D97706] rounded p-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[#111113]/10">
             <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-[#1D4ED8]" />
+              <FileText className="w-5 h-5 text-[#D97706]" />
               <div>
-                <h3 className="font-bold text-[#0B1324] text-sm">
+                <h3 className="font-bold text-[#111113] text-sm">
                   Draft Script: {selectedPreset.title}
                 </h3>
-                <p className="text-xs text-[#52627A]">
+                <p className="text-xs text-[#52525B]">
                   Calibrated for {profile.name} ({profile.country}, {profile.currency})
                 </p>
               </div>
@@ -310,16 +310,16 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
                 <button
                   type="button"
                   onClick={() => copyToClipboard(generatedScript, 'generated-script')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#1D4ED8] text-white text-xs font-bold hover:bg-[#1E40AF] transition"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#111113] text-white text-xs font-bold hover:bg-[#27272A] transition whitespace-nowrap shrink-0"
                 >
                   {copiedScriptId === 'generated-script' ? (
                     <>
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5 text-[#FBBF24]" />
                       <span>Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3.5 h-3.5 text-[#FBBF24]" />
                       <span>Copy Script</span>
                     </>
                   )}
@@ -328,7 +328,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
               <button
                 type="button"
                 onClick={() => setSelectedPreset(null)}
-                className="px-2.5 py-1.5 text-xs text-[#52627A] hover:text-[#0B1324] font-semibold"
+                className="px-2.5 py-1.5 text-xs text-[#52525B] hover:text-[#111113] font-semibold"
               >
                 Close
               </button>
@@ -337,12 +337,12 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
 
           <div className="mt-4">
             {isGeneratingScript ? (
-              <div className="py-8 text-center text-[#52627A] text-xs flex flex-col items-center justify-center space-y-2">
-                <Loader2 className="w-6 h-6 text-[#1D4ED8] animate-spin" />
+              <div className="py-8 text-center text-[#52525B] text-xs flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="w-6 h-6 text-[#D97706] animate-spin" />
                 <span>Drafting tailored communication...</span>
               </div>
             ) : (
-              <div className="bg-[#F3F6FB] p-4 rounded-xl border border-[#CBD5E1] text-xs text-[#0B1324] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+              <div className="bg-[#FCFCFC] p-4 rounded border border-[#111113]/15 text-xs text-[#111113] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
                 {generatedScript}
               </div>
             )}
@@ -351,10 +351,10 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
       )}
 
       {/* Main Chat Container */}
-      <div className="bg-white border border-[#D9E2F0] rounded-2xl shadow-xs overflow-hidden flex flex-col h-[620px]">
-        <div className="bg-[#F3F6FB] px-6 py-3 border-b border-[#D9E2F0] flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white border border-[#111113]/12 rounded overflow-hidden flex flex-col h-[620px]">
+        <div className="bg-[#F8F7F4] px-6 py-3 border-b border-[#111113]/10 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[#52627A] font-semibold">Topic:</span>
+            <span className="text-[#52525B] font-semibold">Topic:</span>
             <div className="flex flex-wrap gap-1">
               {[
                 'Cash Flow & Collections',
@@ -367,10 +367,10 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
                   key={topic}
                   type="button"
                   onClick={() => setSelectedTopic(topic)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                  className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                     selectedTopic === topic
-                      ? 'bg-[#0F172A] text-white'
-                      : 'text-[#52627A] hover:text-[#0B1324] hover:bg-white'
+                      ? 'bg-[#111113] text-white'
+                      : 'text-[#52525B] hover:text-[#111113] hover:bg-white'
                   }`}
                 >
                   {topic}
@@ -400,7 +400,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
                 updatedAt: new Date().toISOString(),
               });
             }}
-            className="flex items-center space-x-1 text-[#52627A] hover:text-[#0B1324] transition font-semibold"
+            className="flex items-center space-x-1 text-[#52525B] hover:text-[#111113] transition font-semibold"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Thread</span>
@@ -408,7 +408,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
         </div>
 
         {/* Message History */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#F8FAFC]">
+        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#FCFCFC]">
           {messages.map((msg) => {
             const isCoach = msg.sender === 'coach';
             return (
@@ -417,19 +417,19 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
                 className={`flex gap-3 ${isCoach ? 'justify-start' : 'justify-end'}`}
               >
                 {isCoach && (
-                  <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
-                    <Bot className="w-4 h-4 text-[#93C5FD]" />
+                  <div className="w-8 h-8 rounded bg-[#111113] flex items-center justify-center shrink-0 text-white">
+                    <Bot className="w-4 h-4 text-[#FBBF24]" />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-2xl rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-2xs ${
+                  className={`max-w-2xl rounded p-4 text-xs sm:text-sm leading-relaxed ${
                     isCoach
-                      ? 'bg-white border border-[#D9E2F0] text-[#0B1324]'
-                      : 'bg-[#EFF6FF] border border-[#BFDBFE] text-[#0B1324] font-medium'
+                      ? 'bg-white border border-[#111113]/12 text-[#111113]'
+                      : 'bg-[#FFFBEB] border border-[#FDE68A] text-[#111113] font-medium'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1.5 text-[10px] text-[#52627A]">
+                  <div className="flex items-center justify-between mb-1.5 text-[10px] text-[#52525B]">
                     <span className="font-bold uppercase tracking-wider">
                       {isCoach ? 'Executive Coach' : userRole}
                     </span>
@@ -439,7 +439,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
                 </div>
 
                 {!isCoach && (
-                  <div className="w-8 h-8 rounded-lg bg-[#1D4ED8] flex items-center justify-center shrink-0 text-white">
+                  <div className="w-8 h-8 rounded bg-[#D97706] flex items-center justify-center shrink-0 text-white">
                     <UserCheck className="w-4 h-4" />
                   </div>
                 )}
@@ -449,11 +449,11 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
-                <Bot className="w-4 h-4 text-[#93C5FD]" />
+              <div className="w-8 h-8 rounded bg-[#111113] flex items-center justify-center shrink-0 text-white">
+                <Bot className="w-4 h-4 text-[#FBBF24]" />
               </div>
-              <div className="bg-white border border-[#D9E2F0] rounded-2xl p-4 text-xs text-[#52627A] flex items-center space-x-2">
-                <Loader2 className="w-4 h-4 text-[#1D4ED8] animate-spin" />
+              <div className="bg-white border border-[#111113]/12 rounded p-4 text-xs text-[#52525B] flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 text-[#D97706] animate-spin" />
                 <span>Analyzing commercial context...</span>
               </div>
             </div>
@@ -461,7 +461,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
         </div>
 
         {/* Input Form */}
-        <div className="p-4 bg-white border-t border-[#D9E2F0]">
+        <div className="p-4 bg-white border-t border-[#111113]/12">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -475,15 +475,15 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder={`Ask about ${profile.name}'s cash flow, pricing, customer trade-offs, or uploaded documents...`}
               disabled={isLoading}
-              className="flex-1 bg-[#F3F6FB] border border-[#CBD5E1] rounded-xl px-4 py-3 text-xs sm:text-sm text-[#0B1324] placeholder-[#52627A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/25 focus:border-[#1D4ED8] disabled:opacity-50"
+              className="flex-1 bg-[#FCFCFC] border border-[#111113]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#111113] placeholder-[#71717A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706] disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isLoading || !inputPrompt.trim()}
-              className="px-5 py-3 rounded-xl bg-[#1D4ED8] hover:bg-[#1E40AF] disabled:opacity-40 text-white font-bold text-xs flex items-center space-x-1.5 transition"
+              className="px-5 py-3 rounded bg-[#111113] hover:bg-[#27272A] disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition whitespace-nowrap shrink-0"
             >
               <span>Send</span>
-              <Send className="w-3.5 h-3.5" />
+              <Send className="w-3.5 h-3.5 text-[#FBBF24]" />
             </button>
           </form>
         </div>

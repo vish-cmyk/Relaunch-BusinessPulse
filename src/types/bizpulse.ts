@@ -248,6 +248,29 @@ export interface CaseUsageStats {
   documentsAnalyzedCount: number;
 }
 
+export type ReportFontFamily = 'sans' | 'serif' | 'mono';
+export type ReportFontSize = 'sm' | 'base' | 'lg';
+export type ReportBlockAlign = 'left' | 'center' | 'justify';
+
+export interface ReportCustomBlock {
+  id: string;
+  heading: string;
+  body: string;
+  fontFamily: ReportFontFamily;
+  fontSize: ReportFontSize;
+  bold?: boolean;
+  italic?: boolean;
+  align?: ReportBlockAlign;
+  accent?: 'slate' | 'blue' | 'green' | 'amber';
+  updatedAt: string;
+}
+
+export interface ReportEditorSettings {
+  fontFamily: ReportFontFamily;
+  fontSize: ReportFontSize;
+  sectionOrder?: string[];
+}
+
 export interface CaseRecord {
   id: string;
   profile: BusinessProfile;
@@ -260,6 +283,8 @@ export interface CaseRecord {
   actionPlan: TurnaroundAction[];
   sprintCompleted?: Record<string, boolean>;
   dashboardMetrics: CustomDashboardMetric[];
+  reportBlocks?: ReportCustomBlock[];
+  reportEditorSettings?: ReportEditorSettings;
   subscriptionTier?: SubscriptionTierId;
   usageStats?: CaseUsageStats;
   paymentStatus?: PaymentStatus;

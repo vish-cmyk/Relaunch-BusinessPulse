@@ -135,6 +135,8 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
           uploadedDocuments: caseRecord.uploadedDocuments || [],
+          crmContacts: caseRecord.crmContacts || [],
+          roiScenarios: caseRecord.roiScenarios || [],
         }),
       });
 
@@ -235,7 +237,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
               Executive Coaching Console ({profile.name})
             </h2>
             <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed">
-              Grounded strictly in {profile.name} ({profile.industry}, {profile.country}) — including your 8 health scores, primary concern, and {caseRecord.uploadedDocuments?.length || 0} uploaded document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
+              Grounded strictly in {profile.name} ({profile.industry}, {profile.country}) — including your 8 health scores, {caseRecord.crmContacts?.length || 0} CRM record{(caseRecord.crmContacts?.length || 0) === 1 ? '' : 's'}, {caseRecord.roiScenarios?.length || 0} ROI scenario{(caseRecord.roiScenarios?.length || 0) === 1 ? '' : 's'}, and {caseRecord.uploadedDocuments?.length || 0} uploaded document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
             </p>
           </div>
 

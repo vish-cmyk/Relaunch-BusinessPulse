@@ -297,7 +297,9 @@ async function startServer() {
     healthInputs: any,
     financials: any,
     overallHealth: any,
-    uploadedDocuments?: any[]
+    uploadedDocuments?: any[],
+    crmContacts?: any[],
+    roiScenarios?: any[]
   ): string {
     const businessName = profile?.name || 'Client SME';
     const industry = profile?.industry || 'Small & Medium Enterprise';
@@ -345,6 +347,42 @@ async function startServer() {
       docsSummary += 'No supporting documents uploaded yet.\n';
     }
 
+    let crmSummary = 'CRM & SALES PIPELINE SUMMARY:\n';
+    if (Array.isArray(crmContacts) && crmContacts.length > 0) {
+      const openPipeline = crmContacts
+        .filter((c) => c.salesStage !== 'Won' && c.salesStage !== 'Lost')
+        .reduce((acc, c) => acc + (Number(c.opportunityValue) || 0), 0);
+      const activeMonthly = crmContacts
+        .filter((c) => c.status !== 'Closed Lost')
+        .reduce((acc, c) => acc + (Number(c.monthlyValue) || 0), 0);
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const dueOrRisk = crmContacts.filter(
+        (c) =>
+          c.status === 'At Risk' ||
+          c.status === 'Follow-Up Due' ||
+          (c.nextFollowUpDate && c.nextFollowUpDate <= todayIso && c.salesStage !== 'Lost')
+      );
+      crmSummary += `- Total CRM Records: ${crmContacts.length} | Open Pipeline Opportunity Value: ${currency} ${openPipeline.toLocaleString()} | Active Monthly Recurring Base: ${currency} ${activeMonthly.toLocaleString()}/mo | Follow-Ups Due or At Risk: ${dueOrRisk.length}\n`;
+      for (const c of crmContacts.slice(0, 8)) {
+        crmSummary += `  • [ID:${c.id}] ${c.companyOrName} (${c.recordType}, Tier: ${c.tier}, Stage: ${c.salesStage}, Status: ${c.status}, Opp: ${currency} ${Number(c.opportunityValue || 0).toLocaleString()}, Monthly: ${currency} ${Number(c.monthlyValue || 0).toLocaleString()}, Follow-up: ${c.nextFollowUpDate || 'Unscheduled'}): ${c.notes || 'No notes'}\n`;
+      }
+    } else {
+      crmSummary += 'No CRM customer or prospect records entered yet.\n';
+    }
+
+    let roiSummary = 'ROI & FINANCIAL SCENARIOS:\n';
+    if (Array.isArray(roiScenarios) && roiScenarios.length > 0) {
+      for (const s of roiScenarios.slice(0, 6)) {
+        const monthlyMargin = (Number(s.expectedMonthlyRevenue) || 0) * ((Number(s.grossMarginPct) || 0) / 100);
+        const monthlyNet = monthlyMargin - (Number(s.monthlyOperatingCost) || 0);
+        const horizon = Math.max(1, Number(s.monthsHorizon) || 12);
+        const netBenefit = monthlyNet * horizon - (Number(s.upfrontInvestment) || 0);
+        roiSummary += `  • Scenario "${s.name}" (${s.category}${s.linkedCrmLabel ? `, Linked CRM: ${s.linkedCrmLabel}` : ''}): Upfront=${currency} ${Number(s.upfrontInvestment || 0).toLocaleString()}, MonthlyRev=${currency} ${Number(s.expectedMonthlyRevenue || 0).toLocaleString()}, GM=${s.grossMarginPct}%, MonthlyCost=${currency} ${Number(s.monthlyOperatingCost || 0).toLocaleString()}, ${horizon}m Net Benefit=${currency} ${Math.round(netBenefit).toLocaleString()}, Confidence=${s.confidencePct}%\n`;
+      }
+    } else {
+      roiSummary += 'No custom ROI scenarios modeled yet.\n';
+    }
+
     return `
 You are a seasoned, welcoming yet commercially sharp SME business coach, financial analyst, and turnaround adviser.
 You are advising the owner of "${businessName}", an SME operating in the "${industry}" sector (${country}).
@@ -363,12 +401,14 @@ ACTIVE BUSINESS CONTEXT:
 ${healthSummary}
 ${financialSummary}
 ${docsSummary}
+${crmSummary}
+${roiSummary}
 
 COACHING & EVIDENCE RULES:
 1. Context Fidelity: Tailor all advice strictly to "${businessName}" (${industry}, ${country}, ${currency}, ${staff}). Never assume it is an IT MSP unless industry is IT & Managed Services.
 2. Evidence Discipline: Explicitly distinguish Verified Evidence, Owner-Reported Information, Working Assumptions, and Unknowns / Missing Data.
-3. Zero Fabricated Numbers: NEVER invent revenue, profit, cash, debtor, or percentage figures not supplied in the profile, financials, notes, or uploaded documents. If figures are missing, state exactly what figure is needed.
-4. Commercial Focus: Highlight sustainability risks, hidden profit leaks/opportunities, and cash conversion/revenue flow improvements with practical actions naming owner role, priority, and timeframe.
+3. Zero Fabricated Numbers: NEVER invent revenue, profit, cash, debtor, or percentage figures not supplied in the profile, financials, notes, CRM, ROI scenarios, or uploaded documents. If figures are missing, state exactly what figure is needed.
+4. Connected Integration: Connect Business Health risks directly to CRM priorities (retention, collections, follow-ups), ROI payback & cash headroom, and practical actions naming owner role, priority, and timeframe.
 5. Specialist Triggers: Note clearly whenever a Chartered Accountant, commercial lawyer, HR/employment adviser, or banker should review decisions.
 `;
   }
@@ -578,7 +618,18 @@ COACHING & EVIDENCE RULES:
   // 1. Live AI Coach Query
   app.post('/api/coach/query', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
-      const { prompt, businessProfile, healthInputs, financials, overallHealth, uploadedDocuments, userRole, topic } = req.body;
+      const {
+        prompt,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        userRole,
+        topic,
+      } = req.body;
 
       if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
         return res.status(400).json({ error: 'A coaching question or prompt is required.' });
@@ -588,7 +639,15 @@ COACHING & EVIDENCE RULES:
       }
 
       const systemInstruction =
-        buildDynamicSystemInstruction(businessProfile, healthInputs, financials, overallHealth, uploadedDocuments) +
+        buildDynamicSystemInstruction(
+          businessProfile,
+          healthInputs,
+          financials,
+          overallHealth,
+          uploadedDocuments,
+          crmContacts,
+          roiScenarios
+        ) +
         `\nSpeaking as: ${userRole || 'Owner/Director'}. Topic: ${topic || 'General Strategy'}. Format concisely using clear bullet points and direct commercial reasoning. Never invent missing financial numbers.`;
 
       const response = await generateWithGemini4({
@@ -608,14 +667,24 @@ COACHING & EVIDENCE RULES:
   // 2. Dynamic Structured Recommendation & Action Plan Generator
   app.post('/api/coach/generate-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
-      const { businessProfile, healthInputs, financials, overallHealth, uploadedDocuments } = req.body;
+      const {
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+      } = req.body;
 
       const systemInstruction = buildDynamicSystemInstruction(
         businessProfile,
         healthInputs,
         financials,
         overallHealth,
-        uploadedDocuments
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios
       );
 
       const prompt = `
@@ -715,12 +784,29 @@ Strictly do NOT invent any financial figures that were not supplied. Return stri
   // 3. Challenge Recommendation / Follow-up Endpoint
   app.post('/api/coach/challenge-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
-      const { challengeText, currentRecommendation, businessProfile, healthInputs, financials, overallHealth, uploadedDocuments } = req.body;
+      const {
+        challengeText,
+        challengeQuestion,
+        currentRecommendation,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+      } = req.body;
 
-      if (!challengeText || typeof challengeText !== 'string' || !challengeText.trim()) {
+      const challengeInput = typeof challengeQuestion === 'string' && challengeQuestion.trim()
+        ? challengeQuestion.trim()
+        : typeof challengeText === 'string'
+        ? challengeText.trim()
+        : '';
+
+      if (!challengeInput) {
         return res.status(400).json({ error: 'Please enter your question or challenge.' });
       }
-      if (challengeText.length > 4000) {
+      if (challengeInput.length > 4000) {
         return res.status(400).json({ error: 'Challenge text exceeds 4,000 characters.' });
       }
 
@@ -729,7 +815,9 @@ Strictly do NOT invent any financial figures that were not supplied. Return stri
         healthInputs,
         financials,
         overallHealth,
-        uploadedDocuments
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios
       );
 
       const prompt = `
@@ -741,7 +829,7 @@ CURRENT RECOMMENDATION SUMMARY:
 - Immediate Action: ${currentRecommendation?.immediateAction || 'N/A'}
 
 OWNER'S CHALLENGE / FOLLOW-UP:
-"${challengeText.trim()}"
+"${challengeInput}"
 
 Respond directly, respectfully, and rigorously:
 - Acknowledge what new evidence or operational reality the owner just raised.
@@ -754,12 +842,17 @@ Respond directly, respectfully, and rigorously:
         config: { systemInstruction },
       });
 
+      const replyText = response.text || 'Unable to formulate response.';
+      const createdAt = new Date().toISOString();
+
       return res.json({
+        reply: replyText,
+        createdAt,
         challengeEntry: {
           id: `chal-${Date.now()}`,
-          questionOrChallenge: challengeText.trim(),
-          coachResponse: response.text || 'Unable to formulate response.',
-          createdAt: new Date().toISOString(),
+          questionOrChallenge: challengeInput,
+          coachResponse: replyText,
+          createdAt,
         },
       });
     } catch (err: any) {
@@ -908,6 +1001,101 @@ Include:
       console.error('Script Generation Error:', err);
       return res.status(err?.statusCode || 502).json({
         error: err?.message || 'Unable to generate script.',
+      });
+    }
+  });
+
+  // 6. Connected Business Development, Lead Generation & Outreach Plan API
+  app.post('/api/coach/business-development', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
+    try {
+      const {
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        focusArea,
+      } = req.body;
+
+      const systemInstruction = buildDynamicSystemInstruction(
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios
+      );
+
+      const prompt = `
+Build a practical, connected Business Development & Outreach Plan for "${businessProfile?.name || 'this SME'}" (${businessProfile?.industry || 'SME'}).
+${focusArea ? `Requested Owner Focus: ${focusArea}` : ''}
+
+Synthesize ALL connected workspace evidence:
+1. Business Health realities (especially Money/Cash, Customers/Concentration, Sales, and Operations capacity). If Money or Operations is At Risk, prioritize collecting/stabilizing margin and targeting high-fit/fast-paying buyers rather than low-margin volume.
+2. Actual CRM contacts, sales stages, due follow-ups, and at-risk accounts supplied above (reference their exact CRM ID in linkedCrmId when suggesting outreach for an existing CRM record).
+3. Modeled ROI scenarios (payback & cash requirements).
+
+Return strictly valid JSON matching the schema:
+- idealCustomerProfile: clear description of who this business should target next and why (payment discipline, margin fit, operational load).
+- targetOpportunities: 3–5 concrete target market, referral, or partnership opportunities tailored to the industry & country.
+- followUpPriorities: 3–5 prioritized follow-up actions covering overdue CRM follow-ups, open proposals, or at-risk retention accounts.
+- outreachSuggestions: 3–4 ready-to-use prospecting or follow-up outreach items ({ title, targetSegment, channel, rationale, messageDraft, linkedCrmId }). Do NOT fabricate financial figures.
+`;
+
+      const response = await generateWithGemini4({
+        contents: prompt,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              idealCustomerProfile: { type: Type.STRING },
+              targetOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              followUpPriorities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              outreachSuggestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    targetSegment: { type: Type.STRING },
+                    channel: { type: Type.STRING },
+                    rationale: { type: Type.STRING },
+                    messageDraft: { type: Type.STRING },
+                    linkedCrmId: { type: Type.STRING },
+                  },
+                  required: ['title', 'targetSegment', 'channel', 'rationale', 'messageDraft'],
+                },
+              },
+            },
+            required: [
+              'idealCustomerProfile',
+              'targetOpportunities',
+              'followUpPriorities',
+              'outreachSuggestions',
+            ],
+          },
+        },
+      });
+
+      const parsed = JSON.parse((response.text || '{}').trim());
+      return res.json({
+        businessDevPlan: {
+          idealCustomerProfile: parsed.idealCustomerProfile || 'Tailor targeting to high-margin, prompt-paying SMEs.',
+          targetOpportunities: Array.isArray(parsed.targetOpportunities) ? parsed.targetOpportunities : [],
+          followUpPriorities: Array.isArray(parsed.followUpPriorities) ? parsed.followUpPriorities : [],
+          outreachSuggestions: Array.isArray(parsed.outreachSuggestions) ? parsed.outreachSuggestions : [],
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (err: any) {
+      console.error('Business Development Generation Error:', err);
+      return res.status(err?.statusCode || 502).json({
+        error: err?.message || 'Unable to generate Business Development Plan.',
       });
     }
   });

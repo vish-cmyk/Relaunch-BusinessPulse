@@ -25,6 +25,8 @@ import {
   RecommendationOutput,
   UploadedDocument,
   RecommendationChallenge,
+  CrmRecord,
+  RoiScenario,
 } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
@@ -34,6 +36,8 @@ interface RecommendationViewProps {
   financials: FinancialData | null;
   overallHealth: OverallHealthAssessment | null;
   uploadedDocuments?: UploadedDocument[];
+  crmContacts?: CrmRecord[];
+  roiScenarios?: RoiScenario[];
   recommendations: RecommendationOutput | null;
   onUpdateRecommendations: (rec: RecommendationOutput) => void;
   onTrackUsage?: (field: 'coachMessagesCount' | 'recommendationsCount') => void;
@@ -46,6 +50,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   financials,
   overallHealth,
   uploadedDocuments = [],
+  crmContacts = [],
+  roiScenarios = [],
   recommendations,
   onUpdateRecommendations,
   onTrackUsage,
@@ -78,6 +84,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           financials,
           overallHealth,
           uploadedDocuments,
+          crmContacts,
+          roiScenarios,
         }),
       });
 
@@ -138,6 +146,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           overallHealth,
           currentRecommendation: recommendations,
           uploadedDocuments,
+          crmContacts,
+          roiScenarios,
         }),
       });
 
@@ -148,10 +158,11 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
       const data = await response.json();
       const newEntry: RecommendationChallenge = {
-        id: `chal-${Date.now()}`,
+        id: data.challengeEntry?.id || `chal-${Date.now()}`,
         questionOrChallenge: challengePrompt.trim(),
-        coachResponse: data.reply || 'No response received.',
-        createdAt: data.createdAt || new Date().toISOString(),
+        coachResponse:
+          data.reply || data.challengeEntry?.coachResponse || 'No response received.',
+        createdAt: data.createdAt || data.challengeEntry?.createdAt || new Date().toISOString(),
       };
 
       onUpdateRecommendations({

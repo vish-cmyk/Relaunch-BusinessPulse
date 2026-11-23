@@ -4,6 +4,7 @@ export interface RoadmapPillar {
   title: string;
   tagline: string;
   description: string;
+  releaseStatus: string;
   capabilities: string[];
   availableNowLabel?: string;
   availableNowTab?: string;
@@ -13,19 +14,19 @@ export const BIZPULSE_VISION = {
   headline: 'BizPulse – From Business Clarity to Business Growth',
   subheading: 'Gain Clarity. Shape Your Future, Here and Now.',
   introParagraphs: [
-    'BizPulse is evolving into an AI-powered Business Health, Growth & Development Platform designed to help small and growing businesses make better decisions, identify opportunities and build sustainable performance.',
-    "Our journey doesn't stop at understanding the health of your business. We aim to help you turn insights into practical actions, stronger customer relationships and new revenue opportunities.",
+    'BizPulse is an AI-powered Business Health, Growth & Development Platform designed to help small and growing businesses make better decisions, identify opportunities and build sustainable performance.',
+    "Our journey doesn't stop at understanding the health of your business. Basic CRM, sales pipeline follow-ups, ROI & break-even modeling, and connected business development are integrated directly into your active workspace today.",
   ],
   commitmentTitle: 'Our Commitment',
   commitmentParagraphs: [
-    'BizPulse will continue to evolve in response to the real challenges and needs of small businesses.',
-    'Our approach is practical and progressive: introduce useful capabilities, learn from business owners, improve the experience and expand the platform responsibly.',
+    'BizPulse continues to evolve in response to the real challenges and needs of small businesses.',
+    'Our approach is practical and progressive: keep Business Health connected to customer relationships, financial ROI, and practical growth execution — then expand automation responsibly in future releases.',
   ],
   ambitionLead: 'The ambition is simple:',
   ambitionStatement:
-    'Help business owners understand where they stand today, recognise where they can improve, and identify what they can do next to build a stronger and more sustainable business.',
+    'Help business owners understand where they stand today, manage customer relationships and opportunities systematically, evaluate financial ROI transparently, and execute sustainable growth.',
   disclaimer:
-    'Roadmap features are planned for future releases. Availability, scope and sequencing may evolve as BizPulse develops.',
+    'Release 1 includes live Basic CRM, pipeline tracking, editable ROI & break-even modeling, and AI-assisted business development. Advanced multi-channel automation and external accounting/CRM syncing are planned for Phase 2 releases.',
 };
 
 export const GROWTH_ROADMAP_PILLARS: RoadmapPillar[] = [
@@ -34,16 +35,17 @@ export const GROWTH_ROADMAP_PILLARS: RoadmapPillar[] = [
     id: 'crm',
     title: 'CRM & Customer Relationships',
     tagline: 'Build stronger customer relationships.',
+    releaseStatus: 'Active in Release 1',
     description:
-      'A simple, practical customer relationship management system to help business owners organise customer and prospect information, understand their relationships and manage business opportunities.',
+      'A simple, practical customer relationship management system integrated directly with your Business Health and portfolio margin matrix.',
     capabilities: [
-      'Customer and prospect records',
-      'Contact and interaction history',
-      'Customer classification and segmentation',
-      'Opportunity and potential-value tracking',
-      'Centralised customer relationship information',
+      'Customer, prospect, lead and partner records',
+      'Contact details and timestamped interaction history',
+      'Customer tier classification and concentration link',
+      'Opportunity and monthly recurring value tracking',
+      'Per-business isolated workspace persistence',
     ],
-    availableNowLabel: 'Explore Client Matrix Today',
+    availableNowLabel: 'Open CRM & Clients',
     availableNowTab: 'clientmatrix',
   },
   {
@@ -51,53 +53,54 @@ export const GROWTH_ROADMAP_PILLARS: RoadmapPillar[] = [
     id: 'lead-gen',
     title: 'AI-Assisted Lead Generation',
     tagline: 'Discover where your next customers could come from.',
+    releaseStatus: 'Active in Release 1',
     description:
-      'Intelligent assistance to help businesses identify potential customers, explore target markets and develop practical prospecting strategies.',
+      'Intelligent business development planning connected to your health scores, financials, and CRM pipeline to generate tailored prospecting strategies and outreach drafts.',
     capabilities: [
-      'Ideal customer profiling',
-      'Target-market and industry opportunities',
-      'Referral and partnership ideas',
-      'Lead-generation campaigns',
-      'Personalised prospecting messages and outreach suggestions',
+      'Health- & CRM-grounded ideal customer profiling',
+      'Target-market and partnership opportunities',
+      'Priority follow-up triage for due/at-risk accounts',
+      'Personalised prospecting messages & AI Coach scripts',
+      'Phase 2: Automated multi-channel campaign tracking',
     ],
-    availableNowLabel: 'Draft Outreach in AI Coach',
-    availableNowTab: 'aicoach',
+    availableNowLabel: 'Open Business Development & CRM',
+    availableNowTab: 'clientmatrix',
   },
   {
     number: '03',
     id: 'pipeline',
     title: 'Lead Follow-up & Sales Pipeline',
     tagline: 'Turn opportunities into customers.',
+    releaseStatus: 'Active in Release 1',
     description:
-      'A structured way to manage enquiries, follow-ups and potential business, helping owners avoid missed opportunities and maintain consistent customer engagement.',
+      'A structured way to track enquiries, follow-up dates, sales stages, and overdue follow-up alerts across your CRM and Monday Scoreboard.',
     capabilities: [
-      'Follow-up schedules and reminders',
-      'Contact and activity tracking',
-      'Enquiry and proposal monitoring',
-      'Sales pipeline management',
-      'Won, lost and dormant opportunity tracking',
-      'Lead conversion insights',
+      'Follow-up dates & overdue reminder alerts',
+      'Interaction logging (Calls, Emails, Meetings, Proposals)',
+      'Sales stage progression (Lead → Qualified → Proposal → Won/Lost)',
+      'Active pipeline value & follow-up KPIs on Scoreboard',
+      'Phase 2: Automated calendar & email reminder triggers',
     ],
-    availableNowLabel: 'Review Weekly Scoreboard',
+    availableNowLabel: 'Review Pipeline & Scoreboard',
     availableNowTab: 'dashboard',
   },
   {
     number: '04',
     id: 'bizdev',
-    title: 'Business Development Toolkit',
-    tagline: 'Find new ways to improve revenue and profitability.',
+    title: 'ROI & Financial Analysis Toolkit',
+    tagline: 'Evaluate opportunities with transparent numbers.',
+    releaseStatus: 'Active in Release 1',
     description:
-      'A growing collection of practical tools to support better commercial decisions and business development.',
+      'Editable ROI calculator, break-even analysis, and revenue/margin sensitivity modeling linked directly to CRM opportunities and Cash Flow liquidity.',
     capabilities: [
-      'ROI and investment analysis',
-      'Proposal and quotation assistance',
-      'Revenue and profit opportunity identification',
-      'Customer retention strategies',
-      'Upselling and cross-selling opportunities',
-      'Pricing and profitability insights',
-      'Business development planning',
+      'Editable ROI %, payback period & net benefit calculator',
+      'Transparent formulas & break-even monthly revenue checks',
+      'Conservative / Base / Optimistic margin sensitivity matrix',
+      'Liquidity guardrail against bank cash & overdraft headroom',
+      'One-click evaluation of CRM opportunities & AI stress-testing',
     ],
-    availableNowLabel: 'Open Options & Cash Flow Tools',
+    availableNowLabel: 'Open ROI & Options Workbench',
     availableNowTab: 'options',
   },
 ];
+

@@ -110,7 +110,9 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                   <span className="font-mono font-bold text-[#D97706] tracking-wider">
                     Pillar {pillar.number}
                   </span>
-                  <span>Planned Release</span>
+                  <span className="px-2 py-0.5 rounded bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] font-semibold">
+                    {pillar.releaseStatus}
+                  </span>
                 </div>
 
                 <div>

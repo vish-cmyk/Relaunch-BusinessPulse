@@ -271,6 +271,89 @@ export interface ReportEditorSettings {
   sectionOrder?: string[];
 }
 
+export type CrmRecordType = 'Customer' | 'Prospect' | 'Lead' | 'Partner';
+export type CrmTier = 'Champion' | 'Steady Core' | 'Margin Squeeze' | 'Chronic Drain' | 'Prospect';
+export type CrmSalesStage =
+  | 'Lead'
+  | 'Contacted'
+  | 'Qualified'
+  | 'Proposal Sent'
+  | 'Negotiation'
+  | 'Won'
+  | 'Lost'
+  | 'Dormant';
+export type CrmStatus = 'Active' | 'Follow-Up Due' | 'At Risk' | 'Paused' | 'Closed Won' | 'Closed Lost';
+
+export interface CrmInteraction {
+  id: string;
+  date: string;
+  type: 'Call' | 'Email' | 'Meeting' | 'Proposal' | 'Note';
+  summary: string;
+  outcome?: string;
+}
+
+export interface CrmRecord {
+  id: string;
+  companyOrName: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  recordType: CrmRecordType;
+  tier: CrmTier;
+  salesStage: CrmSalesStage;
+  status: CrmStatus;
+  opportunityValue: number;
+  monthlyValue: number;
+  nextFollowUpDate: string;
+  leadSource: string;
+  notes: string;
+  interactions: CrmInteraction[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type RoiCategory =
+  | 'Sales & Marketing'
+  | 'Hiring & Capacity'
+  | 'Pricing & Margin'
+  | 'Systems & Automation'
+  | 'Client Retention'
+  | 'Other';
+
+export interface RoiScenario {
+  id: string;
+  name: string;
+  category: RoiCategory;
+  linkedCrmId?: string;
+  linkedCrmLabel?: string;
+  upfrontInvestment: number;
+  monthlyOperatingCost: number;
+  expectedMonthlyRevenue: number;
+  grossMarginPct: number;
+  monthsHorizon: number;
+  confidencePct: number;
+  assumptionsNote: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessDevSuggestion {
+  title: string;
+  targetSegment: string;
+  channel: string;
+  rationale: string;
+  messageDraft: string;
+  linkedCrmId?: string;
+}
+
+export interface BusinessDevPlan {
+  idealCustomerProfile: string;
+  targetOpportunities: string[];
+  followUpPriorities: string[];
+  outreachSuggestions: BusinessDevSuggestion[];
+  generatedAt: string;
+}
+
 export interface CaseRecord {
   id: string;
   profile: BusinessProfile;
@@ -283,6 +366,9 @@ export interface CaseRecord {
   actionPlan: TurnaroundAction[];
   sprintCompleted?: Record<string, boolean>;
   dashboardMetrics: CustomDashboardMetric[];
+  crmContacts?: CrmRecord[];
+  roiScenarios?: RoiScenario[];
+  businessDevPlan?: BusinessDevPlan | null;
   reportBlocks?: ReportCustomBlock[];
   reportEditorSettings?: ReportEditorSettings;
   subscriptionTier?: SubscriptionTierId;

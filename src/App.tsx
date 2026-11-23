@@ -8,7 +8,7 @@ import { RecommendationView } from './components/RecommendationView';
 import { ExecutiveMemo } from './components/ExecutiveMemo';
 import { CashFlowWorkbench } from './components/CashFlowWorkbench';
 import { ClientMatrixCalculator } from './components/ClientMatrixCalculator';
-import { OptionsEvaluationMatrix } from './components/OptionsEvaluationMatrix';
+import { OptionsEvaluationMatrix, PendingRoiDraft } from './components/OptionsEvaluationMatrix';
 import { Roadmap90Day } from './components/Roadmap90Day';
 import { WeeklyDashboardView } from './components/WeeklyDashboardView';
 import { SevenDaySprint } from './components/SevenDaySprint';
@@ -29,6 +29,9 @@ import {
   UploadedDocument,
   TurnaroundAction,
   SubscriptionTier,
+  CrmRecord,
+  RoiScenario,
+  BusinessDevPlan,
 } from './types/bizpulse';
 import {
   subscribeUserCases,
@@ -55,6 +58,7 @@ function BizPulseWorkspace() {
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
   const [coachInitialPrompt, setCoachInitialPrompt] = useState<string | undefined>(undefined);
+  const [pendingRoiDraft, setPendingRoiDraft] = useState<PendingRoiDraft | null>(null);
 
   const activeCaseRef = useRef<CaseRecord | null>(null);
   activeCaseRef.current = activeCase;
@@ -420,6 +424,44 @@ function BizPulseWorkspace() {
     });
   };
 
+  const handleUpdateCrmContacts = (crmContacts: CrmRecord[]) => {
+    if (!activeCase) return;
+    persistCase({
+      ...activeCase,
+      crmContacts,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleUpdateRoiScenarios = (roiScenarios: RoiScenario[]) => {
+    if (!activeCase) return;
+    persistCase({
+      ...activeCase,
+      roiScenarios,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleUpdateBusinessDevPlan = (businessDevPlan: BusinessDevPlan | null) => {
+    if (!activeCase) return;
+    persistCase({
+      ...activeCase,
+      businessDevPlan,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleEvaluateOpportunityInRoi = (contact: CrmRecord) => {
+    setPendingRoiDraft({
+      linkedCrmId: contact.id,
+      linkedCrmLabel: contact.companyOrName,
+      opportunityValue: contact.opportunityValue || 0,
+      monthlyValue: contact.monthlyValue || 0,
+      notes: contact.notes,
+    });
+    setActiveTab('options');
+  };
+
   const handleSelectPreviewTier = (tier: SubscriptionTier) => {
     if (!activeCase) return;
     persistCase({
@@ -608,6 +650,8 @@ function BizPulseWorkspace() {
             financials={activeCase.financials}
             overallHealth={activeCase.overallHealth}
             uploadedDocuments={activeCase.uploadedDocuments}
+            crmContacts={activeCase.crmContacts}
+            roiScenarios={activeCase.roiScenarios}
             recommendations={activeCase.recommendations}
             onUpdateRecommendations={handleUpdateRecommendations}
             onTrackUsage={handleTrackUsage}
@@ -644,6 +688,14 @@ function BizPulseWorkspace() {
           <ClientMatrixCalculator
             key={`matrix-${activeCase.id}`}
             caseRecord={activeCase}
+            onUpdateCrmContacts={handleUpdateCrmContacts}
+            onUpdateBusinessDevPlan={handleUpdateBusinessDevPlan}
+            onEvaluateOpportunityInRoi={handleEvaluateOpportunityInRoi}
+            onTrackUsage={handleTrackUsage}
+            onOpenCoachWithPrompt={(prompt) => {
+              setCoachInitialPrompt(prompt);
+              setActiveTab('aicoach');
+            }}
           />
         )}
 
@@ -651,6 +703,13 @@ function BizPulseWorkspace() {
           <OptionsEvaluationMatrix
             key={`options-${activeCase.id}`}
             caseRecord={activeCase}
+            onUpdateRoiScenarios={handleUpdateRoiScenarios}
+            pendingRoiDraft={pendingRoiDraft}
+            onClearPendingRoiDraft={() => setPendingRoiDraft(null)}
+            onOpenCoachWithPrompt={(prompt) => {
+              setCoachInitialPrompt(prompt);
+              setActiveTab('aicoach');
+            }}
           />
         )}
 

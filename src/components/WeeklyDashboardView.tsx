@@ -157,6 +157,62 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({ caseRe
         </div>
       )}
 
+      {/* Live Connected CRM & ROI Pipeline Summary Strip */}
+      {(() => {
+        const crm = caseRecord?.crmContacts || [];
+        const roi = caseRecord?.roiScenarios || [];
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const openPipeline = crm
+          .filter((c) => c.salesStage !== 'Won' && c.salesStage !== 'Lost' && c.salesStage !== 'Dormant')
+          .reduce((s, c) => s + (Number(c.opportunityValue) || 0), 0);
+        const dueCount = crm.filter(
+          (c) =>
+            c.status === 'Follow-Up Due' ||
+            c.status === 'At Risk' ||
+            (Boolean(c.nextFollowUpDate) &&
+              c.nextFollowUpDate <= todayIso &&
+              c.salesStage !== 'Lost' &&
+              c.status !== 'Closed Lost')
+        ).length;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 tabular-nums">
+            <div className="bg-white border border-[#111113]/12 rounded p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#52525B] block">
+                CRM Active Pipeline
+              </span>
+              <div className="text-xl font-bold text-[#111113] font-mono mt-1">
+                {currency} {openPipeline.toLocaleString()}
+              </div>
+              <span className="text-[11px] text-[#52525B]">
+                Across {crm.length} CRM contact{crm.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <div
+              className={`border rounded p-4 ${
+                dueCount > 0 ? 'bg-[#FFFBEB] border-[#FDE68A]' : 'bg-white border-[#111113]/12'
+              }`}
+            >
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#B45309] block">
+                CRM Follow-Ups Due / At Risk
+              </span>
+              <div className="text-xl font-bold text-[#B45309] font-mono mt-1">{dueCount}</div>
+              <span className="text-[11px] text-[#52525B]">
+                Accounts needing Monday follow-up action
+              </span>
+            </div>
+            <div className="bg-white border border-[#111113]/12 rounded p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#52525B] block">
+                Modeled ROI Scenarios
+              </span>
+              <div className="text-xl font-bold text-[#111113] font-mono mt-1">{roi.length}</div>
+              <span className="text-[11px] text-[#52525B]">
+                Evaluated on ROI &amp; Options workbench
+              </span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 6 Vital Sign Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {customKPIs.map((kpi, index) => {

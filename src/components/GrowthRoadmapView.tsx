@@ -20,16 +20,16 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
-      {/* Charcoal Editorial Hero */}
-      <section className="bizpulse-hero-gradient text-white rounded p-6 sm:p-10 border border-[#111113]/15">
+      {/* Navy-to-Black Editorial Hero */}
+      <section className="bizpulse-hero-gradient text-white rounded p-6 sm:p-10 border border-[#0F172A]/15">
         <div className="max-w-3xl space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#FBBF24] font-mono uppercase tracking-widest">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[#60A5FA] font-mono uppercase tracking-widest">
             <Compass className="w-3.5 h-3.5" />
             <span>Platform Vision &amp; Development Roadmap</span>
             {businessName && (
               <>
                 <span aria-hidden="true">·</span>
-                <span className="text-[#D4D4D8]">{businessName}</span>
+                <span className="text-[#CBD5E1]">{businessName}</span>
               </>
             )}
           </div>
@@ -38,11 +38,11 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
             {BIZPULSE_VISION.headline}
           </h1>
 
-          <p className="text-base sm:text-lg font-medium text-[#FBBF24]">
+          <p className="text-base sm:text-lg font-medium text-[#60A5FA]">
             {BIZPULSE_VISION.subheading}
           </p>
 
-          <div className="space-y-3 pt-1 text-sm text-[#D4D4D8] leading-relaxed">
+          <div className="space-y-3 pt-1 text-sm text-[#CBD5E1] leading-relaxed">
             {BIZPULSE_VISION.introParagraphs.map((para, idx) => (
               <p key={idx}>{para}</p>
             ))}
@@ -52,17 +52,17 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
 
       {/* Roadmap Filter Bar + Section Header */}
       <section className="space-y-5">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#111113]/10 pb-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#0F172A]/10 pb-4">
           <div>
             <span className="bizpulse-label block mb-1">Future Releases</span>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#111113]">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
               Our Development Roadmap
             </h2>
           </div>
 
           {/* Interactive Filter Tabs */}
           <div
-            className="flex flex-wrap items-center gap-1 p-1 bg-[#EFECE6] rounded border border-[#111113]/10"
+            className="flex flex-wrap items-center gap-1 p-1 bg-[#F1F5F9] rounded border border-[#0F172A]/10"
             role="tablist"
             aria-label="Filter roadmap pillars"
           >
@@ -71,8 +71,8 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
               onClick={() => setSelectedPillarId('all')}
               className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
                 selectedPillarId === 'all'
-                  ? 'bg-[#111113] text-white'
-                  : 'text-[#52525B] hover:text-[#111113]'
+                  ? 'bg-[#0F172A] text-white'
+                  : 'text-[#475569] hover:text-[#0F172A]'
               }`}
             >
               All 4 Pillars
@@ -84,8 +84,8 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                 onClick={() => setSelectedPillarId(pillar.id)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
                   selectedPillarId === pillar.id
-                    ? 'bg-[#111113] text-white'
-                    : 'text-[#52525B] hover:text-[#111113]'
+                    ? 'bg-[#0F172A] text-white'
+                    : 'text-[#475569] hover:text-[#0F172A]'
                 }`}
               >
                 {pillar.number}. {pillar.title.split('&')[0].trim()}
@@ -103,11 +103,11 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
           {visiblePillars.map((pillar) => (
             <article
               key={pillar.id}
-              className="bg-white border border-[#111113]/12 rounded p-6 sm:p-7 flex flex-col justify-between space-y-6"
+              className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-7 flex flex-col justify-between space-y-6"
             >
               <div className="space-y-4">
-                <div className="flex items-center justify-between gap-2 text-xs text-[#52525B]">
-                  <span className="font-mono font-bold text-[#D97706] tracking-wider">
+                <div className="flex items-center justify-between gap-2 text-xs text-[#475569]">
+                  <span className="font-mono font-bold text-[#2563EB] tracking-wider">
                     Pillar {pillar.number}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] font-semibold">
@@ -116,26 +116,26 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                 </div>
 
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-[#111113]">
+                  <h3 className="text-lg sm:text-xl font-bold text-[#0F172A]">
                     {pillar.number}. {pillar.title}
                   </h3>
-                  <p className="text-sm font-semibold text-[#B45309] mt-1">
+                  <p className="text-sm font-semibold text-[#1D4ED8] mt-1">
                     {pillar.tagline}
                   </p>
-                  <p className="text-xs sm:text-sm text-[#52525B] mt-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#475569] mt-3 leading-relaxed">
                     {pillar.description}
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-[#111113]/10 space-y-2.5">
+                <div className="pt-4 border-t border-[#0F172A]/10 space-y-2.5">
                   <span className="bizpulse-label block">Planned Capabilities</span>
                   <ul className="space-y-2">
                     {pillar.capabilities.map((cap) => (
                       <li
                         key={cap}
-                        className="flex items-start gap-2.5 text-xs sm:text-sm text-[#111113]"
+                        className="flex items-start gap-2.5 text-xs sm:text-sm text-[#0F172A]"
                       >
-                        <Check className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
                         <span>{cap}</span>
                       </li>
                     ))}
@@ -144,17 +144,17 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
               </div>
 
               {onNavigateTab && pillar.availableNowTab && pillar.availableNowLabel && (
-                <div className="pt-4 border-t border-[#111113]/10 flex items-center justify-between gap-3">
-                  <span className="text-[11px] text-[#52525B]">
+                <div className="pt-4 border-t border-[#0F172A]/10 flex items-center justify-between gap-3">
+                  <span className="text-[11px] text-[#475569]">
                     Available today in your workspace
                   </span>
                   <button
                     type="button"
                     onClick={() => onNavigateTab(pillar.availableNowTab!)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] border border-[#111113]/15 text-xs font-semibold transition whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition whitespace-nowrap shrink-0"
                   >
                     <span>{pillar.availableNowLabel}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#D97706]" />
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2563EB]" />
                   </button>
                 </div>
               )}
@@ -164,25 +164,25 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
       </section>
 
       {/* Our Commitment Section */}
-      <section className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 space-y-6">
+      <section className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="lg:col-span-7 space-y-3">
             <span className="bizpulse-label block">Progressive Evolution</span>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#111113]">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
               {BIZPULSE_VISION.commitmentTitle}
             </h2>
             {BIZPULSE_VISION.commitmentParagraphs.map((para, idx) => (
-              <p key={idx} className="text-sm text-[#52525B] leading-relaxed">
+              <p key={idx} className="text-sm text-[#475569] leading-relaxed">
                 {para}
               </p>
             ))}
           </div>
 
-          <div className="lg:col-span-5 bg-[#F8F7F4] border border-[#111113]/12 rounded p-5 sm:p-6 space-y-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#B45309] block">
+          <div className="lg:col-span-5 bg-[#F8FAFC] border border-[#0F172A]/12 rounded p-5 sm:p-6 space-y-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] block">
               {BIZPULSE_VISION.ambitionLead}
             </span>
-            <p className="text-sm font-medium text-[#111113] leading-relaxed">
+            <p className="text-sm font-medium text-[#0F172A] leading-relaxed">
               {BIZPULSE_VISION.ambitionStatement}
             </p>
             {onNavigateTab && (
@@ -190,17 +190,17 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onNavigateTab('health')}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
                   <span>Assess Business Health Today</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#FBBF24]" />
+                  <ArrowRight className="w-3.5 h-3.5 text-[#60A5FA]" />
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        <p className="pt-4 border-t border-[#111113]/10 text-xs italic text-[#52525B]">
+        <p className="pt-4 border-t border-[#0F172A]/10 text-xs italic text-[#475569]">
           {BIZPULSE_VISION.disclaimer}
         </p>
       </section>

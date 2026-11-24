@@ -94,9 +94,9 @@ function getAccentClasses(accent: ReportCustomBlock['accent'] = 'slate'): {
     case 'slate':
     default:
       return {
-        card: 'bg-[#F8F7F4] border-[#111113]/12',
-        heading: 'text-[#111113]',
-        badge: 'bg-[#111113] text-white',
+        card: 'bg-[#F8FAFC] border-[#0F172A]/12',
+        heading: 'text-[#0F172A]',
+        badge: 'bg-[#0F172A] text-white',
       };
   }
 }
@@ -301,7 +301,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
           onClick={() => moveSection(sectionId, -1)}
           disabled={idx === 0}
           title="Move section up"
-          className="p-1.5 rounded bg-[#F8F7F4] border border-[#111113]/15 text-[#111113] hover:bg-[#EFECE6] disabled:opacity-40 transition"
+          className="p-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/15 text-[#0F172A] hover:bg-[#F1F5F9] disabled:opacity-40 transition"
         >
           <ArrowUp className="w-3.5 h-3.5" />
         </button>
@@ -310,7 +310,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
           onClick={() => moveSection(sectionId, 1)}
           disabled={idx === sectionOrder.length - 1}
           title="Move section down"
-          className="p-1.5 rounded bg-[#F8F7F4] border border-[#111113]/15 text-[#111113] hover:bg-[#EFECE6] disabled:opacity-40 transition"
+          className="p-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/15 text-[#0F172A] hover:bg-[#F1F5F9] disabled:opacity-40 transition"
         >
           <ArrowDown className="w-3.5 h-3.5" />
         </button>
@@ -319,7 +319,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
   };
 
   const renderEditorToolbar = () => (
-    <div className="bg-white border border-[#111113]/12 rounded p-4 shadow-xs space-y-3 print:hidden">
+    <div className="bg-white border border-[#0F172A]/12 rounded p-4 shadow-xs space-y-3 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -327,8 +327,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             onClick={() => setIsEditing((v) => !v)}
             className={`px-3.5 py-2 rounded text-xs font-bold flex items-center gap-1.5 transition border ${
               isEditing
-                ? 'bg-[#111113] text-white border-[#111113]'
-                : 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A] hover:bg-[#FEF3C7]'
+                ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                : 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]'
             }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -338,7 +338,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
           <button
             type="button"
             onClick={handleAddParagraph}
-            className="px-3.5 py-2 rounded bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition shadow-2xs"
+            className="px-3.5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Paragraph</span>
@@ -348,9 +348,9 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <button
               type="button"
               onClick={onOpenExportModal}
-              className="px-3.5 py-2 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] text-xs font-semibold border border-[#111113]/15 flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 flex items-center gap-1.5 transition"
             >
-              <Download className="w-3.5 h-3.5 text-[#D97706]" />
+              <Download className="w-3.5 h-3.5 text-[#2563EB]" />
               <span>Export Edited PDF / Word</span>
             </button>
           )}
@@ -364,8 +364,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             </span>
           )}
 
-          <div className="flex items-center gap-1 bg-[#F8F7F4] border border-[#111113]/15 rounded px-2.5 py-1.5">
-            <Type className="w-3.5 h-3.5 text-[#52525B]" />
+          <div className="flex items-center gap-1 bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5">
+            <Type className="w-3.5 h-3.5 text-[#475569]" />
             <label htmlFor="report-font-select" className="sr-only">
               Report Font Family
             </label>
@@ -373,7 +373,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               id="report-font-select"
               value={editorSettings.fontFamily}
               onChange={(e) => updateSettings({ fontFamily: e.target.value as ReportFontFamily })}
-              className="bg-transparent text-[#111113] font-semibold focus:outline-none text-xs"
+              className="bg-transparent text-[#0F172A] font-semibold focus:outline-none text-xs"
             >
               <option value="sans">Sans-Serif (Inter)</option>
               <option value="serif">Editorial Serif</option>
@@ -381,7 +381,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center bg-[#F8F7F4] border border-[#111113]/15 rounded p-0.5">
+          <div className="flex items-center bg-[#F8FAFC] border border-[#0F172A]/15 rounded p-0.5">
             {(['sm', 'base', 'lg'] as ReportFontSize[]).map((sz) => (
               <button
                 key={sz}
@@ -389,8 +389,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 onClick={() => updateSettings({ fontSize: sz })}
                 className={`px-2.5 py-1 rounded text-[11px] font-bold transition ${
                   editorSettings.fontSize === sz
-                    ? 'bg-[#111113] text-white'
-                    : 'text-[#52525B] hover:text-[#111113]'
+                    ? 'bg-[#0F172A] text-white'
+                    : 'text-[#475569] hover:text-[#0F172A]'
                 }`}
               >
                 {sz === 'sm' ? 'Compact' : sz === 'base' ? 'Standard' : 'Large'}
@@ -402,7 +402,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             type="button"
             onClick={handleResetLayout}
             title="Reset section order and typography"
-            className="px-2.5 py-1.5 rounded bg-white border border-[#111113]/15 text-[#52525B] hover:text-[#111113] hover:bg-[#F8F7F4] font-semibold flex items-center gap-1 transition"
+            className="px-2.5 py-1.5 rounded bg-white border border-[#0F172A]/15 text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] font-semibold flex items-center gap-1 transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
@@ -411,7 +411,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
       </div>
 
       {isEditing && (
-        <p className="text-[11px] text-[#52525B] bg-[#F8F7F4] border border-[#111113]/10 rounded px-3 py-2">
+        <p className="text-[11px] text-[#475569] bg-[#F8FAFC] border border-[#0F172A]/10 rounded px-3 py-2">
           <strong>Edit Mode Active:</strong> Use the Up/Down arrows on any section or custom paragraph to reorder it, change fonts/sizes/alignment/bold/italic, edit report text inline, or add custom paragraphs. All changes save automatically to your case and carry into PDF, Word (.docx), and Markdown exports.
         </p>
       )}
@@ -424,14 +424,14 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
     return (
       <div
         key="custom"
-        className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4"
+        className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-[#111113]/10 gap-2">
+        <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10 gap-2">
           <div className="flex items-center space-x-2.5">
-            <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+            <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
               {displayNum}
             </span>
-            <h3 className="text-lg font-bold text-[#111113]">
+            <h3 className="text-lg font-bold text-[#0F172A]">
               Custom Commentary &amp; Owner Paragraphs ({reportBlocks.length})
             </h3>
           </div>
@@ -439,7 +439,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <button
               type="button"
               onClick={handleAddParagraph}
-              className="px-3 py-1.5 rounded bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] text-xs font-bold border border-[#FDE68A] flex items-center gap-1 transition"
+              className="px-3 py-1.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] text-xs font-bold border border-[#BFDBFE] flex items-center gap-1 transition"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Paragraph</span>
@@ -449,8 +449,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         </div>
 
         {reportBlocks.length === 0 ? (
-          <div className="p-6 text-center rounded bg-[#F8F7F4] border border-dashed border-[#111113]/20 space-y-2">
-            <p className="text-xs text-[#52525B]">
+          <div className="p-6 text-center rounded bg-[#F8FAFC] border border-dashed border-[#0F172A]/20 space-y-2">
+            <p className="text-xs text-[#475569]">
               No custom paragraphs added yet. Click <strong>Add Paragraph</strong> to insert board notes, consultant commentary, or owner decisions into this report.
             </p>
           </div>
@@ -479,7 +479,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                               })
                             }
                             aria-label="Paragraph font"
-                            className="bg-white border border-[#111113]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#111113]"
+                            className="bg-white border border-[#0F172A]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#0F172A]"
                           >
                             <option value="sans">Sans</option>
                             <option value="serif">Serif</option>
@@ -494,7 +494,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                               })
                             }
                             aria-label="Paragraph size"
-                            className="bg-white border border-[#111113]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#111113]"
+                            className="bg-white border border-[#0F172A]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#0F172A]"
                           >
                             <option value="sm">Small</option>
                             <option value="base">Normal</option>
@@ -507,8 +507,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             title="Bold"
                             className={`p-1.5 rounded border text-xs ${
                               block.bold
-                                ? 'bg-[#111113] text-white border-[#111113]'
-                                : 'bg-white text-[#111113] border-[#111113]/15'
+                                ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                                : 'bg-white text-[#0F172A] border-[#0F172A]/15'
                             }`}
                           >
                             <Bold className="w-3.5 h-3.5" />
@@ -520,14 +520,14 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             title="Italic"
                             className={`p-1.5 rounded border text-xs ${
                               block.italic
-                                ? 'bg-[#111113] text-white border-[#111113]'
-                                : 'bg-white text-[#111113] border-[#111113]/15'
+                                ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                                : 'bg-white text-[#0F172A] border-[#0F172A]/15'
                             }`}
                           >
                             <Italic className="w-3.5 h-3.5" />
                           </button>
 
-                          <div className="flex items-center bg-white border border-[#111113]/15 rounded overflow-hidden">
+                          <div className="flex items-center bg-white border border-[#0F172A]/15 rounded overflow-hidden">
                             {(
                               [
                                 { id: 'left', icon: AlignLeft, label: 'Align left' },
@@ -544,8 +544,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                                   title={al.label}
                                   className={`p-1.5 ${
                                     (block.align || 'left') === al.id
-                                      ? 'bg-[#D97706] text-white'
-                                      : 'text-[#52525B] hover:text-[#111113]'
+                                      ? 'bg-[#2563EB] text-white'
+                                      : 'text-[#475569] hover:text-[#0F172A]'
                                   }`}
                                 >
                                   <AlIcon className="w-3.5 h-3.5" />
@@ -562,7 +562,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                               })
                             }
                             aria-label="Callout style"
-                            className="bg-white border border-[#111113]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#111113]"
+                            className="bg-white border border-[#0F172A]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#0F172A]"
                           >
                             <option value="slate">Neutral Card</option>
                             <option value="blue">Cobalt Highlight</option>
@@ -577,7 +577,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             onClick={() => handleMoveBlock(block.id, -1)}
                             disabled={bIdx === 0}
                             title="Move paragraph up"
-                            className="p-1.5 rounded bg-white border border-[#111113]/15 text-[#111113] disabled:opacity-40 hover:bg-[#F8F7F4]"
+                            className="p-1.5 rounded bg-white border border-[#0F172A]/15 text-[#0F172A] disabled:opacity-40 hover:bg-[#F8FAFC]"
                           >
                             <ArrowUp className="w-3.5 h-3.5" />
                           </button>
@@ -586,7 +586,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             onClick={() => handleMoveBlock(block.id, 1)}
                             disabled={bIdx === reportBlocks.length - 1}
                             title="Move paragraph down"
-                            className="p-1.5 rounded bg-white border border-[#111113]/15 text-[#111113] disabled:opacity-40 hover:bg-[#F8F7F4]"
+                            className="p-1.5 rounded bg-white border border-[#0F172A]/15 text-[#0F172A] disabled:opacity-40 hover:bg-[#F8FAFC]"
                           >
                             <ArrowDown className="w-3.5 h-3.5" />
                           </button>
@@ -594,7 +594,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             type="button"
                             onClick={() => handleDuplicateBlock(block)}
                             title="Duplicate paragraph"
-                            className="p-1.5 rounded bg-white border border-[#111113]/15 text-[#D97706] hover:bg-[#FFFBEB]"
+                            className="p-1.5 rounded bg-white border border-[#0F172A]/15 text-[#2563EB] hover:bg-[#EFF6FF]"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>
@@ -614,14 +614,14 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                         value={block.heading}
                         onChange={(e) => handleUpdateBlock(block.id, { heading: e.target.value })}
                         placeholder="Paragraph / Section Heading..."
-                        className={`w-full bg-white border border-[#111113]/15 rounded px-3 py-1.5 font-bold focus:outline-none focus:ring-1 focus:ring-[#D97706] ${blockFont} ${accent.heading}`}
+                        className={`w-full bg-white border border-[#0F172A]/15 rounded px-3 py-1.5 font-bold focus:outline-none focus:ring-1 focus:ring-[#2563EB] ${blockFont} ${accent.heading}`}
                       />
                       <textarea
                         rows={4}
                         value={block.body}
                         onChange={(e) => handleUpdateBlock(block.id, { body: e.target.value })}
                         placeholder="Enter paragraph commentary..."
-                        className={`w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113] focus:outline-none focus:ring-1 focus:ring-[#D97706] ${blockFont} ${blockSize} ${blockAlign} ${
+                        className={`w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:ring-1 focus:ring-[#2563EB] ${blockFont} ${blockSize} ${blockAlign} ${
                           block.bold ? 'font-bold' : 'font-normal'
                         } ${block.italic ? 'italic' : ''}`}
                       />
@@ -632,7 +632,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                         {block.heading}
                       </h4>
                       <p
-                        className={`text-[#111113] whitespace-pre-wrap ${blockFont} ${blockSize} ${blockAlign} ${
+                        className={`text-[#0F172A] whitespace-pre-wrap ${blockFont} ${blockSize} ${blockAlign} ${
                           block.bold ? 'font-bold' : 'font-normal'
                         } ${block.italic ? 'italic' : ''}`}
                       >
@@ -656,21 +656,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'dimensions') {
         return (
-          <div key="dimensions" className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#111113]/10">
+          <div key="dimensions" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                   {displayNum}
                 </span>
-                <h3 className="text-lg font-bold text-[#111113]">
-                  Eight Commercial Health Dimensions
+                <h3 className="text-lg font-bold text-[#0F172A]">
+                  Twelve Business Health Capabilities
                 </h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => onSwitchTab('health')}
-                  className="text-xs text-[#D97706] hover:text-[#B45309] font-bold print:hidden"
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold print:hidden"
                 >
                   Edit Dimensions &rarr;
                 </button>
@@ -681,7 +681,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#111113]/12 bg-[#F8F7F4] text-[#52525B] font-mono uppercase tracking-wider text-[11px]">
+                  <tr className="border-b border-[#0F172A]/12 bg-[#F8FAFC] text-[#475569] font-mono uppercase tracking-wider text-[11px]">
                     <th className="py-2.5 px-3">Dimension</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3">Score</th>
@@ -689,12 +689,12 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                     <th className="py-2.5 px-3">Owner Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#111113]/10">
+                <tbody className="divide-y divide-[#0F172A]/10">
                   {Object.values(activeCase.healthInputs).map((dim) => {
                     const detail = h?.dimensionScores?.find((d) => d.key === dim.key);
                     return (
-                      <tr key={dim.key} className="hover:bg-[#F8F7F4]/60 transition">
-                        <td className="py-3 px-3 font-semibold text-[#111113]">{dim.title}</td>
+                      <tr key={dim.key} className="hover:bg-[#F8FAFC]/60 transition">
+                        <td className="py-3 px-3 font-semibold text-[#0F172A]">{dim.title}</td>
                         <td className="py-3 px-3">
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-bold border whitespace-nowrap ${
@@ -705,22 +705,22 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                                 : dim.status === 'at_risk'
                                 ? 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
                                 : dim.status === 'not_sure'
-                                ? 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]'
-                                : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0]'
+                                ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
+                                : 'bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]'
                             }`}
                           >
-                            {dim.status.replace('_', ' ').toUpperCase()}
+                            {dim.status === 'not_sure' ? 'INSUFFICIENT INFO' : dim.status.replace('_', ' ').toUpperCase()}
                           </span>
                         </td>
-                        <td className="py-3 px-3 font-mono font-bold text-[#111113] tabular-nums">
+                        <td className="py-3 px-3 font-mono font-bold text-[#0F172A] tabular-nums">
                           {detail && detail.score !== null ? `${detail.score}/100` : '—'}
                         </td>
-                        <td className="py-3 px-3 text-[#52525B] font-mono text-[11px]">
+                        <td className="py-3 px-3 text-[#475569] font-mono text-[11px]">
                           {dim.evidenceType.replace('_', ' ')}
                         </td>
-                        <td className="py-3 px-3 text-[#111113] max-w-md">
+                        <td className="py-3 px-3 text-[#0F172A] max-w-md">
                           {dim.notes || (
-                            <span className="text-[#71717A] italic">No notes supplied by owner</span>
+                            <span className="text-[#64748B] italic">No notes supplied by owner</span>
                           )}
                         </td>
                       </tr>
@@ -735,13 +735,13 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'evidence') {
         return (
-          <div key="evidence" className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#111113]/10">
+          <div key="evidence" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                   {displayNum}
                 </span>
-                <h3 className="text-lg font-bold text-[#111113]">
+                <h3 className="text-lg font-bold text-[#0F172A]">
                   Supplied Financial &amp; Document Evidence
                 </h3>
               </div>
@@ -749,7 +749,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('documents')}
-                  className="text-xs text-[#D97706] hover:text-[#B45309] font-bold"
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
                 >
                   Manage Documents ({docs.length}) &rarr;
                 </button>
@@ -759,30 +759,30 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
             {fin ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs tabular-nums">
-                <div className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Cash in Bank</span>
-                  <strong className="text-[#111113] font-mono text-sm">
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Cash in Bank</span>
+                  <strong className="text-[#0F172A] font-mono text-sm">
                     {fin.cashInBank !== null ? `${p.currency} ${fin.cashInBank.toLocaleString()}` : 'Not supplied'}
                   </strong>
                 </div>
-                <div className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Receivables</span>
-                  <strong className="text-[#111113] font-mono text-sm">
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Receivables</span>
+                  <strong className="text-[#0F172A] font-mono text-sm">
                     {fin.accountsReceivable !== null
                       ? `${p.currency} ${fin.accountsReceivable.toLocaleString()}`
                       : 'Not supplied'}
                   </strong>
                 </div>
-                <div className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Overdue (&gt;60d)</span>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Overdue (&gt;60d)</span>
                   <strong className="text-[#B91C1C] font-mono text-sm">
                     {fin.overdueReceivables !== null
                       ? `${p.currency} ${fin.overdueReceivables.toLocaleString()}`
                       : 'Not supplied'}
                   </strong>
                 </div>
-                <div className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Credit Drawn</span>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Credit Drawn</span>
                   <strong className="text-[#B45309] font-mono text-sm">
                     {fin.creditFacilityUsed !== null
                       ? `${p.currency} ${fin.creditFacilityUsed.toLocaleString()}`
@@ -791,31 +791,54 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-[#52525B] bg-[#F8F7F4] p-3.5 rounded border border-[#111113]/10">
+              <p className="text-xs text-[#475569] bg-[#F8FAFC] p-3.5 rounded border border-[#0F172A]/10">
                 No numerical financial ledger figures have been entered in the Cash Flow Workbench yet. BizPulse never assumes missing financial numbers.
               </p>
             )}
 
             {docs.length > 0 && (
               <div className="space-y-2 pt-2">
-                <span className="text-xs font-bold text-[#111113] uppercase tracking-wider block">
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider block">
                   Analyzed Documents ({docs.length})
                 </span>
                 {docs.map((d) => (
                   <div
                     key={d.id}
-                    className="p-3.5 rounded bg-[#F8F7F4] border border-[#111113]/10 text-xs space-y-1"
+                    className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-xs space-y-1"
                   >
-                    <div className="flex items-center justify-between font-bold text-[#111113]">
+                    <div className="flex items-center justify-between font-bold text-[#0F172A]">
                       <span className="flex items-center gap-1.5">
-                        <FileSpreadsheet className="w-3.5 h-3.5 text-[#D97706]" />
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-[#2563EB]" />
                         {d.fileName}
                       </span>
-                      <span className="text-[11px] font-mono text-[#52525B]">{d.fileType.toUpperCase()}</span>
+                      <span className="text-[11px] font-mono text-[#475569]">{d.fileType.toUpperCase()}</span>
                     </div>
-                    <p className="text-[#52525B] leading-relaxed">{d.summary}</p>
+                    <p className="text-[#475569] leading-relaxed">{d.summary}</p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {activeCase.crossDocumentSynthesis && (
+              <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs space-y-2">
+                <span className="font-bold text-[#B45309] uppercase tracking-wider block text-[11px]">
+                  Cross-Document Financial &amp; Future Earnings Synthesis
+                </span>
+                <p className="text-[#0F172A] leading-relaxed">{activeCase.crossDocumentSynthesis.summary}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                  <div className="p-2.5 rounded bg-white border border-[#0F172A]/10">
+                    <span className="font-bold text-[#475569] block text-[10px] uppercase">Conservative</span>
+                    <p className="text-[#0F172A] mt-0.5">{activeCase.crossDocumentSynthesis.conservativeScenario}</p>
+                  </div>
+                  <div className="p-2.5 rounded bg-white border border-[#0F172A]/10">
+                    <span className="font-bold text-[#B45309] block text-[10px] uppercase">Base Case</span>
+                    <p className="text-[#0F172A] mt-0.5">{activeCase.crossDocumentSynthesis.baseScenario}</p>
+                  </div>
+                  <div className="p-2.5 rounded bg-white border border-[#0F172A]/10">
+                    <span className="font-bold text-[#15803D] block text-[10px] uppercase">Optimistic Drivers</span>
+                    <p className="text-[#0F172A] mt-0.5">{activeCase.crossDocumentSynthesis.optimisticScenario}</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -824,13 +847,13 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'recommendations') {
         return (
-          <div key="recommendations" className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#111113]/10">
+          <div key="recommendations" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                   {displayNum}
                 </span>
-                <h3 className="text-lg font-bold text-[#111113]">
+                <h3 className="text-lg font-bold text-[#0F172A]">
                   Coaching Recommendations &amp; Priority Actions
                 </h3>
               </div>
@@ -838,7 +861,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('recommendations')}
-                  className="text-xs text-[#D97706] hover:text-[#B45309] font-bold"
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
                 >
                   Open Coaching Tab &rarr;
                 </button>
@@ -848,8 +871,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
             {rec ? (
               <div className={`space-y-4 ${globalSizeClass}`}>
-                <div className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/10 space-y-2">
-                  <span className="font-bold font-mono text-[#D97706] uppercase tracking-wider block text-[11px]">
+                <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2">
+                  <span className="font-bold font-mono text-[#2563EB] uppercase tracking-wider block text-[11px]">
                     Core Commercial Finding
                   </span>
                   {isEditing ? (
@@ -858,19 +881,19 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                         rows={2}
                         value={rec.initialObservation}
                         onChange={(e) => updateRecField('initialObservation', e.target.value)}
-                        className="w-full bg-white border border-[#111113]/15 rounded p-2 font-bold text-[#111113] text-sm"
+                        className="w-full bg-white border border-[#0F172A]/15 rounded p-2 font-bold text-[#0F172A] text-sm"
                       />
                       <textarea
                         rows={3}
                         value={rec.commercialWhy}
                         onChange={(e) => updateRecField('commercialWhy', e.target.value)}
-                        className="w-full bg-white border border-[#111113]/15 rounded p-2 text-[#52525B] text-xs"
+                        className="w-full bg-white border border-[#0F172A]/15 rounded p-2 text-[#475569] text-xs"
                       />
                     </>
                   ) : (
                     <>
-                      <p className="font-bold text-[#111113]">{rec.initialObservation}</p>
-                      <p className="text-[#52525B] leading-relaxed">{rec.commercialWhy}</p>
+                      <p className="font-bold text-[#0F172A]">{rec.initialObservation}</p>
+                      <p className="text-[#475569] leading-relaxed">{rec.commercialWhy}</p>
                     </>
                   )}
                 </div>
@@ -884,10 +907,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                       rows={3}
                       value={rec.initialRecommendation}
                       onChange={(e) => updateRecField('initialRecommendation', e.target.value)}
-                      className="w-full bg-white border border-[#111113]/15 rounded p-2 font-semibold text-[#111113] text-xs"
+                      className="w-full bg-white border border-[#0F172A]/15 rounded p-2 font-semibold text-[#0F172A] text-xs"
                     />
                   ) : (
-                    <p className="text-[#111113] font-semibold">{rec.initialRecommendation}</p>
+                    <p className="text-[#0F172A] font-semibold">{rec.initialRecommendation}</p>
                   )}
                 </div>
 
@@ -900,31 +923,74 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                       rows={2}
                       value={rec.immediateAction}
                       onChange={(e) => updateRecField('immediateAction', e.target.value)}
-                      className="w-full bg-white border border-[#111113]/15 rounded p-2 font-medium text-[#111113] text-xs"
+                      className="w-full bg-white border border-[#0F172A]/15 rounded p-2 font-medium text-[#0F172A] text-xs"
                     />
                   ) : (
-                    <p className="text-[#111113] font-medium">{rec.immediateAction}</p>
+                    <p className="text-[#0F172A] font-medium">{rec.immediateAction}</p>
                   )}
                 </div>
 
+                {rec.sustainabilityAssessment && (
+                  <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-bold font-mono text-[#1D4ED8] uppercase tracking-wider text-[11px]">
+                        Business Sustainability &amp; Strategic Choice
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#0F172A] text-white font-bold text-[10px] uppercase">
+                        {rec.sustainabilityAssessment.recommendedChoice}
+                      </span>
+                    </div>
+                    <p className="text-[#0F172A] font-medium leading-relaxed">
+                      <strong>Current Position: </strong>
+                      {rec.sustainabilityAssessment.currentPositionSummary}
+                    </p>
+                    <p className="text-[#334155] leading-relaxed">
+                      <strong>6–12 Month Outlook: </strong>
+                      {rec.sustainabilityAssessment.futureOutlook6to12Months}
+                    </p>
+                    <p className="text-[#1E3A8A] leading-relaxed">
+                      <strong>Choice Rationale: </strong>
+                      {rec.sustainabilityAssessment.choiceRationale}
+                    </p>
+                    <p className="text-[11px] italic text-[#475569]">
+                      {rec.sustainabilityAssessment.disclaimer}
+                    </p>
+                  </div>
+                )}
+
+                {rec.profitOpportunities && rec.profitOpportunities.length > 0 && (
+                  <div className="p-4 rounded bg-[#F8FAFC] border border-[#CBD5E1] space-y-2 text-xs">
+                    <span className="font-bold font-mono text-[#0F172A] uppercase tracking-wider block text-[11px]">
+                      Top Profit &amp; Revenue Leakage Levers ({rec.profitOpportunities.length})
+                    </span>
+                    <ul className="space-y-1.5 text-[#1E293B]">
+                      {rec.profitOpportunities.slice(0, 5).map((opp) => (
+                        <li key={opp.id}>
+                          • <strong>[{opp.horizon}] {opp.title}:</strong> {opp.estimatedFinancialImpact} ({opp.whatToDoFirst || opp.evidenceBasis})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {rec.specialistAdviceNeeded && (
-                  <div className="p-3.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-[#111113] text-xs">
+                  <div className="p-3.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-[#0F172A] text-xs">
                     <strong className="text-[#B45309]">Specialist Advisory Check: </strong>
                     {rec.specialistAdviceNeeded}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="p-6 text-center rounded bg-[#F8F7F4] border border-[#111113]/10 space-y-3">
-                <p className="text-xs text-[#52525B]">
+              <div className="p-6 text-center rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-3">
+                <p className="text-xs text-[#475569]">
                   Coaching recommendations have not yet been generated for {p.name}.
                 </p>
                 <button
                   type="button"
                   onClick={() => onSwitchTab('recommendations')}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white font-semibold uppercase tracking-wider text-xs"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold uppercase tracking-wider text-xs"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
                   <span>Generate Coaching Plan</span>
                 </button>
               </div>
@@ -944,21 +1010,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
       <div className={`space-y-6 max-w-5xl mx-auto print:max-w-none print:text-black ${globalFontClass}`}>
         {renderEditorToolbar()}
 
-        {/* Top Architectural Charcoal Executive Header */}
-        <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#111113]/15 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+        {/* Top Architectural Navy Executive Header */}
+        <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#0F172A]/15 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/15 pb-5 print:border-black">
             <div>
-              <span className="bizpulse-label text-[#FBBF24]">
+              <span className="bizpulse-label text-[#60A5FA]">
                 Executive Diagnostic Briefing · Case: {p.caseId}
               </span>
               <h1 className="text-2xl sm:text-3xl font-bold text-white mt-2 tracking-tight print:text-black">
                 {p.name || 'Business Assessment'}
               </h1>
-              <p className="text-[#D4D4D8] text-sm mt-1 print:text-gray-700">
+              <p className="text-[#CBD5E1] text-sm mt-1 print:text-gray-700">
                 Commercial Diagnostic &amp; Action Report · {p.industry} ({p.country})
               </p>
             </div>
-            <div className="text-right text-xs text-[#D4D4D8] space-y-1 print:text-gray-700 tabular-nums">
+            <div className="text-right text-xs text-[#CBD5E1] space-y-1 print:text-gray-700 tabular-nums">
               <div>
                 <strong className="text-white print:text-black">Assessment Date:</strong>{' '}
                 {h?.assessmentDate || new Date().toISOString().split('T')[0]}
@@ -967,6 +1033,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <strong className="text-white print:text-black">Currency:</strong> {p.currency} ·{' '}
                 <strong className="text-white print:text-black">Team:</strong> {p.employeeCount} Staff,{' '}
                 {p.subcontractorCount} Subcontractors
+                {p.turnoverRange ? ` · ${p.turnoverRange}` : ''}
               </div>
               <div>
                 <strong className="text-white print:text-black">Status:</strong>{' '}
@@ -977,17 +1044,17 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
           <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="p-4 rounded bg-white/10 border border-white/15 space-y-1">
-              <span className="text-[#FBBF24] font-mono font-bold uppercase tracking-wider text-[10px] block">
+              <span className="text-[#60A5FA] font-mono font-bold uppercase tracking-wider text-[10px] block">
                 Overall Health Score
               </span>
               <div className="text-xl font-bold text-white font-mono tabular-nums">
                 {h && h.overallScore !== null ? `${h.overallScore} / 100` : 'Pending Rating'}
               </div>
-              <span className="text-[#D4D4D8] block">{h?.overallRating || 'Awaiting inputs'}</span>
+              <span className="text-[#CBD5E1] block">{h?.overallRating || 'Awaiting inputs'}</span>
             </div>
 
             <div className="p-4 rounded bg-white/10 border border-white/15 space-y-1">
-              <span className="text-[#FBBF24] font-mono font-bold uppercase tracking-wider text-[10px] block">
+              <span className="text-[#60A5FA] font-mono font-bold uppercase tracking-wider text-[10px] block">
                 Primary Objective
               </span>
               {isEditing ? (
@@ -995,7 +1062,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   rows={2}
                   value={p.primaryObjective}
                   onChange={(e) => updateProfileField('primaryObjective', e.target.value)}
-                  className="w-full bg-white text-[#111113] rounded p-2 text-xs font-medium focus:outline-none"
+                  className="w-full bg-white text-[#0F172A] rounded p-2 text-xs font-medium focus:outline-none"
                 />
               ) : (
                 <p className="text-white font-medium leading-relaxed">
@@ -1013,7 +1080,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   rows={2}
                   value={p.primaryConcern}
                   onChange={(e) => updateProfileField('primaryConcern', e.target.value)}
-                  className="w-full bg-white text-[#111113] rounded p-2 text-xs font-medium focus:outline-none"
+                  className="w-full bg-white text-[#0F172A] rounded p-2 text-xs font-medium focus:outline-none"
                 />
               ) : (
                 <p className="text-white font-medium leading-relaxed">
@@ -1024,10 +1091,22 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
           </div>
 
           {h?.overallExplanation && (
-            <p className={`mt-4 text-[#D4D4D8] leading-relaxed print:text-gray-800 ${globalSizeClass}`}>
+            <p className={`mt-4 text-[#CBD5E1] leading-relaxed print:text-gray-800 ${globalSizeClass}`}>
               <strong className="text-white print:text-black">Diagnostic Summary: </strong>
               {h.overallExplanation}
             </p>
+          )}
+          {h?.topThreePriorities && h.topThreePriorities.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-white/15 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              {h.topThreePriorities.map((tp) => (
+                <div key={tp.key} className="p-3 rounded bg-white/10 border border-white/15">
+                  <span className="text-[10px] font-mono font-bold uppercase text-[#60A5FA] block">
+                    Priority #{tp.rank} · {tp.title}
+                  </span>
+                  <p className="text-[#E2E8F0] mt-1 leading-relaxed">{tp.recommendedFocus}</p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -1035,15 +1114,15 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         {sectionOrder.map((secId, idx) => renderCustomSection(secId, idx))}
 
         {/* Bottom Next Actions Bar */}
-        <div className="p-6 sm:p-8 rounded bg-white border border-[#111113]/12 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+        <div className="p-6 sm:p-8 rounded bg-white border border-[#0F172A]/12 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
           <div className="space-y-1">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D97706]">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
               Interactive Execution Tools
             </span>
-            <h4 className="text-base font-bold text-[#111113]">
+            <h4 className="text-base font-bold text-[#0F172A]">
               Explore Cash Flow, Client Economics &amp; Live Coaching
             </h4>
-            <p className="text-xs text-[#52525B] max-w-xl">
+            <p className="text-xs text-[#475569] max-w-xl">
               Simulate liquidity scenarios or ask your AI Coach follow-up questions tailored to {p.name}.
             </p>
           </div>
@@ -1052,21 +1131,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <button
               type="button"
               onClick={() => onSwitchTab('cashflow')}
-              className="px-3.5 py-2 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] text-xs font-semibold border border-[#111113]/15 transition"
+              className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition"
             >
               Cash Flow
             </button>
             <button
               type="button"
               onClick={() => onSwitchTab('clientmatrix')}
-              className="px-3.5 py-2 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] text-xs font-semibold border border-[#111113]/15 transition"
+              className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition"
             >
               Client Matrix
             </button>
             <button
               type="button"
               onClick={() => onSwitchTab('aicoach')}
-              className="px-4 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition shadow-xs"
+              className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition shadow-xs"
             >
               Consult AI Coach
             </button>
@@ -1084,21 +1163,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
     if (secId === 'sec-2') {
       return (
-        <div key="sec-2" className="bg-white border border-[#111113]/12 rounded overflow-hidden shadow-xs">
-          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8F7F4] border-b border-[#111113]/10">
+        <div key="sec-2" className="bg-white border border-[#0F172A]/12 rounded overflow-hidden shadow-xs">
+          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8FAFC] border-b border-[#0F172A]/10">
             <button
               type="button"
               onClick={() => toggleAccordion('sec-2')}
               className="flex-1 text-left flex items-center space-x-3"
             >
-              <span className="w-8 h-8 rounded bg-[#111113] text-white font-mono font-bold text-sm flex items-center justify-center shrink-0">
+              <span className="w-8 h-8 rounded bg-[#0F172A] text-white font-mono font-bold text-sm flex items-center justify-center shrink-0">
                 {displayNum}
               </span>
               <div>
-                <h2 className="text-lg font-bold text-[#111113]">
+                <h2 className="text-lg font-bold text-[#0F172A]">
                   Evidence Quality: Verified Baseline vs. Unverified vs. Missing
                 </h2>
-                <p className="text-xs text-[#52525B]">
+                <p className="text-xs text-[#475569]">
                   Distinguishing established facts from unverified owner estimates
                 </p>
               </div>
@@ -1107,9 +1186,9 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               {renderSectionMoveControls('sec-2')}
               <button type="button" onClick={() => toggleAccordion('sec-2')} className="p-1 print:hidden">
                 {activeAccordion === 'sec-2' ? (
-                  <ChevronUp className="w-5 h-5 text-[#52525B]" />
+                  <ChevronUp className="w-5 h-5 text-[#475569]" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-[#52525B]" />
+                  <ChevronDown className="w-5 h-5 text-[#475569]" />
                 )}
               </button>
             </div>
@@ -1123,7 +1202,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                     <CheckCircle className="w-4 h-4" />
                     <span>Verified Baseline</span>
                   </div>
-                  <ul className="text-xs text-[#111113] space-y-1.5 list-disc list-inside">
+                  <ul className="text-xs text-[#0F172A] space-y-1.5 list-disc list-inside">
                     <li>8 years operating; 48 active B2B customers.</li>
                     <li>12 employees + 2 subcontractors.</li>
                     <li>NZ$75,000 overdraft limit; NZ$38,000 operating cash.</li>
@@ -1136,7 +1215,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                     <HelpCircle className="w-4 h-4" />
                     <span>Reported (Needs Verification)</span>
                   </div>
-                  <ul className="text-xs text-[#111113] space-y-1.5 list-disc list-inside">
+                  <ul className="text-xs text-[#0F172A] space-y-1.5 list-disc list-inside">
                     <li>Annual revenue NZ$1.28M; paper profit NZ$100k.</li>
                     <li>NZ$175,000 receivables; NZ$58,000 &gt;60 days overdue.</li>
                     <li>NZ$52,000 overdraft drawn; Top 5 clients = 38%.</li>
@@ -1148,7 +1227,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                     <AlertTriangle className="w-4 h-4" />
                     <span>Missing Evidence</span>
                   </div>
-                  <ul className="text-xs text-[#111113] space-y-1.5 list-disc list-inside">
+                  <ul className="text-xs text-[#0F172A] space-y-1.5 list-disc list-inside">
                     <li>Itemized aged receivables ledger with dispute flags.</li>
                     <li>Gross margin per contract &amp; effective hourly rates.</li>
                     <li>4-week GST, PAYE &amp; supplier commitment schedule.</li>
@@ -1163,8 +1242,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
     if (secId === 'sec-3') {
       return (
-        <div key="sec-3" className="bg-white border border-[#111113]/12 rounded overflow-hidden shadow-xs">
-          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8F7F4] border-b border-[#111113]/10">
+        <div key="sec-3" className="bg-white border border-[#0F172A]/12 rounded overflow-hidden shadow-xs">
+          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8FAFC] border-b border-[#0F172A]/10">
             <button
               type="button"
               onClick={() => toggleAccordion('sec-3')}
@@ -1174,10 +1253,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 {displayNum}
               </span>
               <div>
-                <h2 className="text-lg font-bold text-[#111113]">
+                <h2 className="text-lg font-bold text-[#0F172A]">
                   Paper Profit vs. Cash Squeeze
                 </h2>
-                <p className="text-xs text-[#52525B]">
+                <p className="text-xs text-[#475569]">
                   Why NZ$100k reported profit is still leaving the bank account short
                 </p>
               </div>
@@ -1186,27 +1265,27 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               {renderSectionMoveControls('sec-3')}
               <button type="button" onClick={() => toggleAccordion('sec-3')} className="p-1 print:hidden">
                 {activeAccordion === 'sec-3' ? (
-                  <ChevronUp className="w-5 h-5 text-[#52525B]" />
+                  <ChevronUp className="w-5 h-5 text-[#475569]" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-[#52525B]" />
+                  <ChevronDown className="w-5 h-5 text-[#475569]" />
                 )}
               </button>
             </div>
           </div>
 
           <div className={activeAccordion === 'sec-3' ? 'block' : 'hidden print:block'}>
-            <div className="p-6 space-y-4 text-xs text-[#111113] leading-relaxed">
+            <div className="p-6 space-y-4 text-xs text-[#0F172A] leading-relaxed">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 tabular-nums">
-                <div className="p-3.5 bg-[#F8F7F4] rounded border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Trapped in Receivables</span>
+                <div className="p-3.5 bg-[#F8FAFC] rounded border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Trapped in Receivables</span>
                   <span className="text-lg font-bold text-[#B91C1C] font-mono block">NZ$175,000</span>
                 </div>
-                <div className="p-3.5 bg-[#F8F7F4] rounded border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Net Immediate Liquidity</span>
+                <div className="p-3.5 bg-[#F8FAFC] rounded border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Net Immediate Liquidity</span>
                   <span className="text-lg font-bold text-[#B91C1C] font-mono block">-NZ$54,000</span>
                 </div>
-                <div className="p-3.5 bg-[#F8F7F4] rounded border border-[#111113]/10">
-                  <span className="text-[#52525B] block text-[11px]">Overdraft Drawn</span>
+                <div className="p-3.5 bg-[#F8FAFC] rounded border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Overdraft Drawn</span>
                   <span className="text-lg font-bold text-[#B45309] font-mono block">
                     NZ$52,000 / NZ$75k
                   </span>
@@ -1220,8 +1299,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
     if (secId === 'sec-4') {
       return (
-        <div key="sec-4" className="bg-white border border-[#111113]/12 rounded overflow-hidden shadow-xs">
-          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8F7F4] border-b border-[#111113]/10">
+        <div key="sec-4" className="bg-white border border-[#0F172A]/12 rounded overflow-hidden shadow-xs">
+          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8FAFC] border-b border-[#0F172A]/10">
             <button
               type="button"
               onClick={() => toggleAccordion('sec-4')}
@@ -1231,10 +1310,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 {displayNum}
               </span>
               <div>
-                <h2 className="text-lg font-bold text-[#111113]">
+                <h2 className="text-lg font-bold text-[#0F172A]">
                   Integrated Commercial Risk Map
                 </h2>
-                <p className="text-xs text-[#52525B]">
+                <p className="text-xs text-[#475569]">
                   Cash lag, delivery bottlenecks, and margin erosion
                 </p>
               </div>
@@ -1243,9 +1322,9 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               {renderSectionMoveControls('sec-4')}
               <button type="button" onClick={() => toggleAccordion('sec-4')} className="p-1 print:hidden">
                 {activeAccordion === 'sec-4' ? (
-                  <ChevronUp className="w-5 h-5 text-[#52525B]" />
+                  <ChevronUp className="w-5 h-5 text-[#475569]" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-[#52525B]" />
+                  <ChevronDown className="w-5 h-5 text-[#475569]" />
                 )}
               </button>
             </div>
@@ -1256,18 +1335,18 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               {RISK_MAP_ITEMS.map((item) => (
                 <div
                   key={item.id}
-                  className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/10 space-y-2 text-xs"
+                  className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold uppercase tracking-wider text-[#D97706] font-mono">
+                    <span className="font-bold uppercase tracking-wider text-[#2563EB] font-mono">
                       {item.category}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]">
                       {item.urgency}
                     </span>
                   </div>
-                  <p className="text-[#111113] font-semibold">{item.reportedSymptom}</p>
-                  <p className="text-[#52525B]">{item.possibleUnderlyingCause}</p>
+                  <p className="text-[#0F172A] font-semibold">{item.reportedSymptom}</p>
+                  <p className="text-[#475569]">{item.possibleUnderlyingCause}</p>
                   <div className="p-2.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D]">
                     <strong>First Action: </strong>
                     {item.recommendedFirstAction}
@@ -1282,8 +1361,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
     if (secId === 'sec-5') {
       return (
-        <div key="sec-5" className="bg-white border border-[#111113]/12 rounded overflow-hidden shadow-xs">
-          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8F7F4] border-b border-[#111113]/10">
+        <div key="sec-5" className="bg-white border border-[#0F172A]/12 rounded overflow-hidden shadow-xs">
+          <div className="w-full p-6 text-left flex items-center justify-between bg-[#F8FAFC] border-b border-[#0F172A]/10">
             <button
               type="button"
               onClick={() => toggleAccordion('sec-5')}
@@ -1293,10 +1372,10 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 {displayNum}
               </span>
               <div>
-                <h2 className="text-lg font-bold text-[#111113]">
+                <h2 className="text-lg font-bold text-[#0F172A]">
                   Capital Investment Comparison (Options A, B &amp; C)
                 </h2>
-                <p className="text-xs text-[#52525B]">
+                <p className="text-xs text-[#475569]">
                   Marketing spend vs. Salesperson hire vs. Core margin turnaround
                 </p>
               </div>
@@ -1305,9 +1384,9 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               {renderSectionMoveControls('sec-5')}
               <button type="button" onClick={() => toggleAccordion('sec-5')} className="p-1 print:hidden">
                 {activeAccordion === 'sec-5' ? (
-                  <ChevronUp className="w-5 h-5 text-[#52525B]" />
+                  <ChevronUp className="w-5 h-5 text-[#475569]" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-[#52525B]" />
+                  <ChevronDown className="w-5 h-5 text-[#475569]" />
                 )}
               </button>
             </div>
@@ -1319,15 +1398,15 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 {GROWTH_OPTIONS_EVALUATION.map((opt) => (
                   <div
                     key={opt.id}
-                    className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/10 space-y-2 text-xs"
+                    className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2 text-xs"
                   >
-                    <span className="font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#111113] text-[#FBBF24] font-mono inline-block">
+                    <span className="font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA] font-mono inline-block">
                       {opt.id}
                     </span>
-                    <h3 className="font-bold text-[#111113] text-sm">{opt.title}</h3>
-                    <p className="text-[#52525B]">{opt.proposedAction}</p>
-                    <div className="pt-2 border-t border-[#111113]/10">
-                      <span className="font-semibold text-[#111113]">Upfront Outlay: </span>
+                    <h3 className="font-bold text-[#0F172A] text-sm">{opt.title}</h3>
+                    <p className="text-[#475569]">{opt.proposedAction}</p>
+                    <div className="pt-2 border-t border-[#0F172A]/10">
+                      <span className="font-semibold text-[#0F172A]">Upfront Outlay: </span>
                       <span className="font-mono">{opt.upfrontCashRequirement}</span>
                     </div>
                   </div>
@@ -1341,16 +1420,16 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
     if (secId === 'sec-6') {
       return (
-        <div key="sec-6" className="p-6 sm:p-8 rounded bg-white border border-[#111113]/12 shadow-xs space-y-4">
+        <div key="sec-6" className="p-6 sm:p-8 rounded bg-white border border-[#0F172A]/12 shadow-xs space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center space-x-2 text-[#111113] font-bold text-base">
-              <ShieldCheck className="w-5 h-5 text-[#D97706]" />
+            <div className="flex items-center space-x-2 text-[#0F172A] font-bold text-base">
+              <ShieldCheck className="w-5 h-5 text-[#2563EB]" />
               <span>48-Hour Management Decision Gates</span>
             </div>
             {renderSectionMoveControls('sec-6')}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-[#111113]">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-[#0F172A]">
             <div className="p-4 rounded bg-[#ECFDF5] border border-[#A7F3D0] space-y-1">
               <strong className="text-[#15803D] font-bold block text-sm">1. What to Do First</strong>
               <p>Verify the NZ$58k overdue ledger within 48 hours and initiate direct owner collection calls.</p>
@@ -1383,27 +1462,27 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
     <div className={`space-y-6 max-w-5xl mx-auto print:max-w-none print:text-black ${globalFontClass}`}>
       {renderEditorToolbar()}
 
-      {/* Top Architectural Charcoal Demo Banner */}
-      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#111113]/15 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+      {/* Top Architectural Navy Demo Banner */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#0F172A]/15 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
         <div className="border-b border-white/15 pb-6 print:border-black">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="bizpulse-label text-[#FBBF24]">
+                <span className="bizpulse-label text-[#60A5FA]">
                   Executive Turnaround Briefing
                 </span>
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[#D4D4D8] bg-white/10 px-2.5 py-0.5 rounded border border-white/15">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#CBD5E1] bg-white/10 px-2.5 py-0.5 rounded border border-white/15">
                   Benchmark Demo Case: NZ MSP
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white mt-3 tracking-tight print:text-black">
                 {p.name}: Commercial Turnaround Diagnostic
               </h1>
-              <p className="text-[#D4D4D8] text-sm mt-1 print:text-gray-700">
+              <p className="text-[#CBD5E1] text-sm mt-1 print:text-gray-700">
                 B2B IT Managed Services Provider ({p.country})
               </p>
             </div>
-            <div className="text-right text-xs text-[#D4D4D8] space-y-1 print:text-gray-700 tabular-nums">
+            <div className="text-right text-xs text-[#CBD5E1] space-y-1 print:text-gray-700 tabular-nums">
               <div>
                 <strong className="text-white print:text-black">Date:</strong>{' '}
                 {h?.assessmentDate || '2026-10-14'}
@@ -1424,17 +1503,25 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         <div className="mt-5 p-4 rounded bg-white/10 border border-white/15 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-[#FBBF24]" />
+              <Activity className="w-5 h-5 text-[#60A5FA]" />
               <span className="font-bold text-white text-sm">
-                Provisional Overall Health Assessment:
+                Overall Health Assessment:
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
-                NEEDS ATTENTION (Working-Capital &amp; Delivery Strain)
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                  h?.overallRating === 'Healthy'
+                    ? 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]'
+                    : h?.overallRating === 'Needs Attention'
+                    ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                    : 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
+                }`}
+              >
+                {(h?.overallRating || 'AT RISK').toUpperCase()} ({h?.overallScore ?? 35}/100)
               </span>
             </div>
           </div>
 
-          <p className={`text-[#D4D4D8] leading-relaxed ${globalSizeClass}`}>
+          <p className={`text-[#CBD5E1] leading-relaxed ${globalSizeClass}`}>
             The business has an 8-year operating history, 48 recurring clients, and NZ$100,000 paper operating profit on NZ$1.28M revenue. However, NZ$175,000 trapped in receivables (NZ$58,000 overdue &gt;60 days) has pushed bank overdraft borrowing to NZ$52,000 of a NZ$75,000 limit while unbilled scope creep strains senior technician capacity.
           </p>
         </div>

@@ -56,7 +56,7 @@ function getStatusRgb(status: HealthStatus): [number, number, number] {
     case 'not_sure':
     case 'unanswered':
     default:
-      return [71, 85, 105]; // #475569 Neutral Slate
+      return [29, 78, 216]; // #1D4ED8 Blue (Insufficient Information)
   }
 }
 
@@ -71,7 +71,7 @@ function getStatusHex(status: HealthStatus): string {
     case 'not_sure':
     case 'unanswered':
     default:
-      return '475569';
+      return '1D4ED8';
   }
 }
 
@@ -84,7 +84,6 @@ function getDimensionNumericScore(status: HealthStatus): number | null {
     case 'at_risk':
       return 15;
     case 'not_sure':
-      return 40;
     case 'unanswered':
     default:
       return null;
@@ -92,7 +91,7 @@ function getDimensionNumericScore(status: HealthStatus): number | null {
 }
 
 /**
- * Generates a high-resolution Canvas PNG of the 8-Dimension Radar & Bar chart
+ * Generates a high-resolution Canvas PNG of the 12-Capability Radar & Bar chart
  * in browser environments for inclusion in Word (.docx) exports.
  */
 export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array | null {
@@ -100,7 +99,7 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
   try {
     const canvas = document.createElement('canvas');
     canvas.width = 960;
-    canvas.height = 420;
+    canvas.height = 560;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
@@ -121,12 +120,12 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(`8-Dimension Commercial Health Profile — ${caseRecord.profile.name}`, 20, 27);
+    ctx.fillText(`12-Capability Business Health Profile — ${caseRecord.profile.name}`, 20, 27);
 
     // Left: Radar Chart
     const cx = 215;
-    const cy = 232;
-    const radius = 128;
+    const cy = 300;
+    const radius = 150;
     const dims = HEALTH_DIMENSION_ORDER;
     const step = (Math.PI * 2) / dims.length;
 
@@ -195,18 +194,18 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
       ctx.stroke();
     });
 
-    // Right: Horizontal Score Bars
+    // Right: Horizontal Score Bars (12 Capabilities)
     ctx.textAlign = 'left';
     const barStartX = 445;
     const barMaxW = 350;
     dims.forEach((key, idx) => {
       const item = caseRecord.healthInputs[key];
-      const y = 78 + idx * 41;
+      const y = 76 + idx * 38;
       const numScore = getDimensionNumericScore(item?.status || 'unanswered');
       const [r, g, b] = getStatusRgb(item?.status || 'unanswered');
 
       ctx.fillStyle = '#0B1324';
-      ctx.font = 'bold 12px sans-serif';
+      ctx.font = 'bold 11.5px sans-serif';
       ctx.fillText(item?.title || key, barStartX, y);
 
       // Background bar
@@ -214,14 +213,14 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
       ctx.fillRect(barStartX, y + 7, barMaxW, 12);
 
       // Score bar
-      const fillW = numScore !== null ? Math.round((numScore / 100) * barMaxW) : 8;
+      const fillW = numScore !== null ? Math.round((numScore / 100) * barMaxW) : 10;
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fillRect(barStartX, y + 7, fillW, 12);
 
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.font = 'bold 11px monospace';
       ctx.fillText(
-        numScore !== null ? `${numScore}/100 · ${formatStatusLabel(item.status)}` : 'Unanswered',
+        numScore !== null ? `${numScore}/100 · ${formatStatusLabel(item.status)}` : formatStatusLabel(item?.status || 'unanswered'),
         barStartX + barMaxW + 12,
         y + 17
       );
@@ -415,7 +414,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
       ? [180, 83, 9]
       : computedHealth.overallRating === 'At Risk'
       ? [185, 28, 28]
-      : [71, 85, 105];
+      : [29, 78, 216];
 
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(ratingColor[0], ratingColor[1], ratingColor[2]);
@@ -463,21 +462,21 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
 
   y += summaryBoxHeight + 14;
 
-  // Visual Charts Block (Vector Radar + Horizontal Bars — Guaranteed crisp & overlap-free)
-  ensureSpace(225);
+  // Visual Charts Block (Vector Radar + 12 Horizontal Bars — Guaranteed crisp & overlap-free)
+  ensureSpace(305);
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(217, 226, 240);
-  doc.roundedRect(margin, y, contentWidth, 212, 4, 4, 'FD');
+  doc.roundedRect(margin, y, contentWidth, 295, 4, 4, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text('8-Dimension Equilibrium Chart & Quantitative Breakdown', margin + 12, y + 16);
+  doc.text('12-Capability Equilibrium Chart & Quantitative Breakdown', margin + 12, y + 16);
 
   // Left Vector Radar
   const radarCx = margin + 108;
-  const radarCy = y + 114;
-  const radarR = 64;
+  const radarCy = y + 155;
+  const radarR = 68;
   const step = (Math.PI * 2) / HEALTH_DIMENSION_ORDER.length;
 
   [0.25, 0.5, 0.75, 1.0].forEach((lvl) => {
@@ -524,41 +523,41 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     doc.circle(px, py, 2.8, 'F');
   });
 
-  // Right Horizontal Score Bars
+  // Right Horizontal Score Bars (12 Capabilities)
   const barX = margin + 225;
   const barMaxW = 175;
   HEALTH_DIMENSION_ORDER.forEach((key, idx) => {
     const dim = healthInputs[key];
-    const rowY = y + 32 + idx * 21.5;
+    const rowY = y + 32 + idx * 20.5;
     const sc = getDimensionNumericScore(dim?.status || 'unanswered');
     const [r, g, b] = getStatusRgb(dim?.status || 'unanswered');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7.2);
     doc.setTextColor(15, 23, 42);
     const shortTitle = (dim?.title || key).length > 34 ? `${(dim?.title || key).slice(0, 32)}…` : (dim?.title || key);
     doc.text(shortTitle, barX, rowY);
 
     doc.setFillColor(238, 242, 248);
-    doc.rect(barX, rowY + 3, barMaxW, 6, 'F');
+    doc.rect(barX, rowY + 2.5, barMaxW, 5.5, 'F');
     const w = sc !== null ? Math.max(4, (sc / 100) * barMaxW) : 4;
     doc.setFillColor(r, g, b);
-    doc.rect(barX, rowY + 3, w, 6, 'F');
+    doc.rect(barX, rowY + 2.5, w, 5.5, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(6.8);
     doc.setTextColor(r, g, b);
     doc.text(
-      sc !== null ? `${sc}/100 (${formatStatusLabel(dim.status)})` : 'Unanswered',
+      sc !== null ? `${sc}/100 (${formatStatusLabel(dim.status)})` : formatStatusLabel(dim?.status || 'unanswered'),
       barX + barMaxW + 8,
-      rowY + 8
+      rowY + 7.5
     );
   });
 
-  y += 226;
+  y += 308;
 
-  // Section 2: Eight Commercial Health Dimensions Detailed Table (Dynamic Wrapped Row Heights)
-  drawSectionHeading('2', 'Eight Commercial Health Dimensions (Detailed Evidence)');
+  // Section 2: Twelve Business Health Capabilities Detailed Table (Dynamic Wrapped Row Heights)
+  drawSectionHeading('2', 'Twelve Business Health Capabilities (Detailed Evidence)');
 
   const colWidths = [130, 88, 48, contentWidth - 266];
   const drawTableHeader = () => {
@@ -653,15 +652,15 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
   computedHealth.strongestAreas.forEach((st) =>
     drawWrappedParagraph(`•  ${st}`, { fontSize: 8.5, indent: 8, gapAfter: 3 })
   );
-  drawWrappedParagraph('Missing Information / Evidence Gaps:', { fontSize: 9, bold: true, color: [71, 85, 105], gapAfter: 3 });
+  drawWrappedParagraph('Insufficient Info / Evidence Gaps (Blue):', { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 3 });
   computedHealth.missingEvidenceAreas.forEach((gap) =>
     drawWrappedParagraph(`•  ${gap}`, { fontSize: 8.5, indent: 8, gapAfter: 3 })
   );
   y += 4;
 
-  // Section 5: AI Recommendations & Actions
-  const recSectionNum = String(Number(nextSectionNum) + 1);
-  drawSectionHeading(recSectionNum, 'Executive Recommendations & Action Plan');
+  // Section 5: AI Recommendations, Profit Opportunities & Sustainability Assessment
+  let secCounter = Number(nextSectionNum) + 1;
+  drawSectionHeading(String(secCounter), 'Executive Recommendations & Profit Opportunity Engine');
   if (recommendations) {
     drawWrappedParagraph('Primary Commercial Observation:', { fontSize: 9, bold: true, color: [15, 23, 42], gapAfter: 2 });
     drawWrappedParagraph(recommendations.initialObservation, { fontSize: 8.5, indent: 6, gapAfter: 6 });
@@ -669,7 +668,31 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     drawWrappedParagraph('Why This Matters Commercially:', { fontSize: 9, bold: true, color: [15, 23, 42], gapAfter: 2 });
     drawWrappedParagraph(recommendations.commercialWhy, { fontSize: 8.5, indent: 6, gapAfter: 6 });
 
-    if (recommendations.sustainabilityRisks?.length) {
+    if (recommendations.profitOpportunities?.length) {
+      drawWrappedParagraph('Structured Profit & Revenue Leakage Opportunities:', { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 3 });
+      recommendations.profitOpportunities.forEach((opp, idx) => {
+        drawWrappedParagraph(
+          `${idx + 1}. [${opp.area} · ${opp.horizon}] ${opp.title} — Impact: ${opp.estimatedFinancialImpact} | First Step: ${opp.whatToDoFirst || opp.evidenceBasis}`,
+          { fontSize: 8.2, indent: 8, gapAfter: 3 }
+        );
+        if (opp.illustrativeExample) {
+          drawWrappedParagraph(`Illustrative: ${opp.illustrativeExample}`, { fontSize: 7.8, italic: true, indent: 14, color: [71, 85, 105], gapAfter: 3 });
+        }
+      });
+      y += 4;
+    }
+
+    if (recommendations.sustainabilityAssessment) {
+      const sust = recommendations.sustainabilityAssessment;
+      drawWrappedParagraph(`Business Sustainability & Strategic Choice: ${sust.recommendedChoice}`, { fontSize: 9, bold: true, color: [15, 23, 42], gapAfter: 2 });
+      drawWrappedParagraph(`Current Position: ${sust.currentPositionSummary}`, { fontSize: 8.3, indent: 8, gapAfter: 2 });
+      drawWrappedParagraph(`6–12 Month Outlook: ${sust.futureOutlook6to12Months}`, { fontSize: 8.3, indent: 8, gapAfter: 2 });
+      drawWrappedParagraph(`Strategic Rationale: ${sust.choiceRationale}`, { fontSize: 8.3, indent: 8, gapAfter: 3 });
+      sust.areas?.forEach((a) => {
+        drawWrappedParagraph(`• ${a.area} [${a.status.toUpperCase()}]: ${a.assessment}`, { fontSize: 8, indent: 10, gapAfter: 2 });
+      });
+      drawWrappedParagraph(`Notice: ${sust.disclaimer}`, { fontSize: 7.5, italic: true, indent: 8, color: [100, 116, 139], gapAfter: 5 });
+    } else if (recommendations.sustainabilityRisks?.length) {
       drawWrappedParagraph('Sustainability Risks:', { fontSize: 9, bold: true, color: [185, 28, 28], gapAfter: 2 });
       recommendations.sustainabilityRisks.forEach((r) => drawWrappedParagraph(`•  ${r}`, { fontSize: 8.5, indent: 8, gapAfter: 2 }));
       y += 4;
@@ -718,10 +741,42 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     );
   }
 
-  // Section 6: Uploaded Document Audits (Evidence vs Assumptions)
+  // CRM & ROI Connected Pipeline Summary
+  const crmList = rawCase.crmContacts || [];
+  const roiList = rawCase.roiScenarios || [];
+  if (crmList.length > 0 || roiList.length > 0) {
+    secCounter += 1;
+    drawSectionHeading(String(secCounter), 'CRM Pipeline & ROI Investment Scenarios');
+    if (crmList.length > 0) {
+      drawWrappedParagraph(`CRM Accounts & Pipeline (${crmList.length} records):`, { fontSize: 9, bold: true, color: [15, 23, 42], gapAfter: 3 });
+      crmList.slice(0, 12).forEach((c) => {
+        drawWrappedParagraph(
+          `• ${c.companyOrName} (${c.recordType} · ${c.tier}) — Stage: ${c.salesStage} | Status: ${c.status} | Monthly: ${profile.currency} ${Number(c.monthlyValue || 0).toLocaleString()} | Opp: ${profile.currency} ${Number(c.opportunityValue || 0).toLocaleString()} | Follow-up: ${c.nextFollowUpDate || 'Unscheduled'}`,
+          { fontSize: 8, indent: 8, gapAfter: 2 }
+        );
+      });
+      y += 4;
+    }
+    if (roiList.length > 0) {
+      drawWrappedParagraph(`ROI & Break-Even Scenarios (${roiList.length} modeled):`, { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 3 });
+      roiList.forEach((s) => {
+        const monthlyGp = (s.expectedMonthlyRevenue * s.grossMarginPct) / 100;
+        const netMonthly = monthlyGp - s.monthlyOperatingCost;
+        const netGain = netMonthly * s.monthsHorizon - s.upfrontInvestment;
+        const roiPct = s.upfrontInvestment > 0 ? Math.round((netGain / s.upfrontInvestment) * 100) : 0;
+        drawWrappedParagraph(
+          `• ${s.name} [${s.category}] — Upfront: ${profile.currency} ${s.upfrontInvestment.toLocaleString()} | Monthly Rev: ${profile.currency} ${s.expectedMonthlyRevenue.toLocaleString()} @ ${s.grossMarginPct}% GM | ${s.monthsHorizon}m Net Gain: ${profile.currency} ${Math.round(netGain).toLocaleString()} (${roiPct}% ROI, ${s.confidencePct}% confidence)`,
+          { fontSize: 8, indent: 8, gapAfter: 2 }
+        );
+      });
+      y += 4;
+    }
+  }
+
+  // Uploaded Document Audits (Evidence vs Assumptions)
   if (uploadedDocuments.length > 0) {
-    const docSectionNum = String(Number(recSectionNum) + 1);
-    drawSectionHeading(docSectionNum, 'Uploaded Document Financial Audits (Evidence vs. Assumptions)');
+    secCounter += 1;
+    drawSectionHeading(String(secCounter), 'Uploaded Document Financial Audits (Evidence vs. Assumptions)');
     uploadedDocuments.forEach((uDoc, i) => {
       drawWrappedParagraph(`${i + 1}. ${uDoc.fileName} (${new Date(uDoc.uploadedAt).toLocaleDateString()})`, {
         fontSize: 9,
@@ -744,8 +799,8 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
   }
 
   if (reportBlocks.length > 0) {
-    const baseNum = uploadedDocuments.length > 0 ? Number(recSectionNum) + 2 : Number(recSectionNum) + 1;
-    drawSectionHeading(String(baseNum), 'Custom Commentary & Owner Paragraphs');
+    secCounter += 1;
+    drawSectionHeading(String(secCounter), 'Custom Commentary & Owner Paragraphs');
     reportBlocks.forEach((blk) => {
       const blkPdfFont = resolvePdfFont(blk.fontFamily);
       const blkFontSize = blk.fontSize === 'sm' ? 8.5 : blk.fontSize === 'lg' ? 11 : 9.5;
@@ -974,7 +1029,7 @@ export async function generateDocxReportUint8Array(
         children: [
           new ImageRun({
             data: chartPngBytes,
-            transformation: { width: 580, height: 254 },
+            transformation: { width: 580, height: 338 },
             type: 'png',
           }),
         ],
@@ -985,7 +1040,7 @@ export async function generateDocxReportUint8Array(
 
   sectionsChildren.push(
     new Paragraph({
-      text: '2. Eight Commercial Health Dimensions',
+      text: '2. Twelve Business Health Capabilities',
       heading: HeadingLevel.HEADING_1,
       spacing: { before: 160, after: 100 },
     }),
@@ -1026,7 +1081,7 @@ export async function generateDocxReportUint8Array(
         ...computedHealth.criticalRisksIdentified.map((r) => new TextRun({ text: `• ${r}\n`, size: 19 })),
         new TextRun({ text: '\nCore Strengths:\n', bold: true, color: '15803D', size: 20 }),
         ...computedHealth.strongestAreas.map((s) => new TextRun({ text: `• ${s}\n`, size: 19 })),
-        new TextRun({ text: '\nInformation & Evidence Gaps:\n', bold: true, color: '475569', size: 20 }),
+        new TextRun({ text: '\nInformation & Evidence Gaps (Blue):\n', bold: true, color: '1D4ED8', size: 20 }),
         ...computedHealth.missingEvidenceAreas.map((g) => new TextRun({ text: `• ${g}\n`, size: 19 })),
       ],
       spacing: { after: 180 },
@@ -1170,10 +1225,98 @@ export async function generateDocxReportUint8Array(
     );
   }
 
+  if (recommendations?.sustainabilityAssessment) {
+    const sust = recommendations.sustainabilityAssessment;
+    sectionsChildren.push(
+      new Paragraph({
+        text: '5. Business Sustainability & Strategic Choice',
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 220, after: 80 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: `Recommended Choice: ${sust.recommendedChoice}\n`, bold: true, size: 21, color: '1D4ED8' }),
+          new TextRun({ text: `Current Position: ${sust.currentPositionSummary}\n`, size: 19 }),
+          new TextRun({ text: `6–12 Month Outlook: ${sust.futureOutlook6to12Months}\n`, size: 19 }),
+          new TextRun({ text: `Rationale: ${sust.choiceRationale}\n\n`, size: 19 }),
+          ...(sust.areas || []).map(
+            (a) => new TextRun({ text: `• ${a.area} [${a.status.toUpperCase()}]: ${a.assessment} (${a.keyDriverOrGap})\n`, size: 18 })
+          ),
+          new TextRun({ text: `\nNotice: ${sust.disclaimer}\n`, italics: true, size: 17, color: '64748B' }),
+        ],
+        spacing: { after: 140 },
+      })
+    );
+  }
+
+  if (recommendations?.profitOpportunities?.length) {
+    sectionsChildren.push(
+      new Paragraph({
+        text: 'Profit & Revenue Opportunity Engine',
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 180, after: 80 },
+      })
+    );
+    recommendations.profitOpportunities.forEach((opp, idx) => {
+      sectionsChildren.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: `${idx + 1}. [${opp.area} · ${opp.horizon}] ${opp.title}\n`, bold: true, size: 19 }),
+            new TextRun({ text: `Evidence: ${opp.evidenceBasis}\nFirst Step: ${opp.whatToDoFirst || 'Review baseline margin'}\nImpact: ${opp.estimatedFinancialImpact}\n`, size: 18 }),
+            ...(opp.illustrativeExample ? [new TextRun({ text: `Illustrative: ${opp.illustrativeExample}\n`, italics: true, size: 17, color: '475569' })] : []),
+          ],
+          spacing: { after: 90 },
+        })
+      );
+    });
+  }
+
+  if ((rawCase.crmContacts && rawCase.crmContacts.length > 0) || (rawCase.roiScenarios && rawCase.roiScenarios.length > 0)) {
+    sectionsChildren.push(
+      new Paragraph({
+        text: 'CRM Pipeline & ROI Investment Scenarios',
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 220, after: 80 },
+      })
+    );
+    if (rawCase.crmContacts?.length) {
+      rawCase.crmContacts.slice(0, 12).forEach((c) => {
+        sectionsChildren.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `• ${c.companyOrName} (${c.recordType} · ${c.tier}) | Stage: ${c.salesStage} | Status: ${c.status} | Monthly: ${profile.currency} ${Number(c.monthlyValue || 0).toLocaleString()} | Opp: ${profile.currency} ${Number(c.opportunityValue || 0).toLocaleString()}`,
+                size: 18,
+              }),
+            ],
+            spacing: { after: 40 },
+          })
+        );
+      });
+    }
+    if (rawCase.roiScenarios?.length) {
+      rawCase.roiScenarios.forEach((s) => {
+        const monthlyGp = (s.expectedMonthlyRevenue * s.grossMarginPct) / 100;
+        const netGain = (monthlyGp - s.monthlyOperatingCost) * s.monthsHorizon - s.upfrontInvestment;
+        sectionsChildren.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `• ROI Scenario "${s.name}" [${s.category}]: Upfront ${profile.currency} ${s.upfrontInvestment.toLocaleString()}, Monthly Rev ${profile.currency} ${s.expectedMonthlyRevenue.toLocaleString()} @ ${s.grossMarginPct}% GM, ${s.monthsHorizon}m Net Gain ${profile.currency} ${Math.round(netGain).toLocaleString()}`,
+                size: 18,
+              }),
+            ],
+            spacing: { after: 40 },
+          })
+        );
+      });
+    }
+  }
+
   if (uploadedDocuments.length > 0) {
     sectionsChildren.push(
       new Paragraph({
-        text: '5. Uploaded Document Financial Audits',
+        text: 'Uploaded Document Financial Audits',
         heading: HeadingLevel.HEADING_1,
         spacing: { before: 240, after: 80 },
       })
@@ -1196,10 +1339,9 @@ export async function generateDocxReportUint8Array(
   }
 
   if (reportBlocks.length > 0) {
-    const customSecNum = uploadedDocuments.length > 0 ? 6 : 5;
     sectionsChildren.push(
       new Paragraph({
-        text: `${customSecNum}. Custom Commentary & Owner Paragraphs`,
+        text: 'Custom Commentary & Owner Paragraphs',
         heading: HeadingLevel.HEADING_1,
         spacing: { before: 240, after: 80 },
       })

@@ -36,6 +36,7 @@ import {
   CrmStatus,
   CrmInteraction,
   BusinessDevPlan,
+  AccountUsageSummary,
 } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
@@ -46,6 +47,7 @@ interface ClientMatrixCalculatorProps {
   onEvaluateOpportunityInRoi?: (contact: CrmRecord) => void;
   onOpenCoachWithPrompt?: (prompt: string) => void;
   onTrackUsage?: (field: 'coachMessagesCount') => void;
+  onAccountUsageUpdate?: (usage: AccountUsageSummary) => void;
 }
 
 const RECORD_TYPES: CrmRecordType[] = ['Customer', 'Prospect', 'Lead', 'Partner'];
@@ -93,9 +95,10 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
   onEvaluateOpportunityInRoi,
   onOpenCoachWithPrompt,
   onTrackUsage,
+  onAccountUsageUpdate,
 }) => {
   const profile = caseRecord?.profile;
-  const isDemo = profile?.isDemonstrationCase ?? true;
+  const isDemo = profile?.isDemonstrationCase ?? false;
   const currency = profile?.currency || 'NZD';
   const fin = caseRecord?.financials;
   const crmContacts = caseRecord?.crmContacts || [];
@@ -417,18 +420,23 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
           uploadedDocuments: caseRecord.uploadedDocuments || [],
+          crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
           crmContacts,
           roiScenarios: caseRecord.roiScenarios || [],
+          recommendations: caseRecord.recommendations || null,
+          actionPlan: caseRecord.actionPlan || [],
           focusArea: bizDevFocus.trim() || undefined,
         }),
       });
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
+        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
         throw new Error(errJson.error || 'Unable to generate Business Development Plan.');
       }
 
       const data = await response.json();
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       if (data.businessDevPlan) {
         onUpdateBusinessDevPlan?.(data.businessDevPlan);
         onTrackUsage?.('coachMessagesCount');
@@ -487,7 +495,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
       return 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]';
     if (stage === 'Lost' || stage === 'Dormant')
       return 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]';
-    return 'bg-[#F8F7F4] text-[#111113] border-[#111113]/15';
+    return 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/15';
   };
 
   const statusBadgeClass = (status: CrmStatus) => {
@@ -496,27 +504,27 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
     if (status === 'Follow-Up Due') return 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]';
     if (status === 'Closed Won' || status === 'Active')
       return 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]';
-    return 'bg-[#F8F7F4] text-[#52525B] border-[#111113]/15';
+    return 'bg-[#F8FAFC] text-[#475569] border-[#0F172A]/15';
   };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Architectural Charcoal Hero Header */}
-      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#111113]/15">
+      {/* Architectural Navy Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#0F172A]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="bizpulse-label text-[#FBBF24]">
+              <span className="bizpulse-label text-[#60A5FA]">
                 CRM, Pipeline &amp; Business Development
               </span>
-              <span className="text-xs text-[#A1A1AA] font-medium">
+              <span className="text-xs text-[#94A3B8] font-medium">
                 {profile?.name || 'Business Case'} ({profile?.industry || 'SME'})
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               CRM, Client Portfolio &amp; Growth Pipeline
             </h2>
-            <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed tabular-nums">
+            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed tabular-nums">
               {clientCount !== null
                 ? `Active portfolio baseline: ${clientCount} customers.`
                 : 'Track customer and prospect relationships, follow-up dates, and sales opportunities.'}{' '}
@@ -525,13 +533,13 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
           </div>
 
           <div className="bg-white/10 border border-white/15 rounded p-4 min-w-[230px] text-center shrink-0">
-            <span className="text-[11px] font-mono text-[#FBBF24] uppercase tracking-wider font-bold block">
+            <span className="text-[11px] font-mono text-[#60A5FA] uppercase tracking-wider font-bold block">
               Open CRM Pipeline Value
             </span>
             <div className="text-2xl sm:text-3xl font-bold text-white mt-1 font-mono tabular-nums">
               {currency} {crmStats.openPipelineValue.toLocaleString()}
             </div>
-            <div className="text-[11px] text-[#D4D4D8] mt-1 tabular-nums">
+            <div className="text-[11px] text-[#CBD5E1] mt-1 tabular-nums">
               {crmStats.totalCount} records · {crmStats.dueFollowUps.length} due/at risk
             </div>
           </div>
@@ -540,43 +548,43 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
       {/* CRM Live Summary KPI Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
-        <div className="bg-white border border-[#111113]/12 rounded p-4">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-[#52525B] block">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-[#475569] block">
             CRM Records
           </span>
-          <div className="text-2xl font-bold text-[#111113] font-mono mt-1">
+          <div className="text-2xl font-bold text-[#0F172A] font-mono mt-1">
             {crmStats.totalCount}
           </div>
-          <span className="text-[11px] text-[#52525B]">
+          <span className="text-[11px] text-[#475569]">
             {crmStats.openOpportunitiesCount} active pipeline deal{crmStats.openOpportunitiesCount === 1 ? '' : 's'}
           </span>
         </div>
 
-        <div className="bg-white border border-[#111113]/12 rounded p-4">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-[#52525B] block">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-[#475569] block">
             Open Opportunity Value
           </span>
-          <div className="text-2xl font-bold text-[#111113] font-mono mt-1">
+          <div className="text-2xl font-bold text-[#0F172A] font-mono mt-1">
             {currency} {crmStats.openPipelineValue.toLocaleString()}
           </div>
-          <span className="text-[11px] text-[#52525B]">Qualified, proposal &amp; negotiation</span>
+          <span className="text-[11px] text-[#475569]">Qualified, proposal &amp; negotiation</span>
         </div>
 
-        <div className="bg-white border border-[#111113]/12 rounded p-4">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-[#52525B] block">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-4">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-[#475569] block">
             Tracked Monthly Value
           </span>
           <div className="text-2xl font-bold text-[#15803D] font-mono mt-1">
             {currency} {crmStats.activeMonthlyBase.toLocaleString()}/mo
           </div>
-          <span className="text-[11px] text-[#52525B]">Retainers + pipeline MRR potential</span>
+          <span className="text-[11px] text-[#475569]">Retainers + pipeline MRR potential</span>
         </div>
 
         <div
           className={`border rounded p-4 ${
             crmStats.dueFollowUps.length > 0
               ? 'bg-[#FFFBEB] border-[#FDE68A]'
-              : 'bg-white border-[#111113]/12'
+              : 'bg-white border-[#0F172A]/12'
           }`}
         >
           <span className="text-[11px] font-mono uppercase tracking-wider text-[#B45309] block">
@@ -603,10 +611,10 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
               key={idx}
               className={`p-3.5 rounded border text-xs flex items-start gap-2.5 ${
                 alert.tone === 'red'
-                  ? 'bg-[#FEF2F2] border-[#FECACA] text-[#111113]'
+                  ? 'bg-[#FEF2F2] border-[#FECACA] text-[#0F172A]'
                   : alert.tone === 'amber'
-                  ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#111113]'
-                  : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#111113]'
+                  ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#0F172A]'
+                  : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#0F172A]'
               }`}
             >
               <AlertTriangle
@@ -620,7 +628,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
               />
               <div>
                 <strong className="block">{alert.title}</strong>
-                <span className="text-[#52525B]">{alert.detail}</span>
+                <span className="text-[#475569]">{alert.detail}</span>
               </div>
             </div>
           ))}
@@ -630,16 +638,16 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
       {/* =================================================== */}
       {/* SECTION 1: BASIC CRM & SALES PIPELINE WORKBENCH     */}
       {/* =================================================== */}
-      <div className="bg-white border border-[#111113]/12 rounded p-6 shadow-xs space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#111113]/10">
+      <div className="bg-white border border-[#0F172A]/12 rounded p-6 shadow-xs space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#0F172A]/10">
           <div>
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#D97706]" />
-              <h3 className="text-lg font-bold text-[#111113]">
+              <Users className="w-5 h-5 text-[#2563EB]" />
+              <h3 className="text-lg font-bold text-[#0F172A]">
                 Customer &amp; Prospect Relationship Records (CRM)
               </h3>
             </div>
-            <p className="text-xs text-[#52525B] mt-1">
+            <p className="text-xs text-[#475569] mt-1">
               Manage customer and prospect details, sales stage, follow-up dates, and full interaction logs. Isolated cleanly per business session.
             </p>
           </div>
@@ -647,9 +655,9 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
           <button
             type="button"
             onClick={openNewContactForm}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0"
           >
-            <Plus className="w-4 h-4 text-[#FBBF24]" />
+            <Plus className="w-4 h-4 text-[#60A5FA]" />
             <span>Add Customer / Prospect</span>
           </button>
         </div>
@@ -658,16 +666,16 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
         {isFormOpen && (
           <form
             onSubmit={handleSaveContact}
-            className="p-5 rounded bg-[#F8F7F4] border border-[#D97706]/50 space-y-4"
+            className="p-5 rounded bg-[#F8FAFC] border border-[#2563EB]/40 space-y-4"
           >
             <div className="flex items-center justify-between">
-              <h4 className="font-bold text-sm text-[#111113]">
+              <h4 className="font-bold text-sm text-[#0F172A]">
                 {editingId ? 'Edit CRM Record' : 'New Customer / Prospect Record'}
               </h4>
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="text-xs text-[#52525B] hover:text-[#111113] flex items-center gap-1"
+                className="text-xs text-[#475569] hover:text-[#0F172A] flex items-center gap-1"
               >
                 <X className="w-4 h-4" /> Close
               </button>
@@ -681,7 +689,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">
+                <label className="font-semibold text-[#0F172A] block mb-1">
                   Company / Account Name *
                 </label>
                 <input
@@ -690,48 +698,48 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                   value={formState.companyOrName}
                   onChange={(e) => setFormState({ ...formState, companyOrName: e.target.value })}
                   placeholder="e.g., Harbourview Builders Ltd"
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Primary Contact Person</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Primary Contact Person</label>
                 <input
                   type="text"
                   value={formState.contactPerson}
                   onChange={(e) => setFormState({ ...formState, contactPerson: e.target.value })}
                   placeholder="e.g., Jane Smith (Director)"
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Email</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Email</label>
                 <input
                   type="email"
                   value={formState.email}
                   onChange={(e) => setFormState({ ...formState, email: e.target.value })}
                   placeholder="name@company.co.nz"
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Phone</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Phone</label>
                 <input
                   type="text"
                   value={formState.phone}
                   onChange={(e) => setFormState({ ...formState, phone: e.target.value })}
                   placeholder="+64 21 ..."
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Record Classification</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Record Classification</label>
                 <select
                   value={formState.recordType}
                   onChange={(e) =>
                     setFormState({ ...formState, recordType: e.target.value as CrmRecordType })
                   }
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 >
                   {RECORD_TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -741,11 +749,11 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 </select>
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Portfolio Tier</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Portfolio Tier</label>
                 <select
                   value={formState.tier}
                   onChange={(e) => setFormState({ ...formState, tier: e.target.value as CrmTier })}
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 >
                   {TIER_OPTIONS.map((t) => (
                     <option key={t} value={t}>
@@ -755,13 +763,13 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 </select>
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Sales Stage</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Sales Stage</label>
                 <select
                   value={formState.salesStage}
                   onChange={(e) =>
                     setFormState({ ...formState, salesStage: e.target.value as CrmSalesStage })
                   }
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 >
                   {STAGE_OPTIONS.map((s) => (
                     <option key={s} value={s}>
@@ -771,11 +779,11 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 </select>
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Tracking Status</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Tracking Status</label>
                 <select
                   value={formState.status}
                   onChange={(e) => setFormState({ ...formState, status: e.target.value as CrmStatus })}
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
@@ -786,7 +794,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
               </div>
 
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">
+                <label className="font-semibold text-[#0F172A] block mb-1">
                   Opportunity Value ({currency})
                 </label>
                 <input
@@ -795,11 +803,11 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                   value={formState.opportunityValue}
                   onChange={(e) => setFormState({ ...formState, opportunityValue: e.target.value })}
                   placeholder="0"
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113] font-mono tabular-nums"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-mono tabular-nums"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">
+                <label className="font-semibold text-[#0F172A] block mb-1">
                   Monthly Value / Retainer ({currency})
                 </label>
                 <input
@@ -808,32 +816,32 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                   value={formState.monthlyValue}
                   onChange={(e) => setFormState({ ...formState, monthlyValue: e.target.value })}
                   placeholder="0"
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113] font-mono tabular-nums"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-mono tabular-nums"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Next Follow-Up Date</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Next Follow-Up Date</label>
                 <input
                   type="date"
                   value={formState.nextFollowUpDate}
                   onChange={(e) => setFormState({ ...formState, nextFollowUpDate: e.target.value })}
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113] font-mono"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-mono"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#111113] block mb-1">Lead Source</label>
+                <label className="font-semibold text-[#0F172A] block mb-1">Lead Source</label>
                 <input
                   type="text"
                   value={formState.leadSource}
                   onChange={(e) => setFormState({ ...formState, leadSource: e.target.value })}
                   placeholder="Referral, Website, Accountant..."
-                  className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                  className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
                 />
               </div>
             </div>
 
             <div className="text-xs">
-              <label className="font-semibold text-[#111113] block mb-1">
+              <label className="font-semibold text-[#0F172A] block mb-1">
                 Commercial Notes, Payment Behaviour &amp; Context
               </label>
               <textarea
@@ -841,7 +849,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 value={formState.notes}
                 onChange={(e) => setFormState({ ...formState, notes: e.target.value })}
                 placeholder="Key requirements, debtor aging status, renewal date, or scope boundaries..."
-                className="w-full bg-white border border-[#111113]/15 rounded px-3 py-2 text-[#111113]"
+                className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A]"
               />
             </div>
 
@@ -849,13 +857,13 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="px-4 py-2 rounded bg-white border border-[#111113]/15 text-xs font-semibold text-[#52525B]"
+                className="px-4 py-2 rounded bg-white border border-[#0F172A]/15 text-xs font-semibold text-[#475569]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-bold uppercase tracking-wider"
+                className="px-5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider"
               >
                 {editingId ? 'Save Record Updates' : 'Save to CRM'}
               </button>
@@ -866,20 +874,20 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
         {/* Filter Bar */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="relative flex-1 min-w-[220px]">
-            <Search className="w-3.5 h-3.5 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search company, contact, email, or notes..."
-              className="w-full bg-[#F8F7F4] border border-[#111113]/15 rounded pl-8 pr-3 py-2 text-[#111113]"
+              className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded pl-8 pr-3 py-2 text-[#0F172A]"
             />
           </div>
 
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
-            className="bg-[#F8F7F4] border border-[#111113]/15 rounded px-3 py-2 text-[#111113] font-medium"
+            className="bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-medium"
           >
             <option value="ALL">All Types</option>
             {RECORD_TYPES.map((t) => (
@@ -892,7 +900,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
           <select
             value={filterStage}
             onChange={(e) => setFilterStage(e.target.value as any)}
-            className="bg-[#F8F7F4] border border-[#111113]/15 rounded px-3 py-2 text-[#111113] font-medium"
+            className="bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-medium"
           >
             <option value="ALL">All Sales Stages</option>
             {STAGE_OPTIONS.map((s) => (
@@ -908,7 +916,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             className={`px-3 py-2 rounded border font-semibold transition ${
               onlyDueOrRisk
                 ? 'bg-[#FFFBEB] border-[#D97706] text-[#B45309]'
-                : 'bg-[#F8F7F4] border-[#111113]/15 text-[#52525B] hover:text-[#111113]'
+                : 'bg-[#F8FAFC] border-[#0F172A]/15 text-[#475569] hover:text-[#0F172A]'
             }`}
           >
             Due / At Risk Only
@@ -917,20 +925,20 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
         {/* CRM Split Workspace: List + Selected Record Detail */}
         {crmContacts.length === 0 ? (
-          <div className="p-8 rounded bg-[#F8F7F4] border border-dashed border-[#111113]/20 text-center space-y-3">
-            <Users className="w-8 h-8 text-[#D97706] mx-auto" />
-            <h4 className="font-bold text-[#111113] text-sm">
+          <div className="p-8 rounded bg-[#F8FAFC] border border-dashed border-[#0F172A]/20 text-center space-y-3">
+            <Users className="w-8 h-8 text-[#2563EB] mx-auto" />
+            <h4 className="font-bold text-[#0F172A] text-sm">
               No CRM Records Yet for {profile?.name || 'This Business'}
             </h4>
-            <p className="text-xs text-[#52525B] max-w-md mx-auto">
+            <p className="text-xs text-[#475569] max-w-md mx-auto">
               Add your top customers, active prospects, or overdue accounts to track pipeline values, interaction history, and follow-up dates.
             </p>
             <button
               type="button"
               onClick={openNewContactForm}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#111113] text-white text-xs font-bold uppercase tracking-wider"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider"
             >
-              <Plus className="w-3.5 h-3.5 text-[#FBBF24]" />
+              <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
               <span>Add First CRM Contact</span>
             </button>
           </div>
@@ -939,7 +947,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             {/* Left List */}
             <div className="lg:col-span-5 space-y-2.5 max-h-[540px] overflow-y-auto pr-1">
               {filteredContacts.length === 0 ? (
-                <div className="p-5 rounded bg-[#F8F7F4] border border-[#111113]/12 text-xs text-[#52525B] text-center">
+                <div className="p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-xs text-[#475569] text-center">
                   No records match your current filters.
                 </div>
               ) : (
@@ -956,16 +964,16 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                       onClick={() => setSelectedContactId(c.id)}
                       className={`p-4 rounded border cursor-pointer transition space-y-2 ${
                         isSelected
-                          ? 'bg-[#FFFBEB]/60 border-[#D97706] shadow-xs'
-                          : 'bg-[#F8F7F4] border-[#111113]/12 hover:bg-white'
+                          ? 'bg-[#EFF6FF]/60 border-[#2563EB] shadow-xs'
+                          : 'bg-[#F8FAFC] border-[#0F172A]/12 hover:bg-white'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h4 className="font-bold text-sm text-[#111113] truncate">
+                          <h4 className="font-bold text-sm text-[#0F172A] truncate">
                             {c.companyOrName}
                           </h4>
-                          <p className="text-xs text-[#52525B] truncate">
+                          <p className="text-xs text-[#475569] truncate">
                             {c.contactPerson || 'No primary contact'} · {c.recordType}
                           </p>
                         </div>
@@ -987,9 +995,9 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                           >
                             {c.status}
                           </span>
-                          <span className="text-[#52525B] font-mono">{c.tier}</span>
+                          <span className="text-[#475569] font-mono">{c.tier}</span>
                         </div>
-                        <div className="font-mono font-bold text-[#111113]">
+                        <div className="font-mono font-bold text-[#0F172A]">
                           {c.opportunityValue > 0
                             ? `Opp: ${currency} ${c.opportunityValue.toLocaleString()}`
                             : `${currency} ${c.monthlyValue.toLocaleString()}/mo`}
@@ -999,7 +1007,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                       {c.nextFollowUpDate && (
                         <div
                           className={`text-[11px] flex items-center gap-1 font-mono ${
-                            isOverdueDate ? 'text-[#B91C1C] font-bold' : 'text-[#52525B]'
+                            isOverdueDate ? 'text-[#B91C1C] font-bold' : 'text-[#475569]'
                           }`}
                         >
                           <Calendar className="w-3 h-3" />
@@ -1018,11 +1026,11 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             {/* Right Detail Panel */}
             <div className="lg:col-span-7">
               {selectedContact ? (
-                <div className="bg-[#F8F7F4] border border-[#111113]/12 rounded p-5 space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-[#111113]/10">
+                <div className="bg-[#F8FAFC] border border-[#0F172A]/12 rounded p-5 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-[#0F172A]/10">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-[#111113] text-[#FBBF24]">
+                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA]">
                           {selectedContact.recordType} · {selectedContact.tier}
                         </span>
                         <span
@@ -1033,10 +1041,10 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                           {selectedContact.status}
                         </span>
                       </div>
-                      <h4 className="text-lg font-bold text-[#111113] mt-1.5">
+                      <h4 className="text-lg font-bold text-[#0F172A] mt-1.5">
                         {selectedContact.companyOrName}
                       </h4>
-                      <p className="text-xs text-[#52525B]">
+                      <p className="text-xs text-[#475569]">
                         {selectedContact.contactPerson || 'Primary contact unspecified'}
                         {selectedContact.leadSource ? ` · Source: ${selectedContact.leadSource}` : ''}
                       </p>
@@ -1046,7 +1054,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                       <button
                         type="button"
                         onClick={() => openEditContactForm(selectedContact)}
-                        className="px-2.5 py-1.5 rounded bg-white border border-[#111113]/15 text-xs font-semibold text-[#111113] hover:border-[#D97706] flex items-center gap-1"
+                        className="px-2.5 py-1.5 rounded bg-white border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A] hover:border-[#2563EB] flex items-center gap-1"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Edit
                       </button>
@@ -1063,28 +1071,28 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
                   {/* Contact Info & Value Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs tabular-nums">
-                    <div className="p-3 bg-white rounded border border-[#111113]/10 space-y-1">
-                      <div className="flex items-center gap-1.5 text-[#52525B]">
-                        <Mail className="w-3.5 h-3.5 text-[#D97706]" />
+                    <div className="p-3 bg-white rounded border border-[#0F172A]/10 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[#475569]">
+                        <Mail className="w-3.5 h-3.5 text-[#2563EB]" />
                         <span>{selectedContact.email || 'No email entered'}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[#52525B]">
-                        <Phone className="w-3.5 h-3.5 text-[#D97706]" />
+                      <div className="flex items-center gap-1.5 text-[#475569]">
+                        <Phone className="w-3.5 h-3.5 text-[#2563EB]" />
                         <span>{selectedContact.phone || 'No phone entered'}</span>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-white rounded border border-[#111113]/10 flex items-center justify-between gap-3">
+                    <div className="p-3 bg-white rounded border border-[#0F172A]/10 flex items-center justify-between gap-3">
                       <div>
-                        <span className="text-[10px] font-bold uppercase text-[#52525B] block">
+                        <span className="text-[10px] font-bold uppercase text-[#475569] block">
                           Opportunity
                         </span>
-                        <span className="font-mono font-bold text-[#111113] text-sm">
+                        <span className="font-mono font-bold text-[#0F172A] text-sm">
                           {currency} {selectedContact.opportunityValue.toLocaleString()}
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] font-bold uppercase text-[#52525B] block">
+                        <span className="text-[10px] font-bold uppercase text-[#475569] block">
                           Monthly Retainer
                         </span>
                         <span className="font-mono font-bold text-[#15803D] text-sm">
@@ -1097,7 +1105,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                   {/* Quick Inline Pipeline & Follow-up Controls */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                     <div>
-                      <label className="text-[10px] font-bold uppercase text-[#52525B] block mb-1">
+                      <label className="text-[10px] font-bold uppercase text-[#475569] block mb-1">
                         Sales Stage
                       </label>
                       <select
@@ -1107,7 +1115,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                             salesStage: e.target.value as CrmSalesStage,
                           })
                         }
-                        className="w-full bg-white border border-[#111113]/15 rounded px-2.5 py-1.5 font-semibold text-[#111113]"
+                        className="w-full bg-white border border-[#0F172A]/15 rounded px-2.5 py-1.5 font-semibold text-[#0F172A]"
                       >
                         {STAGE_OPTIONS.map((s) => (
                           <option key={s} value={s}>
@@ -1117,7 +1125,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold uppercase text-[#52525B] block mb-1">
+                      <label className="text-[10px] font-bold uppercase text-[#475569] block mb-1">
                         Status
                       </label>
                       <select
@@ -1127,7 +1135,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                             status: e.target.value as CrmStatus,
                           })
                         }
-                        className="w-full bg-white border border-[#111113]/15 rounded px-2.5 py-1.5 font-semibold text-[#111113]"
+                        className="w-full bg-white border border-[#0F172A]/15 rounded px-2.5 py-1.5 font-semibold text-[#0F172A]"
                       >
                         {STATUS_OPTIONS.map((s) => (
                           <option key={s} value={s}>
@@ -1137,7 +1145,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold uppercase text-[#52525B] block mb-1">
+                      <label className="text-[10px] font-bold uppercase text-[#475569] block mb-1">
                         Next Follow-Up Date
                       </label>
                       <input
@@ -1148,14 +1156,14 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                             nextFollowUpDate: e.target.value,
                           })
                         }
-                        className="w-full bg-white border border-[#111113]/15 rounded px-2.5 py-1.5 font-mono text-[#111113]"
+                        className="w-full bg-white border border-[#0F172A]/15 rounded px-2.5 py-1.5 font-mono text-[#0F172A]"
                       />
                     </div>
                   </div>
 
                   {selectedContact.notes && (
-                    <div className="p-3 bg-white rounded border border-[#111113]/10 text-xs text-[#111113]">
-                      <strong className="block text-[10px] uppercase tracking-wider text-[#52525B] mb-1">
+                    <div className="p-3 bg-white rounded border border-[#0F172A]/10 text-xs text-[#0F172A]">
+                      <strong className="block text-[10px] uppercase tracking-wider text-[#475569] mb-1">
                         Account Notes
                       </strong>
                       {selectedContact.notes}
@@ -1168,7 +1176,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                       <button
                         type="button"
                         onClick={() => onEvaluateOpportunityInRoi(selectedContact)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#D97706] hover:bg-[#B45309] text-white text-xs font-bold transition"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition"
                       >
                         <Calculator className="w-3.5 h-3.5" />
                         <span>Evaluate ROI for Opportunity</span>
@@ -1183,30 +1191,30 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                             `Help me prepare a practical follow-up and outreach message for CRM record "${selectedContact.companyOrName}" (Contact: ${selectedContact.contactPerson || 'Owner'}, Type: ${selectedContact.recordType}, Tier: ${selectedContact.tier}, Stage: ${selectedContact.salesStage}, Status: ${selectedContact.status}, Opportunity: ${currency} ${selectedContact.opportunityValue.toLocaleString()}, Monthly: ${currency} ${selectedContact.monthlyValue.toLocaleString()}, Follow-up Due: ${selectedContact.nextFollowUpDate || 'Unscheduled'}). Context: ${selectedContact.notes || 'None'}.`
                           )
                         }
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-bold transition"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold transition"
                       >
-                        <Bot className="w-3.5 h-3.5 text-[#FBBF24]" />
+                        <Bot className="w-3.5 h-3.5 text-[#60A5FA]" />
                         <span>Draft Outreach in AI Coach</span>
                       </button>
                     )}
                   </div>
 
                   {/* Interaction History Log */}
-                  <div className="pt-3 border-t border-[#111113]/10 space-y-3">
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#111113] flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#D97706]" />
+                  <div className="pt-3 border-t border-[#0F172A]/10 space-y-3">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#2563EB]" />
                       <span>Interaction History ({selectedContact.interactions?.length || 0})</span>
                     </h5>
 
                     <form
                       onSubmit={handleAddInteraction}
-                      className="p-3 bg-white rounded border border-[#111113]/12 space-y-2 text-xs"
+                      className="p-3 bg-white rounded border border-[#0F172A]/12 space-y-2 text-xs"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <select
                           value={intType}
                           onChange={(e) => setIntType(e.target.value as CrmInteraction['type'])}
-                          className="bg-[#F8F7F4] border border-[#111113]/15 rounded px-2.5 py-1.5 font-semibold"
+                          className="bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 font-semibold"
                         >
                           {INTERACTION_TYPES.map((t) => (
                             <option key={t} value={t}>
@@ -1218,14 +1226,14 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                           type="date"
                           value={intDate}
                           onChange={(e) => setIntDate(e.target.value)}
-                          className="bg-[#F8F7F4] border border-[#111113]/15 rounded px-2.5 py-1.5 font-mono"
+                          className="bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 font-mono"
                         />
                         <input
                           type="text"
                           value={intOutcome}
                           onChange={(e) => setIntOutcome(e.target.value)}
                           placeholder="Next step / outcome (optional)"
-                          className="bg-[#F8F7F4] border border-[#111113]/15 rounded px-2.5 py-1.5"
+                          className="bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5"
                         />
                       </div>
                       <div className="flex gap-2">
@@ -1234,14 +1242,14 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                           value={intSummary}
                           onChange={(e) => setIntSummary(e.target.value)}
                           placeholder="Log call, email, meeting notes, or proposal sent..."
-                          className="flex-1 bg-[#F8F7F4] border border-[#111113]/15 rounded px-3 py-1.5"
+                          className="flex-1 bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-3 py-1.5"
                         />
                         <button
                           type="submit"
                           disabled={!intSummary.trim()}
-                          className="px-3.5 py-1.5 rounded bg-[#111113] disabled:opacity-40 text-white font-bold inline-flex items-center gap-1 shrink-0"
+                          className="px-3.5 py-1.5 rounded bg-[#0F172A] disabled:opacity-40 text-white font-bold inline-flex items-center gap-1 shrink-0"
                         >
-                          <MessageSquarePlus className="w-3.5 h-3.5 text-[#FBBF24]" />
+                          <MessageSquarePlus className="w-3.5 h-3.5 text-[#60A5FA]" />
                           <span>Log</span>
                         </button>
                       </div>
@@ -1252,28 +1260,28 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                         {selectedContact.interactions.map((item) => (
                           <div
                             key={item.id}
-                            className="p-3 bg-white rounded border border-[#111113]/10 text-xs space-y-1"
+                            className="p-3 bg-white rounded border border-[#0F172A]/10 text-xs space-y-1"
                           >
                             <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-bold text-[#D97706] uppercase">{item.type}</span>
-                              <span className="font-mono text-[#52525B]">{item.date}</span>
+                              <span className="font-bold text-[#2563EB] uppercase">{item.type}</span>
+                              <span className="font-mono text-[#475569]">{item.date}</span>
                             </div>
-                            <p className="text-[#111113]">{item.summary}</p>
+                            <p className="text-[#0F172A]">{item.summary}</p>
                             {item.outcome && (
-                              <p className="text-[#52525B] italic">Outcome: {item.outcome}</p>
+                              <p className="text-[#475569] italic">Outcome: {item.outcome}</p>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-[#52525B]">
+                      <p className="text-xs text-[#475569]">
                         No interactions logged yet for this contact.
                       </p>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="p-8 rounded bg-[#F8F7F4] border border-[#111113]/12 text-center text-xs text-[#52525B]">
+                <div className="p-8 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-center text-xs text-[#475569]">
                   Select a CRM record from the list to inspect contact details and interaction history.
                 </div>
               )}
@@ -1285,16 +1293,16 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
       {/* =================================================== */}
       {/* SECTION 2: CONNECTED BUSINESS DEVELOPMENT & OUTREACH */}
       {/* =================================================== */}
-      <div className="bg-white border border-[#111113]/12 rounded p-6 shadow-xs space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#111113]/10">
+      <div className="bg-white border border-[#0F172A]/12 rounded p-6 shadow-xs space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#0F172A]/10">
           <div>
             <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-[#D97706]" />
-              <h3 className="text-lg font-bold text-[#111113]">
+              <Target className="w-5 h-5 text-[#2563EB]" />
+              <h3 className="text-lg font-bold text-[#0F172A]">
                 Connected Business Development, Lead Generation &amp; Follow-Up Support
               </h3>
             </div>
-            <p className="text-xs text-[#52525B] mt-1">
+            <p className="text-xs text-[#475569] mt-1">
               Synthesizes your Business Health score, cash/margin situation, and live CRM pipeline into ideal customer targeting, follow-up priorities, and outreach scripts.
             </p>
           </div>
@@ -1306,13 +1314,13 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             value={bizDevFocus}
             onChange={(e) => setBizDevFocus(e.target.value)}
             placeholder="Optional growth focus (e.g., Target 10 accounting-referred SMEs, or win back dormant customers)"
-            className="flex-1 bg-[#F8F7F4] border border-[#111113]/15 rounded px-3.5 py-2.5 text-xs text-[#111113]"
+            className="flex-1 bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-3.5 py-2.5 text-xs text-[#0F172A]"
           />
           <button
             type="button"
             onClick={handleGenerateBusinessDevPlan}
             disabled={isGeneratingBizDev}
-            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded bg-[#D97706] hover:bg-[#B45309] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
           >
             {isGeneratingBizDev ? (
               <>
@@ -1344,11 +1352,11 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
         {businessDevPlan ? (
           <div className="space-y-4">
-            <div className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 text-xs space-y-1">
-              <span className="font-bold uppercase tracking-wider text-[#D97706] block">
+            <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-xs space-y-1">
+              <span className="font-bold uppercase tracking-wider text-[#2563EB] block">
                 Recommended Ideal Customer Profile (ICP)
               </span>
-              <p className="text-[#111113] leading-relaxed text-sm">
+              <p className="text-[#0F172A] leading-relaxed text-sm">
                 {businessDevPlan.idealCustomerProfile}
               </p>
             </div>
@@ -1358,7 +1366,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 <span className="font-bold uppercase tracking-wider text-[#15803D] block">
                   Target Market &amp; Partnership Opportunities
                 </span>
-                <ul className="space-y-1.5 text-[#111113]">
+                <ul className="space-y-1.5 text-[#0F172A]">
                   {businessDevPlan.targetOpportunities.map((item, idx) => (
                     <li key={idx}>• {item}</li>
                   ))}
@@ -1369,7 +1377,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 <span className="font-bold uppercase tracking-wider text-[#B45309] block">
                   Priority Follow-Up Actions (CRM + Health Linked)
                 </span>
-                <ul className="space-y-1.5 text-[#111113]">
+                <ul className="space-y-1.5 text-[#0F172A]">
                   {businessDevPlan.followUpPriorities.map((item, idx) => (
                     <li key={idx}>• {item}</li>
                   ))}
@@ -1379,26 +1387,26 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
             {businessDevPlan.outreachSuggestions.length > 0 && (
               <div className="space-y-3">
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#111113] block">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F172A] block">
                   Tailored Outreach Drafts &amp; Follow-Up Messages
                 </span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {businessDevPlan.outreachSuggestions.map((sug, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-2 text-xs flex flex-col justify-between"
+                      className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-2 text-xs flex flex-col justify-between"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-[#111113] text-sm">{sug.title}</span>
-                          <span className="px-2 py-0.5 rounded bg-white border border-[#111113]/15 font-mono text-[10px] text-[#D97706] font-bold">
+                          <span className="font-bold text-[#0F172A] text-sm">{sug.title}</span>
+                          <span className="px-2 py-0.5 rounded bg-white border border-[#0F172A]/15 font-mono text-[10px] text-[#2563EB] font-bold">
                             {sug.channel}
                           </span>
                         </div>
-                        <p className="text-[#52525B]">
+                        <p className="text-[#475569]">
                           <strong>Segment:</strong> {sug.targetSegment} — {sug.rationale}
                         </p>
-                        <div className="p-3 rounded bg-white border border-[#111113]/10 text-[#111113] whitespace-pre-wrap leading-relaxed font-mono text-[11px]">
+                        <div className="p-3 rounded bg-white border border-[#0F172A]/10 text-[#0F172A] whitespace-pre-wrap leading-relaxed font-mono text-[11px]">
                           {sug.messageDraft}
                         </div>
                       </div>
@@ -1409,9 +1417,9 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                           onClick={() =>
                             handleSaveOutreachToCrm(sug.title, sug.messageDraft, sug.linkedCrmId)
                           }
-                          className="px-3 py-1.5 rounded bg-white border border-[#111113]/15 hover:border-[#D97706] text-[11px] font-bold text-[#111113] inline-flex items-center gap-1"
+                          className="px-3 py-1.5 rounded bg-white border border-[#0F172A]/15 hover:border-[#2563EB] text-[11px] font-bold text-[#0F172A] inline-flex items-center gap-1"
                         >
-                          <MessageSquarePlus className="w-3 h-3 text-[#D97706]" />
+                          <MessageSquarePlus className="w-3 h-3 text-[#2563EB]" />
                           <span>Save to CRM Log</span>
                         </button>
                         {onOpenCoachWithPrompt && (
@@ -1422,9 +1430,9 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                                 `Refine this outreach campaign "${sug.title}" for ${profile?.name || 'our business'} (${sug.targetSegment} via ${sug.channel}):\n\n"${sug.messageDraft}"\n\nMake it sharper for objection handling and ROI framing.`
                               )
                             }
-                            className="px-3 py-1.5 rounded bg-[#111113] text-white text-[11px] font-bold inline-flex items-center gap-1"
+                            className="px-3 py-1.5 rounded bg-[#0F172A] text-white text-[11px] font-bold inline-flex items-center gap-1"
                           >
-                            <Send className="w-3 h-3 text-[#FBBF24]" />
+                            <Send className="w-3 h-3 text-[#60A5FA]" />
                             <span>Refine in AI Coach</span>
                           </button>
                         )}
@@ -1436,11 +1444,11 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             )}
           </div>
         ) : (
-          <div className="p-5 rounded bg-[#F8F7F4] border border-[#111113]/10 text-xs text-[#52525B] flex items-center justify-between gap-4">
+          <div className="p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-xs text-[#475569] flex items-center justify-between gap-4">
             <span>
               Click <strong>Generate Lead &amp; Outreach Plan</strong> above to generate Health-grounded target customer profiles, partner ideas, and follow-up scripts connected to your CRM records.
             </span>
-            <TrendingUp className="w-5 h-5 text-[#D97706] shrink-0" />
+            <TrendingUp className="w-5 h-5 text-[#2563EB] shrink-0" />
           </div>
         )}
       </div>
@@ -1449,7 +1457,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
       {/* SECTION 3: EXISTING CLIENT CONCENTRATION & MATRIX   */}
       {/* =================================================== */}
       {!isDemo && annualRevenue === null && (
-        <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#111113] flex items-start gap-2.5">
+        <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#0F172A] flex items-start gap-2.5">
           <Info className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
           <span>
             No historical revenue or customer concentration figures have been supplied for{' '}
@@ -1460,49 +1468,49 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
 
       {/* Concentration Tiers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 tabular-nums">
-        <div className="bg-white border border-[#111113]/12 rounded p-5 shadow-xs space-y-2">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#B91C1C]">
               Top 5 Anchor Clients
             </span>
             <AlertOctagon className="w-4 h-4 text-[#B91C1C]" />
           </div>
-          <div className="text-2xl font-bold text-[#111113] font-mono">
+          <div className="text-2xl font-bold text-[#0F172A] font-mono">
             {top5Pct !== null ? `${top5Pct}% of Revenue` : 'Not supplied'}
           </div>
-          <div className="p-2.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#111113]">
+          <div className="p-2.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#0F172A]">
             <strong>Risk Check: </strong>
             Losing any single anchor client requires formal relationship reviews and written renewal visibility.
           </div>
         </div>
 
-        <div className="bg-white border border-[#111113]/12 rounded p-5 shadow-xs space-y-2">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#B45309]">
               Next Core Tier
             </span>
             <Users className="w-4 h-4 text-[#B45309]" />
           </div>
-          <div className="text-2xl font-bold text-[#111113] font-mono">
+          <div className="text-2xl font-bold text-[#0F172A] font-mono">
             {next7Pct !== null ? `${next7Pct}% of Revenue` : 'Not supplied'}
           </div>
-          <div className="p-2.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#111113]">
+          <div className="p-2.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#0F172A]">
             <strong>Retention Focus: </strong>
             Core recurring accounts respond well to predictable service roadmaps and transparent pricing updates.
           </div>
         </div>
 
-        <div className="bg-white border border-[#111113]/12 rounded p-5 shadow-xs space-y-2">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#111113]">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A]">
               Long-Tail Accounts
             </span>
-            <Layers className="w-4 h-4 text-[#D97706]" />
+            <Layers className="w-4 h-4 text-[#2563EB]" />
           </div>
-          <div className="text-2xl font-bold text-[#111113] font-mono">
+          <div className="text-2xl font-bold text-[#0F172A] font-mono">
             {tailPct !== null ? `${tailPct}% of Revenue` : 'Not supplied'}
           </div>
-          <div className="p-2.5 rounded bg-[#F8F7F4] border border-[#111113]/10 text-xs text-[#111113]">
+          <div className="p-2.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-xs text-[#0F172A]">
             <strong>Scope Hygiene: </strong>
             Small ad-hoc accounts often create disproportionate admin interruptions and unpaid support calls.
           </div>
@@ -1510,16 +1518,16 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
       </div>
 
       {/* Price Review & Churn Sensitivity Calculator */}
-      <div className="bg-white border border-[#111113]/12 rounded p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#111113]/10">
+      <div className="bg-white border border-[#0F172A]/12 rounded p-6 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#0F172A]/10">
           <div>
             <div className="flex items-center space-x-2">
-              <Percent className="w-5 h-5 text-[#D97706]" />
-              <h3 className="text-lg font-bold text-[#111113]">
+              <Percent className="w-5 h-5 text-[#2563EB]" />
+              <h3 className="text-lg font-bold text-[#0F172A]">
                 Scenario Simulator: Price Adjustment vs. Low-Margin Churn
               </h3>
             </div>
-            <p className="text-xs text-[#52525B] mt-1">
+            <p className="text-xs text-[#475569] mt-1">
               Test what happens to annual net profit when you review pricing by 8–12% across your recurring revenue base.
             </p>
           </div>
@@ -1534,10 +1542,10 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             {!isDemo && (
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-semibold text-[#111113]">
+                  <label className="text-xs font-semibold text-[#0F172A]">
                     Scenario Annual Recurring Revenue Base ({currency})
                   </label>
-                  <span className="text-xs font-bold font-mono tabular-nums text-[#D97706]">
+                  <span className="text-xs font-bold font-mono tabular-nums text-[#2563EB]">
                     {currency} {priceableRevenueBase.toLocaleString()}
                   </span>
                 </div>
@@ -1548,17 +1556,17 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                   step="25000"
                   value={priceableRevenueBase}
                   onChange={(e) => setPriceableRevenueBase(Number(e.target.value))}
-                  className="w-full h-2 bg-[#E5E5E5] rounded-lg appearance-none cursor-pointer accent-[#D97706]"
+                  className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
                 />
               </div>
             )}
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-[#111113]">
+                <label className="text-sm font-semibold text-[#0F172A]">
                   Contract Price Adjustment (%)
                 </label>
-                <span className="text-sm font-bold text-[#B45309] font-mono tabular-nums bg-[#FFFBEB] px-2.5 py-0.5 rounded border border-[#FDE68A]">
+                <span className="text-sm font-bold text-[#1D4ED8] font-mono tabular-nums bg-[#EFF6FF] px-2.5 py-0.5 rounded border border-[#BFDBFE]">
                   +{priceIncreasePct}% (+{currency} {grossPriceGain.toLocaleString()}/yr)
                 </span>
               </div>
@@ -1569,13 +1577,13 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 step="1"
                 value={priceIncreasePct}
                 onChange={(e) => setPriceIncreasePct(Number(e.target.value))}
-                className="w-full h-2 bg-[#E5E5E5] rounded-lg appearance-none cursor-pointer accent-[#D97706]"
+                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
               />
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-[#111113]">
+                <label className="text-sm font-semibold text-[#0F172A]">
                   Estimated Low-Margin Clients Exiting
                 </label>
                 <span className="text-sm font-bold text-[#B91C1C] font-mono tabular-nums bg-[#FEF2F2] px-2.5 py-0.5 rounded border border-[#FECACA]">
@@ -1589,24 +1597,24 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                 step="1"
                 value={churnedClientsCount}
                 onChange={(e) => setChurnedClientsCount(Number(e.target.value))}
-                className="w-full h-2 bg-[#E5E5E5] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"
+                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#DC2626]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 bg-[#F8F7F4] border border-[#111113]/12 rounded">
-                <label className="text-[#52525B] block font-semibold mb-1">
+              <div className="p-3 bg-[#F8FAFC] border border-[#0F172A]/12 rounded">
+                <label className="text-[#475569] block font-semibold mb-1">
                   Avg Monthly Retainer ({currency})
                 </label>
                 <input
                   type="number"
                   value={averageChurnedClientMRR}
                   onChange={(e) => setAverageChurnedClientMRR(Number(e.target.value) || 0)}
-                  className="w-full bg-[#FCFCFC] border border-[#111113]/15 rounded px-2.5 py-1 font-mono font-bold text-[#111113] tabular-nums focus:outline-none focus:border-[#D97706]"
+                  className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-2.5 py-1 font-mono font-bold text-[#0F172A] tabular-nums focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
-              <div className="p-3 bg-[#F8F7F4] border border-[#111113]/12 rounded">
-                <label className="text-[#52525B] block font-semibold mb-1">
+              <div className="p-3 bg-[#F8FAFC] border border-[#0F172A]/12 rounded">
+                <label className="text-[#475569] block font-semibold mb-1">
                   Gross Margin on Churned (%)
                 </label>
                 <input
@@ -1615,32 +1623,32 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
                   max="100"
                   value={churnedClientMarginPct}
                   onChange={(e) => setChurnedClientMarginPct(Number(e.target.value) || 0)}
-                  className="w-full bg-[#FCFCFC] border border-[#111113]/15 rounded px-2.5 py-1 font-mono font-bold text-[#111113] tabular-nums focus:outline-none focus:border-[#D97706]"
+                  className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-2.5 py-1 font-mono font-bold text-[#0F172A] tabular-nums focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-[#F8F7F4] border border-[#111113]/12 rounded p-5 space-y-4 tabular-nums">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111113] border-b border-[#111113]/10 pb-2">
+          <div className="bg-[#F8FAFC] border border-[#0F172A]/12 rounded p-5 space-y-4 tabular-nums">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0F172A] border-b border-[#0F172A]/10 pb-2">
               Projected Operating Profit Outcome
             </h4>
 
-            <div className="space-y-3 divide-y divide-[#111113]/10 text-sm">
+            <div className="space-y-3 divide-y divide-[#0F172A]/10 text-sm">
               <div className="flex justify-between items-center pt-1">
-                <span className="text-[#52525B]">Gross Price Review Gain:</span>
+                <span className="text-[#475569]">Gross Price Review Gain:</span>
                 <span className="font-bold text-[#15803D] font-mono">
                   +{currency} {grossPriceGain.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center pt-2">
-                <span className="text-[#52525B]">Lost Gross Profit from Churn:</span>
+                <span className="text-[#475569]">Lost Gross Profit from Churn:</span>
                 <span className="font-semibold text-[#B91C1C] font-mono">
                   -{currency} {lostAnnualGrossProfit.toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between items-center pt-2 bg-white p-3 rounded border border-[#111113]/12">
-                <span className="font-bold text-[#111113]">Net Annual Profit Impact:</span>
+              <div className="flex justify-between items-center pt-2 bg-white p-3 rounded border border-[#0F172A]/12">
+                <span className="font-bold text-[#0F172A]">Net Annual Profit Impact:</span>
                 <span
                   className={`font-bold font-mono text-base ${
                     netProfitImpact >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
@@ -1652,15 +1660,15 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
               </div>
               {operatingProfit !== null && (
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-[#52525B]">New Projected Operating Profit:</span>
-                  <span className="font-bold text-[#111113] font-mono text-lg">
+                  <span className="text-[#475569]">New Projected Operating Profit:</span>
+                  <span className="font-bold text-[#0F172A] font-mono text-lg">
                     {currency} {newProjectedOperatingProfit.toLocaleString()}
                   </span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-2">
-                <span className="text-[#52525B]">Team Capacity Freed:</span>
-                <span className="font-bold text-[#D97706] font-mono">
+                <span className="text-[#475569]">Team Capacity Freed:</span>
+                <span className="font-bold text-[#2563EB] font-mono">
                   +{totalHoursFreedPerMonth} hrs / month
                 </span>
               </div>
@@ -1670,9 +1678,9 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
       </div>
 
       {/* 4-Tier Segmentation Playbook */}
-      <div className="bg-white border border-[#111113]/12 rounded p-6 shadow-xs">
-        <h3 className="text-base font-bold text-[#111113] mb-4 flex items-center gap-2">
-          <FileSpreadsheet className="w-5 h-5 text-[#D97706]" />
+      <div className="bg-white border border-[#0F172A]/12 rounded p-6 shadow-xs">
+        <h3 className="text-base font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+          <FileSpreadsheet className="w-5 h-5 text-[#2563EB]" />
           <span>4-Tier Client Portfolio Segmentation Guide</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
@@ -1680,17 +1688,17 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             <span className="font-bold uppercase tracking-wider text-[#15803D] block">
               Tier 1: Champions
             </span>
-            <p className="text-[#111113]">Prompt payers, high margin, strong mutual trust.</p>
+            <p className="text-[#0F172A]">Prompt payers, high margin, strong mutual trust.</p>
             <p className="text-[#15803D] font-semibold">
               Action: Executive check-ins + value-led renewals.
             </p>
           </div>
-          <div className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-1.5">
-            <span className="font-bold uppercase tracking-wider text-[#111113] block">
+          <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1.5">
+            <span className="font-bold uppercase tracking-wider text-[#0F172A] block">
               Tier 2: Steady Core
             </span>
-            <p className="text-[#111113]">Predictable service needs, pays within 20–35 days.</p>
-            <p className="text-[#D97706] font-semibold">
+            <p className="text-[#0F172A]">Predictable service needs, pays within 20–35 days.</p>
+            <p className="text-[#2563EB] font-semibold">
               Action: Scheduled CPI/cost price update + direct debit.
             </p>
           </div>
@@ -1698,7 +1706,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             <span className="font-bold uppercase tracking-wider text-[#B45309] block">
               Tier 3: Margin Squeeze
             </span>
-            <p className="text-[#111113]">Repeatedly demands discounts or extra free scope.</p>
+            <p className="text-[#0F172A]">Repeatedly demands discounts or extra free scope.</p>
             <p className="text-[#B45309] font-semibold">
               Action: Remove unbilled inclusions before matching price.
             </p>
@@ -1707,7 +1715,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
             <span className="font-bold uppercase tracking-wider text-[#B91C1C] block">
               Tier 4: Chronic Drain
             </span>
-            <p className="text-[#111113]">Consistently 60+ days overdue with high ticket friction.</p>
+            <p className="text-[#0F172A]">Consistently 60+ days overdue with high ticket friction.</p>
             <p className="text-[#B91C1C] font-semibold">
               Action: Enforce credit stop-work or exit account.
             </p>

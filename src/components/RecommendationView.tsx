@@ -14,7 +14,9 @@ import {
   MessageSquare,
   Send,
   Circle,
-  Check,
+  PlusCircle,
+  Calculator,
+  Filter,
 } from 'lucide-react';
 import {
   BusinessProfile,
@@ -27,6 +29,11 @@ import {
   RecommendationChallenge,
   CrmRecord,
   RoiScenario,
+  CrossDocumentSynthesis,
+  TurnaroundAction,
+  ProfitOpportunityItem,
+  OpportunityHorizon,
+  AccountUsageSummary,
 } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
@@ -36,10 +43,15 @@ interface RecommendationViewProps {
   financials: FinancialData | null;
   overallHealth: OverallHealthAssessment | null;
   uploadedDocuments?: UploadedDocument[];
+  crossDocumentSynthesis?: CrossDocumentSynthesis | null;
   crmContacts?: CrmRecord[];
   roiScenarios?: RoiScenario[];
+  actionPlan?: TurnaroundAction[];
   recommendations: RecommendationOutput | null;
   onUpdateRecommendations: (rec: RecommendationOutput) => void;
+  onAddOpportunityToPlan?: (opp: ProfitOpportunityItem) => void;
+  onTestOpportunityInRoi?: (opp: ProfitOpportunityItem) => void;
+  onAccountUsageUpdate?: (usage: AccountUsageSummary) => void;
   onTrackUsage?: (field: 'coachMessagesCount' | 'recommendationsCount') => void;
   onNavigateToConsole: (initialPrompt?: string) => void;
   onOpenChallengeMe?: () => void;
@@ -51,16 +63,23 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   financials,
   overallHealth,
   uploadedDocuments = [],
+  crossDocumentSynthesis = null,
   crmContacts = [],
   roiScenarios = [],
+  actionPlan = [],
   recommendations,
   onUpdateRecommendations,
+  onAddOpportunityToPlan,
+  onTestOpportunityInRoi,
+  onAccountUsageUpdate,
   onTrackUsage,
   onNavigateToConsole,
   onOpenChallengeMe,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [horizonFilter, setHorizonFilter] = useState<'all' | OpportunityHorizon>('all');
+  const [addedOppIds, setAddedOppIds] = useState<Record<string, boolean>>({});
 
   // Challenge / Follow-up state
   const [challengePrompt, setChallengePrompt] = useState('');
@@ -86,17 +105,20 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           financials,
           overallHealth,
           uploadedDocuments,
+          crossDocumentSynthesis,
           crmContacts,
           roiScenarios,
+          actionPlan,
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
+
       if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || 'Server returned an error generating recommendation.');
+        throw new Error(data.error || 'Server returned an error generating recommendation.');
       }
 
-      const data = await response.json();
       if (data.recommendation) {
         const merged: RecommendationOutput = {
           ...data.recommendation,
@@ -148,17 +170,20 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           overallHealth,
           currentRecommendation: recommendations,
           uploadedDocuments,
+          crossDocumentSynthesis,
           crmContacts,
           roiScenarios,
+          actionPlan,
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
+
       if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || 'Unable to process follow-up question.');
+        throw new Error(data.error || 'Unable to process follow-up question.');
       }
 
-      const data = await response.json();
       const newEntry: RecommendationChallenge = {
         id: data.challengeEntry?.id || `chal-${Date.now()}`,
         questionOrChallenge: challengePrompt.trim(),
@@ -184,26 +209,31 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   const completedActions = recommendations?.actionItems?.filter((a) => a.completed).length ?? 0;
   const totalActions = recommendations?.actionItems?.length ?? 0;
 
+  const profitOpps = recommendations?.profitOpportunities || [];
+  const filteredOpps = profitOpps.filter(
+    (opp) => horizonFilter === 'all' || opp.horizon === horizonFilter
+  );
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Architectural Charcoal Hero Header */}
-      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#111113]/15">
+      {/* Architectural Navy Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#0F172A]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="bizpulse-label text-[#FBBF24] flex items-center gap-1.5">
+              <span className="bizpulse-label text-[#60A5FA] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                [04] Intelligent Coaching
+                [04] Revenue &amp; Profit Opportunity Engine
               </span>
-              <span className="text-[#A1A1AA] text-xs font-medium">
+              <span className="text-[#94A3B8] text-xs font-medium">
                 {profile.name || 'Active Business'} · {profile.industry} ({profile.country})
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Diagnostic Coaching &amp; Prioritized Action Plan
+              Diagnostic Coaching, 16-Area Profit Leakage &amp; Sustainability
             </h2>
-            <p className="text-sm text-[#D4D4D8] max-w-2xl leading-relaxed">
-              Synthesizes your 8 health scores, primary concern, financial figures, and {uploadedDocuments.length} uploaded document{uploadedDocuments.length === 1 ? '' : 's'} into commercial sustainability risks, profit opportunities, and testable 48-hour steps.
+            <p className="text-sm text-[#CBD5E1] max-w-2xl leading-relaxed">
+              Synthesizes your 12 capability scores, Top 3 priorities, financial ledger, CRM pipeline, and {uploadedDocuments.length} uploaded document{uploadedDocuments.length === 1 ? '' : 's'} into a 10-area sustainability verdict, 16-area profit leakage scan, and testable 48-hour steps.
             </p>
           </div>
 
@@ -212,7 +242,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               type="button"
               onClick={handleGenerateRecommendation}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#D97706] hover:bg-[#B45309] disabled:opacity-50 text-white font-semibold uppercase tracking-wider text-xs shadow-sm transition whitespace-nowrap"
+              className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white font-semibold uppercase tracking-wider text-xs shadow-sm transition whitespace-nowrap"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span>
@@ -232,7 +262,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-[#D4D4D8] hover:text-white font-semibold"
+              className="text-[#CBD5E1] hover:text-white font-semibold"
             >
               Dismiss
             </button>
@@ -244,27 +274,277 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
       {recommendations ? (
         <div className="space-y-6">
           {/* 1: Primary Commercial Observation & Why It Matters */}
-          <div className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
             <div className="flex items-center space-x-2.5">
-              <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+              <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                 1
               </span>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D97706]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
                 Primary Commercial Diagnosis
               </span>
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-bold text-[#111113] leading-snug">
+            <h3 className="text-xl sm:text-2xl font-bold text-[#0F172A] leading-snug">
               {recommendations.initialObservation}
             </h3>
 
-            <div className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/10 text-xs sm:text-sm space-y-1.5 leading-relaxed">
-              <strong className="text-[#D97706] font-mono uppercase tracking-wider text-[11px] block">
+            <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-xs sm:text-sm space-y-1.5 leading-relaxed">
+              <strong className="text-[#2563EB] font-mono uppercase tracking-wider text-[11px] block">
                 Commercial Impact (Profitability, Cash Flow &amp; Owner Capacity):
               </strong>
-              <p className="text-[#111113] leading-relaxed">{recommendations.commercialWhy}</p>
+              <p className="text-[#0F172A] leading-relaxed">{recommendations.commercialWhy}</p>
             </div>
           </div>
+
+          {/* 1B: Structured 12-Area Revenue & Profit Opportunity Engine */}
+          {profitOpps.length > 0 && (
+            <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#0F172A]/10 pb-4">
+                <div>
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB] flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4" />
+                    Structured Profit &amp; Revenue Opportunities ({profitOpps.length})
+                  </span>
+                  <h4 className="font-bold text-[#0F172A] text-base mt-0.5">
+                    Evidence-Backed Margin, Pricing &amp; Growth Levers
+                  </h4>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Filter className="w-3.5 h-3.5 text-[#475569] mr-1" />
+                  {(['all', '0-30 Days', '30-90 Days', '90-180 Days'] as const).map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setHorizonFilter(h)}
+                      className={`px-3 py-1 rounded text-xs font-semibold transition ${
+                        horizonFilter === h
+                          ? 'bg-[#0F172A] text-[#60A5FA]'
+                          : 'bg-[#F8FAFC] text-[#475569] hover:text-[#0F172A] border border-[#0F172A]/10'
+                      }`}
+                    >
+                      {h === 'all' ? 'All Horizons' : h}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {filteredOpps.map((opp) => {
+                  const isAdded =
+                    addedOppIds[opp.id] ||
+                    actionPlan.some((a) => a.action === opp.title || a.sourceTag === opp.id);
+                  return (
+                    <div
+                      key={opp.id}
+                      className="p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 flex flex-col justify-between gap-3"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 rounded bg-white border border-[#0F172A]/15 font-mono font-bold text-[10px] uppercase tracking-wider text-[#0F172A]">
+                            {opp.area}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              opp.horizon === '0-30 Days'
+                                ? 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]'
+                                : opp.horizon === '30-90 Days'
+                                ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                                : 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]'
+                            }`}
+                          >
+                            {opp.horizon}
+                          </span>
+                        </div>
+
+                        <h5 className="font-bold text-[#0F172A] text-sm">{opp.title}</h5>
+
+                        <div className="space-y-1.5 text-[11px] leading-relaxed">
+                          <p className="text-[#0F172A]">
+                            <strong className="text-[#0F172A]">1. Plain-Language Basis: </strong>
+                            {opp.evidenceBasis}
+                          </p>
+                          {opp.whyHappening && (
+                            <p className="text-[#334155]">
+                              <strong className="text-[#0F172A]">2. Why It Happens: </strong>
+                              {opp.whyHappening}
+                            </p>
+                          )}
+                          {opp.infoNeeded && (
+                            <p className="text-[#1D4ED8]">
+                              <strong>3. Info Still Needed: </strong>
+                              {opp.infoNeeded}
+                            </p>
+                          )}
+                          {opp.whatToDoFirst && (
+                            <p className="text-[#0F172A]">
+                              <strong className="text-[#1D4ED8]">4. What To Do First: </strong>
+                              {opp.whatToDoFirst}
+                            </p>
+                          )}
+                          {opp.illustrativeExample && (
+                            <p className="p-2 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A]">
+                              <strong>5. Transparent Example: </strong>
+                              {opp.illustrativeExample}
+                            </p>
+                          )}
+                          <p className="text-[#15803D]">
+                            <strong>Estimated Financial Impact: </strong>
+                            {opp.estimatedFinancialImpact}
+                          </p>
+                          <p className="text-[#475569]">
+                            <strong>Effort / Cost: </strong>
+                            {opp.effortCost}
+                          </p>
+                          {opp.risks && opp.risks.length > 0 && (
+                            <p className="text-[#B91C1C]">
+                              <strong>Watch-Outs: </strong>
+                              {opp.risks.join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-[#0F172A]/10 flex flex-wrap items-center gap-2">
+                        {onAddOpportunityToPlan && (
+                          <button
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => {
+                              onAddOpportunityToPlan(opp);
+                              setAddedOppIds((prev) => ({ ...prev, [opp.id]: true }));
+                            }}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded text-[11px] font-bold transition ${
+                              isAdded
+                                ? 'bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0]'
+                                : 'bg-[#0F172A] hover:bg-[#1E293B] text-white'
+                            }`}
+                          >
+                            <PlusCircle className="w-3.5 h-3.5 text-[#60A5FA]" />
+                            <span>{isAdded ? 'Added to 30/60/90 Plan' : 'Add to 30/60/90 Plan'}</span>
+                          </button>
+                        )}
+
+                        {onTestOpportunityInRoi && (
+                          <button
+                            type="button"
+                            onClick={() => onTestOpportunityInRoi(opp)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded bg-white hover:bg-[#EFF6FF] text-[#0F172A] border border-[#1D4ED8]/25 text-[11px] font-bold transition"
+                          >
+                            <Calculator className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                            <span>Test in ROI</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 1C: Business Sustainability & Future Earning Potential (10 Areas + 3 Perspectives) */}
+          {recommendations.sustainabilityAssessment && (
+            <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#0F172A]/10">
+                <div>
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+                    <Scale className="w-4 h-4" />
+                    Business Sustainability &amp; Future Earning Potential (10-Area Audit)
+                  </span>
+                  <h4 className="font-bold text-[#0F172A] text-base mt-0.5">
+                    Current Resilience, 6–12 Month Outlook &amp; Strategic Choice
+                  </h4>
+                </div>
+                <span
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold border uppercase tracking-wider ${
+                    recommendations.sustainabilityAssessment.recommendedChoice === 'Expand' ||
+                    recommendations.sustainabilityAssessment.recommendedChoice === 'Improve'
+                      ? 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]'
+                      : recommendations.sustainabilityAssessment.recommendedChoice === 'Stabilise'
+                      ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                      : 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
+                  }`}
+                >
+                  Recommended Path: {recommendations.sustainabilityAssessment.recommendedChoice}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded bg-[#F8FAFC] border border-[#CBD5E1] space-y-1.5">
+                  <span className="font-bold text-[#0F172A] uppercase tracking-wider block text-[11px]">
+                    1. Current Position
+                  </span>
+                  <p className="text-[#334155] leading-relaxed">
+                    {recommendations.sustainabilityAssessment.currentPositionSummary}
+                  </p>
+                </div>
+                <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-1.5">
+                  <span className="font-bold text-[#1D4ED8] uppercase tracking-wider block text-[11px]">
+                    2. Future Outlook (6–12 Months)
+                  </span>
+                  <p className="text-[#1E293B] leading-relaxed">
+                    {recommendations.sustainabilityAssessment.futureOutlook6to12Months}
+                  </p>
+                </div>
+                <div className="p-4 rounded bg-[#0F172A] text-white space-y-1.5">
+                  <span className="font-bold text-[#60A5FA] uppercase tracking-wider block text-[11px]">
+                    3. Business Choice ({recommendations.sustainabilityAssessment.recommendedChoice})
+                  </span>
+                  <p className="text-[#E2E8F0] leading-relaxed">
+                    {recommendations.sustainabilityAssessment.choiceRationale}
+                  </p>
+                </div>
+              </div>
+
+              {recommendations.sustainabilityAssessment.areas?.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  {recommendations.sustainabilityAssessment.areas.map((areaItem, idx) => {
+                    const cls =
+                      areaItem.status === 'green'
+                        ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#15803D]'
+                        : areaItem.status === 'red'
+                        ? 'bg-[#FEF2F2] border-[#FECACA] text-[#B91C1C]'
+                        : areaItem.status === 'blue'
+                        ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]'
+                        : 'bg-[#FFFBEB] border-[#FDE68A] text-[#B45309]';
+                    const label =
+                      areaItem.status === 'green'
+                        ? 'Healthy'
+                        : areaItem.status === 'red'
+                        ? 'At Risk'
+                        : areaItem.status === 'blue'
+                        ? 'Insufficient Info'
+                        : 'Needs Attention';
+                    return (
+                      <div key={idx} className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-[#0F172A]">{areaItem.area}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${cls}`}>
+                            {label}
+                          </span>
+                        </div>
+                        <p className="text-[#334155] leading-relaxed">{areaItem.assessment}</p>
+                        <p className="text-[11px] text-[#475569]">
+                          <strong>Key Driver / Gap:</strong> {areaItem.keyDriverOrGap}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#CBD5E1] text-[11px] text-[#475569] space-y-1">
+                {recommendations.sustainabilityAssessment.keyAssumptions?.length > 0 && (
+                  <p>
+                    <strong className="text-[#0F172A]">Explicit Assumptions: </strong>
+                    {recommendations.sustainabilityAssessment.keyAssumptions.join(' · ')}
+                  </p>
+                )}
+                <p className="italic">{recommendations.sustainabilityAssessment.disclaimer}</p>
+              </div>
+            </div>
+          )}
 
           {/* 2: Sustainability Risks, Hidden Profit Opportunities & Revenue Flow Improvements */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -274,7 +554,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 <span>Sustainability Risks</span>
               </div>
               {recommendations.sustainabilityRisks && recommendations.sustainabilityRisks.length > 0 ? (
-                <ul className="space-y-2 text-xs text-[#111113]">
+                <ul className="space-y-2 text-xs text-[#0F172A]">
                   {recommendations.sustainabilityRisks.map((risk, idx) => (
                     <li key={idx} className="p-2.5 rounded bg-[#FEF2F2] border border-[#FECACA]/70 leading-relaxed">
                       • {risk}
@@ -282,7 +562,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-[#52525B]">Refresh analysis to populate itemized sustainability risks.</p>
+                <p className="text-xs text-[#475569]">Refresh analysis to populate itemized sustainability risks.</p>
               )}
             </div>
 
@@ -293,7 +573,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               </div>
               {recommendations.hiddenProfitOpportunities &&
               recommendations.hiddenProfitOpportunities.length > 0 ? (
-                <ul className="space-y-2 text-xs text-[#111113]">
+                <ul className="space-y-2 text-xs text-[#0F172A]">
                   {recommendations.hiddenProfitOpportunities.map((opp, idx) => (
                     <li key={idx} className="p-2.5 rounded bg-[#ECFDF5] border border-[#A7F3D0]/70 leading-relaxed">
                       • {opp}
@@ -301,7 +581,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-[#52525B]">Refresh analysis to surface margin and pricing opportunities.</p>
+                <p className="text-xs text-[#475569]">Refresh analysis to surface margin and pricing opportunities.</p>
               )}
             </div>
 
@@ -312,7 +592,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               </div>
               {recommendations.revenueFlowImprovements &&
               recommendations.revenueFlowImprovements.length > 0 ? (
-                <ul className="space-y-2 text-xs text-[#111113]">
+                <ul className="space-y-2 text-xs text-[#0F172A]">
                   {recommendations.revenueFlowImprovements.map((rev, idx) => (
                     <li key={idx} className="p-2.5 rounded bg-[#FFFBEB] border border-[#FDE68A]/80 leading-relaxed">
                       • {rev}
@@ -320,18 +600,18 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-[#52525B]">Refresh analysis to surface cash collection improvements.</p>
+                <p className="text-xs text-[#475569]">Refresh analysis to surface cash collection improvements.</p>
               )}
             </div>
           </div>
 
           {/* 3: Evidence Audit — Knowns vs Assumptions vs Unknowns */}
-          <div className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
             <div className="flex items-center space-x-2.5">
-              <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+              <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                 2
               </span>
-              <h4 className="font-bold text-[#111113] text-base">
+              <h4 className="font-bold text-[#0F172A] text-base">
                 Evidence Audit: Established Knowns vs. Assumptions vs. Missing Unknowns
               </h4>
             </div>
@@ -342,7 +622,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Established Knowns
                 </span>
-                <ul className="space-y-1.5 text-[#111113]">
+                <ul className="space-y-1.5 text-[#0F172A]">
                   {recommendations.knownsVsAssumptions.knowns.map((k, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-[#15803D] font-bold">•</span>
@@ -357,7 +637,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Working Assumptions
                 </span>
-                <ul className="space-y-1.5 text-[#111113]">
+                <ul className="space-y-1.5 text-[#0F172A]">
                   {recommendations.knownsVsAssumptions.assumptions.map((a, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-[#B45309] font-bold">?</span>
@@ -367,15 +647,15 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 </ul>
               </div>
 
-              <div className="p-4 rounded bg-[#F1F5F9] border border-[#CBD5E1] space-y-2">
-                <span className="font-bold text-[#475569] uppercase tracking-wider flex items-center gap-1.5">
+              <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-2">
+                <span className="font-bold text-[#1D4ED8] uppercase tracking-wider flex items-center gap-1.5">
                   <HelpCircle className="w-3.5 h-3.5" />
-                  Missing Financial / Operational Data
+                  Insufficient Info / Missing Data (Blue)
                 </span>
-                <ul className="space-y-1.5 text-[#111113]">
+                <ul className="space-y-1.5 text-[#0F172A]">
                   {recommendations.knownsVsAssumptions.unknowns.map((u, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-[#475569] font-bold">!</span>
+                      <span className="text-[#1D4ED8] font-bold">!</span>
                       <span>{u}</span>
                     </li>
                   ))}
@@ -386,42 +666,42 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
           {/* 4: Contextual Questions & Critical Missing Evidence */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-[#111113]/12 rounded p-6 shadow-xs space-y-3">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D97706] flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-[#D97706]" />
+            <div className="bg-white border border-[#0F172A]/12 rounded p-6 shadow-xs space-y-3">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB] flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-[#2563EB]" />
                 Essential Follow-Up Questions
               </span>
-              <p className="text-xs text-[#52525B]">
+              <p className="text-xs text-[#475569]">
                 Clarifying these specific points sharpens your commercial action plan:
               </p>
               <div className="space-y-2 pt-1 text-xs">
                 {recommendations.contextualQuestions.map((q, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded bg-[#F8F7F4] border border-[#111113]/10 text-[#111113] font-medium leading-relaxed"
+                    className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-[#0F172A] font-medium leading-relaxed"
                   >
-                    <span className="text-[#D97706] font-mono font-bold mr-1.5">{idx + 1}.</span>
+                    <span className="text-[#2563EB] font-mono font-bold mr-1.5">{idx + 1}.</span>
                     {q}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white border border-[#111113]/12 rounded p-6 shadow-xs space-y-3">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#111113] flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-[#52525B]" />
+            <div className="bg-white border border-[#0F172A]/12 rounded p-6 shadow-xs space-y-3">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F172A] flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-[#475569]" />
                 Missing Evidence Before Major Commitments
               </span>
-              <p className="text-xs text-[#52525B]">
+              <p className="text-xs text-[#475569]">
                 Upload or verify these records in the Documents tab before spending capital:
               </p>
-              <ul className="space-y-2 pt-1 text-xs text-[#111113]">
+              <ul className="space-y-2 pt-1 text-xs text-[#0F172A]">
                 {recommendations.missingEvidence.map((ev, idx) => (
                   <li
                     key={idx}
-                    className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/10 flex items-start gap-2 leading-relaxed"
+                    className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10 flex items-start gap-2 leading-relaxed"
                   >
-                    <span className="text-[#D97706] font-bold">→</span>
+                    <span className="text-[#2563EB] font-bold">→</span>
                     <span>{ev}</span>
                   </li>
                 ))}
@@ -430,26 +710,26 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           </div>
 
           {/* 5: Prioritized Practical Actions Checklist */}
-          <div className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-5">
+          <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                   3
                 </span>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D97706]">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
                   Core Strategy &amp; Prioritized Action Steps
                 </span>
               </div>
               {totalActions > 0 && (
-                <span className="text-xs font-mono font-bold text-[#111113] bg-[#F8F7F4] px-3 py-1 rounded border border-[#111113]/12 tabular-nums">
+                <span className="text-xs font-mono font-bold text-[#0F172A] bg-[#F8FAFC] px-3 py-1 rounded border border-[#0F172A]/12 tabular-nums">
                   {completedActions} of {totalActions} Completed
                 </span>
               )}
             </div>
 
-            <div className="p-5 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-2">
-              <span className="font-bold text-[#111113] text-sm block">Core Turnaround Recommendation:</span>
-              <p className="text-xs sm:text-sm text-[#111113] leading-relaxed">
+            <div className="p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-2">
+              <span className="font-bold text-[#0F172A] text-sm block">Core Turnaround Recommendation:</span>
+              <p className="text-xs sm:text-sm text-[#0F172A] leading-relaxed">
                 {recommendations.initialRecommendation}
               </p>
             </div>
@@ -459,14 +739,14 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 <Clock className="w-4 h-4 text-[#D97706]" />
                 Immediate Priority Action (Next 48–72 Hours):
               </span>
-              <p className="text-xs sm:text-sm text-[#111113] leading-relaxed font-semibold">
+              <p className="text-xs sm:text-sm text-[#0F172A] leading-relaxed font-semibold">
                 {recommendations.immediateAction}
               </p>
             </div>
 
             {recommendations.actionItems && recommendations.actionItems.length > 0 && (
               <div className="space-y-2.5 pt-2">
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#52525B] block">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569] block">
                   Practical Sequenced Action Plan (Click to Track Execution):
                 </span>
                 {recommendations.actionItems.map((act) => (
@@ -475,8 +755,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                     onClick={() => handleToggleActionItem(act.id)}
                     className={`p-4 rounded border cursor-pointer transition flex items-start justify-between gap-4 ${
                       act.completed
-                        ? 'bg-[#F8F7F4] border-[#A7F3D0] opacity-75'
-                        : 'bg-white border-[#111113]/12 hover:border-[#D97706]'
+                        ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-75'
+                        : 'bg-white border-[#0F172A]/12 hover:border-[#2563EB]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -488,7 +768,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                         {act.completed ? (
                           <CheckCircle2 className="w-5 h-5 text-[#15803D]" />
                         ) : (
-                          <Circle className="w-5 h-5 text-[#A1A1AA]" />
+                          <Circle className="w-5 h-5 text-[#94A3B8]" />
                         )}
                       </button>
                       <div className="space-y-1">
@@ -499,23 +779,23 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                                 ? 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
                                 : act.priority.includes('High')
                                 ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
-                                : 'bg-[#F8F7F4] text-[#111113] border-[#111113]/15'
+                                : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/15'
                             }`}
                           >
                             {act.priority}
                           </span>
-                          <span className="text-[11px] font-semibold text-[#52525B]">
+                          <span className="text-[11px] font-semibold text-[#475569]">
                             Owner: {act.ownerRole} · {act.timeframe}
                           </span>
                         </div>
                         <p
                           className={`text-xs sm:text-sm font-bold ${
-                            act.completed ? 'line-through text-[#52525B]' : 'text-[#111113]'
+                            act.completed ? 'line-through text-[#475569]' : 'text-[#0F172A]'
                           }`}
                         >
                           {act.action}
                         </p>
-                        <p className="text-xs text-[#52525B]">
+                        <p className="text-xs text-[#475569]">
                           Expected Impact: {act.expectedImpact}
                         </p>
                       </div>
@@ -526,7 +806,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             )}
 
             {recommendations.specialistAdviceNeeded && (
-              <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#111113] flex items-start gap-2.5">
+              <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#0F172A] flex items-start gap-2.5">
                 <Scale className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-[#B45309]">Specialist Advisory Check: </strong>
@@ -535,8 +815,8 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               </div>
             )}
 
-            <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#111113]/10">
-              <span className="text-[11px] text-[#52525B] font-mono tabular-nums">
+            <div className="pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#0F172A]/10">
+              <span className="text-[11px] text-[#475569] font-mono tabular-nums">
                 Generated {new Date(recommendations.generatedAt).toLocaleString()}
               </span>
 
@@ -545,9 +825,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   <button
                     type="button"
                     onClick={onOpenChallengeMe}
-                    className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] text-xs font-semibold border border-[#FDE68A] transition whitespace-nowrap"
+                    className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] text-xs font-semibold border border-[#BFDBFE] transition whitespace-nowrap"
                   >
-                    <ShieldAlert className="w-3.5 h-3.5 text-[#D97706]" />
+                    <ShieldAlert className="w-3.5 h-3.5 text-[#2563EB]" />
                     <span>Launch Challenge Me</span>
                   </button>
                 )}
@@ -562,9 +842,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                       )}...", help me prepare step-by-step execution details for ${profile.name}.`
                     )
                   }
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded bg-white hover:bg-[#F8F7F4] text-[#111113] text-xs font-semibold border border-[#111113]/15 transition whitespace-nowrap"
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-[#D97706]" />
+                  <MessageSquare className="w-3.5 h-3.5 text-[#2563EB]" />
                   <span>Open Chat with Coach</span>
                 </button>
               </div>
@@ -572,17 +852,17 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           </div>
 
           {/* 6: Challenge Recommendation / Follow-Up Questions Inline Thread */}
-          <div className="bg-white border border-[#111113]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#111113] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                   4
                 </span>
-                <h4 className="font-bold text-[#111113] text-base">
+                <h4 className="font-bold text-[#0F172A] text-base">
                   Challenge Recommendation or Ask a Follow-Up Question
                 </h4>
               </div>
-              <p className="text-xs text-[#52525B]">
+              <p className="text-xs text-[#475569]">
                 Push back on any assumption, test an alternative commercial trade-off, or clarify how a step fits your staffing and cash constraints.
               </p>
             </div>
@@ -592,15 +872,15 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 {recommendations.challenges.map((c) => (
                   <div
                     key={c.id}
-                    className="rounded border border-[#111113]/12 overflow-hidden text-xs"
+                    className="rounded border border-[#0F172A]/12 overflow-hidden text-xs"
                   >
-                    <div className="bg-[#111113] text-white px-4 py-2.5 flex items-center justify-between gap-2">
+                    <div className="bg-[#0F172A] text-white px-4 py-2.5 flex items-center justify-between gap-2">
                       <span className="font-semibold">Owner Challenge / Follow-up: {c.questionOrChallenge}</span>
-                      <span className="text-[10px] text-[#FBBF24] font-mono shrink-0">
+                      <span className="text-[10px] text-[#60A5FA] font-mono shrink-0">
                         {new Date(c.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="bg-[#F8F7F4] p-4 text-[#111113] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-[#F8FAFC] p-4 text-[#0F172A] whitespace-pre-wrap leading-relaxed">
                       {c.coachResponse}
                     </div>
                   </div>
@@ -621,14 +901,14 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 onChange={(e) => setChallengePrompt(e.target.value)}
                 disabled={isChallenging}
                 placeholder="e.g., What if our top client refuses a 10% increase? Or how do we cut overtime without delaying jobs?"
-                className="flex-1 bg-[#FCFCFC] border border-[#111113]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#111113] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706]"
+                className="flex-1 bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
               />
               <button
                 type="submit"
                 disabled={isChallenging || !challengePrompt.trim()}
-                className="px-5 py-2.5 rounded bg-[#111113] hover:bg-[#27272A] disabled:opacity-50 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition shrink-0 whitespace-nowrap"
+                className="px-5 py-2.5 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition shrink-0 whitespace-nowrap"
               >
-                <Send className="w-3.5 h-3.5 text-[#D97706]" />
+                <Send className="w-3.5 h-3.5 text-[#60A5FA]" />
                 <span>{isChallenging ? 'Analyzing...' : 'Submit Challenge'}</span>
               </button>
             </form>
@@ -636,23 +916,23 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-white border border-[#111113]/12 rounded p-12 text-center space-y-4 shadow-xs">
-          <div className="w-12 h-12 rounded bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] flex items-center justify-center mx-auto">
+        <div className="bg-white border border-[#0F172A]/12 rounded p-12 text-center space-y-4 shadow-xs">
+          <div className="w-12 h-12 rounded bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] flex items-center justify-center mx-auto">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-[#111113]">
-            Ready to Generate Business Coaching &amp; Action Plan
+          <h3 className="text-lg font-bold text-[#0F172A]">
+            Ready to Generate Business Coaching, 16-Area Profit Scan &amp; Sustainability Audit
           </h3>
-          <p className="text-xs sm:text-sm text-[#52525B] max-w-lg mx-auto leading-relaxed">
-            BizPulse will analyze {profile.name || 'this business'} ({profile.industry}), all 8 health ratings, and any uploaded documents to deliver prioritized commercial actions, sustainability risks, and profit opportunities.
+          <p className="text-xs sm:text-sm text-[#475569] max-w-lg mx-auto leading-relaxed">
+            BizPulse will analyze {profile.name || 'this business'} ({profile.industry}), all 12 capability ratings, CRM &amp; ROI records, and uploaded documents to deliver prioritized actions, a 10-area sustainability verdict, and 16-area profit opportunities.
           </p>
           <button
             type="button"
             onClick={handleGenerateRecommendation}
             disabled={isLoading}
-            className="inline-flex items-center space-x-2 px-6 py-2.5 rounded bg-[#111113] hover:bg-[#27272A] disabled:opacity-50 text-white text-xs font-semibold uppercase tracking-wider shadow-sm transition"
+            className="inline-flex items-center space-x-2 px-6 py-2.5 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white text-xs font-semibold uppercase tracking-wider shadow-sm transition"
           >
-            <Sparkles className="w-4 h-4 text-[#D97706]" />
+            <Sparkles className="w-4 h-4 text-[#60A5FA]" />
             <span>{isLoading ? 'Analyzing Business...' : 'Generate Coaching Plan Now'}</span>
           </button>
         </div>

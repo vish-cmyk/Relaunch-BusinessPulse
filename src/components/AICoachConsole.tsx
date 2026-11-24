@@ -26,6 +26,7 @@ import {
   CoachSuggestedAction,
   TurnaroundAction,
   CrmRecord,
+  AccountUsageSummary,
 } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
@@ -33,6 +34,7 @@ interface AICoachConsoleProps {
   caseRecord: CaseRecord;
   onUpdateCase?: (updated: CaseRecord) => void;
   onTrackUsage?: (field: 'coachMessagesCount') => void;
+  onAccountUsageUpdate?: (usage: AccountUsageSummary) => void;
   initialPrompt?: string;
   onOpenChallengeMe?: () => void;
 }
@@ -51,6 +53,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   caseRecord,
   onUpdateCase,
   onTrackUsage,
+  onAccountUsageUpdate,
   initialPrompt,
   onOpenChallengeMe,
 }) => {
@@ -58,7 +61,7 @@ export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
 
   const getInitialWelcomeText = (p: BusinessProfile) => {
     if (p.isDemonstrationCase) {
-      return `Kia ora Vish and Managing Partner. I am your ongoing AI Business Coach for Apex Managed Services Ltd. I have loaded your 8D Health scores, baseline financials (NZ$1.28M revenue, NZ$38k cash, NZ$52k overdraft drawn, NZ$58k >60-day overdue debtors), CRM pipeline, and ROI models.
+      return `Kia ora Vish and Managing Partner. I am your ongoing AI Business Coach for Apex Managed Services Ltd. I have loaded your 12-Capability Health scores, baseline financials (NZ$1.28M revenue, NZ$38k cash, NZ$52k overdraft drawn, NZ$58k >60-day overdue debtors), CRM pipeline, and ROI models.
 
 Ask questions, disagree with any recommendation, compare options, or turn our discussion directly into Action Plan and CRM follow-up tasks.`;
     }
@@ -188,6 +191,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
           uploadedDocuments: caseRecord.uploadedDocuments || [],
+          crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
@@ -197,10 +201,12 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
+        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
         throw new Error(errJson.error || 'Failed to generate coaching response.');
       }
 
       const data = await response.json();
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       const coachMsg: ChatMessage = {
         id: `c-${Date.now()}`,
         sender: 'coach',
@@ -377,16 +383,26 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
           caseId: caseRecord.id,
           scriptType: preset.title,
           businessProfile: caseRecord.profile,
+          healthInputs: caseRecord.healthInputs,
+          financials: caseRecord.financials,
+          overallHealth: caseRecord.overallHealth,
+          uploadedDocuments: caseRecord.uploadedDocuments || [],
+          crmContacts: caseRecord.crmContacts || [],
+          roiScenarios: caseRecord.roiScenarios || [],
+          recommendations: caseRecord.recommendations,
+          actionPlan: caseRecord.actionPlan || [],
           details: preset.defaultPrompt,
         }),
       });
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
+        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
         throw new Error(errJson.error || 'Failed to generate communication draft.');
       }
 
       const data = await response.json();
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       setGeneratedScript(data.script);
       onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
@@ -411,34 +427,34 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Charcoal Hero Header */}
-      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 border border-[#111113]/15">
+      {/* Executive Navy Hero Header */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 border border-[#0F172A]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#D97706] text-white flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#2563EB] text-white flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
                 Chat with Coach
               </span>
-              <span className="text-[#D4D4D8] text-xs font-medium">
+              <span className="text-[#CBD5E1] text-xs font-medium">
                 Ongoing Context-Aware Business Advisory
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Chat with Coach ({profile.name})
             </h2>
-            <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed">
-              Multi-turn advisory grounded in {profile.name} ({profile.industry}, {profile.country}) — using your 8D Health scores, {caseRecord.recommendations ? 'saved diagnostic recommendations, ' : ''}{caseRecord.crmContacts?.length || 0} CRM record{(caseRecord.crmContacts?.length || 0) === 1 ? '' : 's'}, {caseRecord.roiScenarios?.length || 0} ROI scenario{(caseRecord.roiScenarios?.length || 0) === 1 ? '' : 's'}, and {caseRecord.uploadedDocuments?.length || 0} document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
+            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed">
+              Multi-turn advisory grounded in {profile.name} ({profile.industry}, {profile.country}) — using your 12-Capability Health scores, {caseRecord.recommendations ? 'saved diagnostic recommendations, ' : ''}{caseRecord.crmContacts?.length || 0} CRM record{(caseRecord.crmContacts?.length || 0) === 1 ? '' : 's'}, {caseRecord.roiScenarios?.length || 0} ROI scenario{(caseRecord.roiScenarios?.length || 0) === 1 ? '' : 's'}, and {caseRecord.uploadedDocuments?.length || 0} document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end gap-2 shrink-0">
             <div className="flex items-center space-x-2.5 bg-white/5 px-3.5 py-2 rounded border border-white/15">
-              <span className="text-xs text-[#D4D4D8] font-medium whitespace-nowrap">Role:</span>
+              <span className="text-xs text-[#CBD5E1] font-medium whitespace-nowrap">Role:</span>
               <select
                 value={userRole}
                 onChange={(e) => setUserRole(e.target.value)}
-                className="bg-[#18181B] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#D97706] max-w-[220px]"
+                className="bg-[#0F172A] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#2563EB] max-w-[220px]"
               >
                 {roleOptions.map((role) => (
                   <option key={role} value={role}>
@@ -454,7 +470,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 onClick={onOpenChallengeMe}
                 className="flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap"
               >
-                <ShieldAlert className="w-3.5 h-3.5 text-[#FBBF24]" />
+                <ShieldAlert className="w-3.5 h-3.5 text-[#60A5FA]" />
                 <span>Switch to Challenge Me</span>
               </button>
             )}
@@ -475,13 +491,13 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
       )}
 
       {/* Quick Script Presets Bar */}
-      <div className="bg-white border border-[#111113]/12 rounded p-5">
+      <div className="bg-white border border-[#0F172A]/12 rounded p-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="bizpulse-label text-[#111113] font-bold flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#D97706]" />
+          <span className="bizpulse-label text-[#0F172A] font-bold flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-[#2563EB]" />
             Commercial Script Drafts ({profile.country})
           </span>
-          <span className="text-xs text-[#52525B]">1-Click Custom Draft</span>
+          <span className="text-xs text-[#475569]">1-Click Custom Draft</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -490,18 +506,18 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               key={preset.id}
               type="button"
               onClick={() => handleGeneratePresetScript(preset)}
-              className="p-3 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left space-y-1 group"
+              className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left space-y-1 group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#B45309] border border-[#111113]/12">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#1D4ED8] border border-[#0F172A]/12">
                   {preset.category}
                 </span>
-                <Sparkles className="w-3 h-3 text-[#71717A] group-hover:text-[#D97706] transition" />
+                <Sparkles className="w-3 h-3 text-[#64748B] group-hover:text-[#2563EB] transition" />
               </div>
-              <h4 className="font-bold text-[#111113] text-xs line-clamp-1 group-hover:text-[#D97706]">
+              <h4 className="font-bold text-[#0F172A] text-xs line-clamp-1 group-hover:text-[#2563EB]">
                 {preset.title}
               </h4>
-              <p className="text-[11px] text-[#52525B] line-clamp-2">{preset.description}</p>
+              <p className="text-[11px] text-[#475569] line-clamp-2">{preset.description}</p>
             </button>
           ))}
         </div>
@@ -509,15 +525,15 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
       {/* Generated Script Drawer */}
       {selectedPreset && (
-        <div className="bg-white border border-[#D97706] rounded p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-[#111113]/10">
+        <div className="bg-white border border-[#2563EB] rounded p-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[#0F172A]/10">
             <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-[#D97706]" />
+              <FileText className="w-5 h-5 text-[#2563EB]" />
               <div>
-                <h3 className="font-bold text-[#111113] text-sm">
+                <h3 className="font-bold text-[#0F172A] text-sm">
                   Draft Script: {selectedPreset.title}
                 </h3>
-                <p className="text-xs text-[#52525B]">
+                <p className="text-xs text-[#475569]">
                   Calibrated for {profile.name} ({profile.country}, {profile.currency})
                 </p>
               </div>
@@ -528,16 +544,16 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 <button
                   type="button"
                   onClick={() => copyToClipboard(generatedScript, 'generated-script')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#111113] text-white text-xs font-bold hover:bg-[#27272A] transition whitespace-nowrap shrink-0"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#0F172A] text-white text-xs font-bold hover:bg-[#1E293B] transition whitespace-nowrap shrink-0"
                 >
                   {copiedScriptId === 'generated-script' ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-[#FBBF24]" />
+                      <Check className="w-3.5 h-3.5 text-[#60A5FA]" />
                       <span>Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5 text-[#FBBF24]" />
+                      <Copy className="w-3.5 h-3.5 text-[#60A5FA]" />
                       <span>Copy Script</span>
                     </>
                   )}
@@ -546,7 +562,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               <button
                 type="button"
                 onClick={() => setSelectedPreset(null)}
-                className="px-2.5 py-1.5 text-xs text-[#52525B] hover:text-[#111113] font-semibold"
+                className="px-2.5 py-1.5 text-xs text-[#475569] hover:text-[#0F172A] font-semibold"
               >
                 Close
               </button>
@@ -555,12 +571,12 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
           <div className="mt-4">
             {isGeneratingScript ? (
-              <div className="py-8 text-center text-[#52525B] text-xs flex flex-col items-center justify-center space-y-2">
-                <Loader2 className="w-6 h-6 text-[#D97706] animate-spin" />
+              <div className="py-8 text-center text-[#475569] text-xs flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="w-6 h-6 text-[#2563EB] animate-spin" />
                 <span>Drafting tailored communication...</span>
               </div>
             ) : (
-              <div className="bg-[#FCFCFC] p-4 rounded border border-[#111113]/15 text-xs text-[#111113] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+              <div className="bg-[#FCFCFC] p-4 rounded border border-[#0F172A]/15 text-xs text-[#0F172A] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
                 {generatedScript}
               </div>
             )}
@@ -569,10 +585,10 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
       )}
 
       {/* Main Chat Container */}
-      <div className="bg-white border border-[#111113]/12 rounded overflow-hidden flex flex-col min-h-[640px] max-h-[780px]">
-        <div className="bg-[#F8F7F4] px-6 py-3 border-b border-[#111113]/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white border border-[#0F172A]/12 rounded overflow-hidden flex flex-col min-h-[640px] max-h-[780px]">
+        <div className="bg-[#F8FAFC] px-6 py-3 border-b border-[#0F172A]/10 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[#52525B] font-semibold">Topic:</span>
+            <span className="text-[#475569] font-semibold">Topic:</span>
             <div className="flex flex-wrap gap-1">
               {TOPIC_OPTIONS.map((topic) => (
                 <button
@@ -581,8 +597,8 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                   onClick={() => setSelectedTopic(topic)}
                   className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                     selectedTopic === topic
-                      ? 'bg-[#111113] text-white'
-                      : 'text-[#52525B] hover:text-[#111113] hover:bg-white'
+                      ? 'bg-[#0F172A] text-white'
+                      : 'text-[#475569] hover:text-[#0F172A] hover:bg-white'
                   }`}
                 >
                   {topic}
@@ -612,7 +628,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 updatedAt: new Date().toISOString(),
               });
             }}
-            className="flex items-center space-x-1 text-[#52525B] hover:text-[#111113] transition font-semibold"
+            className="flex items-center space-x-1 text-[#475569] hover:text-[#0F172A] transition font-semibold"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Thread</span>
@@ -634,19 +650,19 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 className={`flex gap-3 ${isCoach ? 'justify-start' : 'justify-end'}`}
               >
                 {isCoach && (
-                  <div className="w-8 h-8 rounded bg-[#111113] flex items-center justify-center shrink-0 text-white">
-                    <Bot className="w-4 h-4 text-[#FBBF24]" />
+                  <div className="w-8 h-8 rounded bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
+                    <Bot className="w-4 h-4 text-[#60A5FA]" />
                   </div>
                 )}
 
                 <div
                   className={`max-w-3xl rounded p-4 text-xs sm:text-sm leading-relaxed space-y-3 ${
                     isCoach
-                      ? 'bg-white border border-[#111113]/12 text-[#111113]'
-                      : 'bg-[#FFFBEB] border border-[#FDE68A] text-[#111113] font-medium'
+                      ? 'bg-white border border-[#0F172A]/12 text-[#0F172A]'
+                      : 'bg-[#EFF6FF] border border-[#BFDBFE] text-[#0F172A] font-medium'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-4 text-[10px] text-[#52525B]">
+                  <div className="flex items-center justify-between gap-4 text-[10px] text-[#475569]">
                     <span className="font-bold uppercase tracking-wider">
                       {isCoach ? 'AI Business Coach' : msg.metadata?.role || userRole}
                       {msg.metadata?.topic ? ` · ${msg.metadata.topic}` : ''}
@@ -663,7 +679,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                         <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
                         <span>AI Estimates &amp; Working Assumptions (Verify Against Actual Records)</span>
                       </div>
-                      <ul className="space-y-1 text-[#111113]">
+                      <ul className="space-y-1 text-[#0F172A]">
                         {estimates.map((est, i) => (
                           <li key={i} className="leading-relaxed">• {est}</li>
                         ))}
@@ -674,8 +690,8 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                   {/* Clickable Coach Follow-Up Questions */}
                   {isCoach && followUps.length > 0 && (
                     <div className="pt-1 space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#52525B] flex items-center gap-1">
-                        <HelpCircle className="w-3 h-3 text-[#D97706]" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#475569] flex items-center gap-1">
+                        <HelpCircle className="w-3 h-3 text-[#2563EB]" />
                         Coach Follow-Up Questions (Click to Answer):
                       </span>
                       <div className="flex flex-col gap-1.5">
@@ -684,7 +700,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                             key={idx}
                             type="button"
                             onClick={() => setInputPrompt(`In response to "${q}": `)}
-                            className="text-left text-xs px-3 py-2 rounded bg-[#F8F7F4] hover:bg-[#FFFBEB] border border-[#111113]/12 hover:border-[#D97706] text-[#111113] transition"
+                            className="text-left text-xs px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#0F172A]/12 hover:border-[#2563EB] text-[#0F172A] transition"
                           >
                             {q}
                           </button>
@@ -695,26 +711,32 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
                   {/* Convertible Suggested Actions / CRM Follow-Ups */}
                   {isCoach && suggestedActions.length > 0 && (
-                    <div className="pt-2 border-t border-[#111113]/10 space-y-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#111113] block">
+                    <div className="pt-2 border-t border-[#0F172A]/10 space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#0F172A] block">
                         Convert Discussion to Tracked Action or CRM Follow-Up:
                       </span>
                       <div className="space-y-2">
                         {suggestedActions.map((act) => (
                           <div
                             key={act.id}
-                            className="p-2.5 rounded bg-[#F8F7F4] border border-[#111113]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                            className="p-2.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
                           >
                             <div className="space-y-0.5">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-white border border-[#111113]/12 text-[#B45309]">
+                                <span
+                                  className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-white border ${
+                                    act.targetType === 'crm_followup'
+                                      ? 'border-[#BFDBFE] text-[#1D4ED8]'
+                                      : 'border-[#FDE68A] text-[#B45309]'
+                                  }`}
+                                >
                                   {act.targetType === 'crm_followup' ? 'CRM Follow-Up' : act.priority}
                                 </span>
-                                <span className="text-[11px] text-[#52525B] font-medium">
+                                <span className="text-[11px] text-[#475569] font-medium">
                                   {act.ownerRole} · {act.timeframe}
                                 </span>
                               </div>
-                              <p className="font-semibold text-[#111113]">{act.title}</p>
+                              <p className="font-semibold text-[#0F172A]">{act.title}</p>
                             </div>
 
                             <button
@@ -724,7 +746,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                               className={`px-3 py-1.5 rounded text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 transition ${
                                 act.savedToPlan
                                   ? 'bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0]'
-                                  : 'bg-[#111113] hover:bg-[#27272A] text-white'
+                                  : 'bg-[#0F172A] hover:bg-[#1E293B] text-white'
                               }`}
                             >
                               {act.savedToPlan ? (
@@ -734,12 +756,12 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                                 </>
                               ) : act.targetType === 'crm_followup' ? (
                                 <>
-                                  <Users className="w-3.5 h-3.5 text-[#FBBF24]" />
+                                  <Users className="w-3.5 h-3.5 text-[#60A5FA]" />
                                   <span>Add CRM Follow-Up</span>
                                 </>
                               ) : (
                                 <>
-                                  <Plus className="w-3.5 h-3.5 text-[#FBBF24]" />
+                                  <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
                                   <span>Add to Action Plan</span>
                                 </>
                               )}
@@ -757,7 +779,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                         type="button"
                         disabled={Boolean(savedMessageIds[msg.id])}
                         onClick={() => handleSaveReplyAsAction(msg)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#52525B] hover:text-[#111113] disabled:text-[#15803D] transition"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#475569] hover:text-[#0F172A] disabled:text-[#15803D] transition"
                       >
                         {savedMessageIds[msg.id] ? (
                           <>
@@ -766,7 +788,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                           </>
                         ) : (
                           <>
-                            <BookmarkPlus className="w-3.5 h-3.5 text-[#D97706]" />
+                            <BookmarkPlus className="w-3.5 h-3.5 text-[#2563EB]" />
                             <span>Save Insight as Action Task</span>
                           </>
                         )}
@@ -776,7 +798,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 </div>
 
                 {!isCoach && (
-                  <div className="w-8 h-8 rounded bg-[#D97706] flex items-center justify-center shrink-0 text-white">
+                  <div className="w-8 h-8 rounded bg-[#2563EB] flex items-center justify-center shrink-0 text-white">
                     <UserCheck className="w-4 h-4" />
                   </div>
                 )}
@@ -786,7 +808,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
           {messages.length <= 1 && !isLoading && (
             <div className="pt-2 space-y-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#52525B] block">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569] block">
                 Starter Coaching Prompts for {profile.name}:
               </span>
               <div className="flex flex-wrap gap-2">
@@ -795,7 +817,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                     key={idx}
                     type="button"
                     onClick={() => handleSendMessage(starter)}
-                    className="text-left text-xs px-3 py-2 rounded bg-white hover:bg-[#FFFBEB] border border-[#111113]/15 hover:border-[#D97706] text-[#111113] transition"
+                    className="text-left text-xs px-3 py-2 rounded bg-white hover:bg-[#EFF6FF] border border-[#0F172A]/15 hover:border-[#2563EB] text-[#0F172A] transition"
                   >
                     {starter}
                   </button>
@@ -806,11 +828,11 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded bg-[#111113] flex items-center justify-center shrink-0 text-white">
-                <Bot className="w-4 h-4 text-[#FBBF24]" />
+              <div className="w-8 h-8 rounded bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
+                <Bot className="w-4 h-4 text-[#60A5FA]" />
               </div>
-              <div className="bg-white border border-[#111113]/12 rounded p-4 text-xs text-[#52525B] flex items-center space-x-2">
-                <Loader2 className="w-4 h-4 text-[#D97706] animate-spin" />
+              <div className="bg-white border border-[#0F172A]/12 rounded p-4 text-xs text-[#475569] flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 text-[#2563EB] animate-spin" />
                 <span>Reviewing {profile.name}’s business context &amp; conversation history...</span>
               </div>
             </div>
@@ -818,7 +840,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
         </div>
 
         {/* Input Form */}
-        <div className="p-4 bg-white border-t border-[#111113]/12">
+        <div className="p-4 bg-white border-t border-[#0F172A]/12">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -832,15 +854,15 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder={`Ask ${profile.name}'s coach, challenge a recommendation, or test a growth/ROI decision...`}
               disabled={isLoading}
-              className="flex-1 bg-[#FCFCFC] border border-[#111113]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#111113] placeholder-[#71717A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706] disabled:opacity-50"
+              className="flex-1 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isLoading || !inputPrompt.trim()}
-              className="px-5 py-3 rounded bg-[#111113] hover:bg-[#27272A] disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition whitespace-nowrap shrink-0"
+              className="px-5 py-3 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition whitespace-nowrap shrink-0"
             >
               <span>Send</span>
-              <Send className="w-3.5 h-3.5 text-[#FBBF24]" />
+              <Send className="w-3.5 h-3.5 text-[#60A5FA]" />
             </button>
           </form>
         </div>

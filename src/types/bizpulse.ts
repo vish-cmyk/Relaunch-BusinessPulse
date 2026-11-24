@@ -25,6 +25,7 @@ export interface BusinessProfile {
   yearsOperating: number | string;
   employeeCount: number;
   subcontractorCount: number;
+  turnoverRange?: string;
   mainProductsServices: string;
   mainCustomerTypes: string;
   primaryObjective: string;
@@ -34,15 +35,19 @@ export interface BusinessProfile {
   updatedAt: string;
 }
 
-export type HealthDimensionKey = 
+export type HealthDimensionKey =
   | 'direction'
   | 'customers'
   | 'sales'
+  | 'pricingMargins'
   | 'money'
   | 'operations'
   | 'people'
   | 'ownerDependency'
-  | 'technology';
+  | 'competition'
+  | 'scalability'
+  | 'technology'
+  | 'sustainability';
 
 export type HealthStatus = 'healthy' | 'needs_attention' | 'at_risk' | 'not_sure' | 'unanswered';
 
@@ -60,8 +65,22 @@ export interface DimensionScoreDetail {
   title: string;
   status: HealthStatus;
   score: number | null; // 0 to 100, or null if unanswered
-  color: 'green' | 'amber' | 'red' | 'slate';
+  color: 'green' | 'amber' | 'red' | 'blue';
   explanation: string;
+  whatMeasured: string;
+  whyMatters: string;
+  evidenceUsed: string;
+  gapDiagnosis: string;
+  recommendedStep: string;
+}
+
+export interface TopPriorityItem {
+  rank: 1 | 2 | 3;
+  key: HealthDimensionKey;
+  title: string;
+  status: HealthStatus;
+  rationale: string;
+  recommendedFocus: string;
 }
 
 export interface OverallHealthAssessment {
@@ -73,6 +92,8 @@ export interface OverallHealthAssessment {
   answeredCount?: number;
   unsureCount?: number;
   unansweredCount?: number;
+  dataVisibilityScore?: number; // % of dimensions confirmed vs not_sure/unanswered
+  topThreePriorities?: TopPriorityItem[];
   criticalRisksIdentified: string[];
   strongestAreas: string[];
   missingEvidenceAreas: string[];
@@ -118,12 +139,75 @@ export interface RecommendationChallenge {
   createdAt: string;
 }
 
+export type OpportunityHorizon = '0-30 Days' | '30-90 Days' | '90-180 Days';
+
+export const PROFIT_LEAKAGE_AREAS = [
+  '1. Pricing Too Low',
+  '2. Unbilled Extra or Out-of-Scope Work',
+  '3. Weak Quoting or Low Win Rates',
+  '4. Slow Invoicing or Late Collections',
+  '5. Poor Margin Tracking',
+  '6. Unprofitable or Low-Value Customers',
+  '7. Excessive Discounting',
+  '8. Ineffective Marketing or Poor Lead Follow-Up',
+  '9. High Employee or Contractor Rework',
+  '10. Inefficient Scheduling or Idle Capacity',
+  '11. Poor Inventory or Supplier Cost Control',
+  '12. Lack of Repeat Business / Upsell / Cross-Sell',
+  '13. Over-Reliance on 1–2 Big Customers or Channels',
+  '14. Software or Admin Duplication',
+  '15. Missed AI / Automation Time Savings',
+  '16. Tax or Cash Timing Errors',
+] as const;
+
+export interface ProfitOpportunityItem {
+  id: string;
+  area: string;
+  title: string;
+  horizon: OpportunityHorizon;
+  evidenceBasis: string;
+  whyHappening?: string;
+  infoNeeded?: string;
+  whatToDoFirst?: string;
+  illustrativeExample?: string;
+  estimatedFinancialImpact: string;
+  effortCost: string;
+  risks: string[];
+  linkedCrmId?: string;
+}
+
+export type SustainabilityBusinessChoice =
+  | 'Stabilise'
+  | 'Improve'
+  | 'Expand'
+  | 'Restructure'
+  | 'Reconsider';
+
+export interface SustainabilityAreaItem {
+  area: string;
+  status: 'green' | 'amber' | 'red' | 'blue';
+  assessment: string;
+  keyDriverOrGap: string;
+}
+
+export interface SustainabilityAssessment {
+  currentPositionSummary: string;
+  futureOutlook6to12Months: string;
+  recommendedChoice: SustainabilityBusinessChoice;
+  choiceRationale: string;
+  areas: SustainabilityAreaItem[];
+  keyAssumptions: string[];
+  disclaimer: string;
+}
+
 export interface RecommendationOutput {
   initialObservation: string;
   commercialWhy: string;
   sustainabilityRisks?: string[];
+  sustainabilityAssessment?: SustainabilityAssessment;
   hiddenProfitOpportunities?: string[];
   revenueFlowImprovements?: string[];
+  profitOpportunities?: ProfitOpportunityItem[];
   knownsVsAssumptions: {
     knowns: string[];
     assumptions: string[];
@@ -163,6 +247,18 @@ export interface UploadedDocument {
   extractedPreview?: string;
 }
 
+export interface CrossDocumentSynthesis {
+  summary: string;
+  trends: string[];
+  unusualMovements: string[];
+  conservativeScenario: string;
+  baseScenario: string;
+  optimisticScenario: string;
+  verifiedFiguresUsed: string[];
+  dataGaps: string[];
+  synthesizedAt: string;
+}
+
 export interface CoachSuggestedAction {
   id: string;
   title: string;
@@ -187,9 +283,17 @@ export interface ChatMessage {
   };
 }
 
+export type TurnaroundHorizon =
+  | '30 Days (Quick Wins & Control)'
+  | '60 Days (Systems & Margin Fixes)'
+  | '90 Days (Sustainable Growth)'
+  | 'Horizon 1 (First 7 Days)'
+  | 'Horizon 2 (Days 8–30)'
+  | 'Horizon 3 (Days 31–90)';
+
 export interface TurnaroundAction {
   id: string;
-  horizon: 'Horizon 1 (First 7 Days)' | 'Horizon 2 (Days 8–30)' | 'Horizon 3 (Days 31–90)';
+  horizon: TurnaroundHorizon;
   priority: 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)';
   businessIssue?: string;
   action: string;
@@ -200,6 +304,13 @@ export interface TurnaroundAction {
   dependencyOrRisk: string;
   status?: 'pending' | 'in_progress' | 'completed';
   completed?: boolean;
+  decisionStatus?: 'pending_review' | 'accepted' | 'modified' | 'rejected';
+  targetCompletionDate?: string;
+  estimatedCostEffort?: string;
+  intendedImprovement?: string;
+  actualResult?: string;
+  metricLink?: string;
+  sourceTag?: string;
 }
 
 export interface ReportedFinancials {
@@ -240,7 +351,13 @@ export interface CustomDashboardMetric {
 }
 
 export type PaymentStatus = 'free' | 'pending' | 'paid' | 'failed' | 'refunded';
-export type SubscriptionTierId = 'free_trial' | 'essential_monthly' | 'founding_monthly';
+export type SubscriptionTierId =
+  | 'free_trial'
+  | 'starter_monthly'
+  | 'growth_monthly'
+  | 'business_plus_monthly'
+  | 'essential_monthly'
+  | 'founding_monthly';
 export type SubscriptionTier = SubscriptionTierId;
 
 export interface PaymentRecord {
@@ -249,7 +366,7 @@ export interface PaymentRecord {
   amount: number;
   currency: string;
   status: PaymentStatus;
-  tier: 'Essential Coach Monthly' | 'Founding Member Growth OS Monthly' | 'Diagnostic Report & Turnaround OS' | 'Executive Subscription';
+  tier: string;
   unlockedAt?: string;
   receiptUrl?: string;
   paymentMethod?: string;
@@ -259,6 +376,45 @@ export interface CaseUsageStats {
   recommendationsCount: number;
   coachMessagesCount: number;
   documentsAnalyzedCount: number;
+}
+
+export interface AccountUsageSummary {
+  monthKey: string;
+  limits: {
+    maxCustomCases: number;
+    coachMessagesPerMonth: number;
+    documentAuditsPerMonth: number;
+    recommendationsPerMonth: number;
+  };
+  used: {
+    coachMessages: number;
+    documentAudits: number;
+    recommendations: number;
+  };
+  remaining: {
+    coachMessages: number;
+    documentAudits: number;
+    recommendations: number;
+  };
+  tokenUsage: {
+    promptTokens: number;
+    outputTokens: number;
+    thinkingTokens: number;
+    totalTokens: number;
+    estimatedCostUsd: number;
+    estimatedCostNzd: number;
+    requestCount: number;
+  };
+  subscription: {
+    tierId: 'free_trial' | 'starter_monthly' | 'growth_monthly' | 'business_plus_monthly';
+    planName: string;
+    priceMonthlyNzd: number;
+    status: string;
+    currentPeriodEnd?: string | null;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripeConfigured: boolean;
+  };
 }
 
 export type ReportFontFamily = 'sans' | 'serif' | 'mono';
@@ -416,6 +572,7 @@ export interface CaseRecord {
   financials: FinancialData | null;
   recommendations: RecommendationOutput | null;
   uploadedDocuments?: UploadedDocument[];
+  crossDocumentSynthesis?: CrossDocumentSynthesis | null;
   conversations: ChatMessage[];
   actionPlan: TurnaroundAction[];
   sprintCompleted?: Record<string, boolean>;

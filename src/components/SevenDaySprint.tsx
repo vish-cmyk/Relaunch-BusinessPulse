@@ -6,16 +6,18 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { CaseRecord } from '../types/bizpulse';
+import { CaseRecord, TurnaroundAction } from '../types/bizpulse';
 
 interface SevenDaySprintProps {
   caseRecord: CaseRecord;
   onToggleSprintItem?: (sprintKey: string) => void;
+  onUpdateActionPlan?: (updatedPlan: TurnaroundAction[]) => void;
 }
 
 export const SevenDaySprint: React.FC<SevenDaySprintProps> = ({
   caseRecord,
   onToggleSprintItem,
+  onUpdateActionPlan,
 }) => {
   const isDemo = caseRecord.profile.isDemonstrationCase;
   const profile = caseRecord.profile;
@@ -27,6 +29,31 @@ export const SevenDaySprint: React.FC<SevenDaySprintProps> = ({
   };
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const actionPlanTasks = caseRecord.actionPlan || [];
+  const sprintActionItems = actionPlanTasks
+    .filter(
+      (t) =>
+        t.decisionStatus !== 'rejected' &&
+        (t.horizon.includes('30 Days') ||
+          t.horizon.includes('7 Days') ||
+          t.priority.includes('Urgent'))
+    )
+    .slice(0, 6);
+
+  const handleTogglePlanTask = (taskId: string) => {
+    if (!onUpdateActionPlan) return;
+    const updated = actionPlanTasks.map((t) => {
+      if (t.id !== taskId) return t;
+      const nextDone = !t.completed;
+      return {
+        ...t,
+        completed: nextDone,
+        status: (nextDone ? 'completed' : 'pending') as TurnaroundAction['status'],
+      };
+    });
+    onUpdateActionPlan(updated);
+  };
 
   const handleToggle = (key: string) => {
     onToggleSprintItem?.(key);
@@ -101,8 +128,8 @@ ${profile.name}`;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Charcoal Hero Banner */}
-      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 border border-[#111113]/15">
+      {/* Executive Navy Hero Banner */}
+      <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 border border-[#0F172A]/15">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -110,12 +137,12 @@ ${profile.name}`;
                 <Flame className="w-3.5 h-3.5" />
                 Next 7 Days Execution Sprint
               </span>
-              <span className="text-[#D4D4D8] text-xs font-medium">{profile.name}</span>
+              <span className="text-[#CBD5E1] text-xs font-medium">{profile.name}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Three Immediate Priorities for the Next 7 Days
             </h2>
-            <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed">
+            <p className="text-sm text-[#CBD5E1] max-w-3xl leading-relaxed">
               {isDemo
                 ? 'Execute these three moves over the next 7 days to protect cash headroom and prevent senior technician burnout.'
                 : `Focused 7-day execution checklist isolated to ${profile.name} (${profile.industry}).`}
@@ -123,16 +150,77 @@ ${profile.name}`;
           </div>
 
           <div className="bg-white/5 border border-white/15 rounded p-4 min-w-[200px] text-center shrink-0">
-            <span className="text-[11px] text-[#FBBF24] uppercase tracking-wider font-bold block">
+            <span className="text-[11px] text-[#60A5FA] uppercase tracking-wider font-bold block">
               Sprint Progress
             </span>
             <div className="text-2xl font-bold text-white mt-1 font-mono tabular-nums">
               {Object.values(completedActions).filter(Boolean).length} / 3 Done
             </div>
-            <div className="text-xs text-[#D4D4D8] mt-0.5">Saved per business</div>
+            <div className="text-xs text-[#CBD5E1] mt-0.5">Saved per business</div>
           </div>
         </div>
       </div>
+
+      {/* Synchronized Live Urgent Actions from 30/60/90-Day Action Plan */}
+      {sprintActionItems.length > 0 && (
+        <div className="bg-white border border-[#0F172A]/12 rounded p-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#0F172A]/10">
+            <div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#2563EB] block">
+                Live Sync with 30/60/90-Day Action Plan
+              </span>
+              <h3 className="text-sm font-bold text-[#0F172A]">
+                Urgent &amp; 30-Day Execution Queue ({sprintActionItems.filter((t) => t.completed || t.status === 'completed').length}/{sprintActionItems.length} completed)
+              </h3>
+            </div>
+            <span className="text-[11px] text-[#475569]">
+              Changes sync automatically with your Action Plan &amp; Scoreboard
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            {sprintActionItems.map((task) => {
+              const isDone = Boolean(task.completed || task.status === 'completed');
+              return (
+                <div
+                  key={task.id}
+                  className={`p-3.5 rounded border flex items-start gap-2.5 transition ${
+                    isDone
+                      ? 'bg-[#ECFDF5]/60 border-[#A7F3D0] opacity-80'
+                      : 'bg-[#F8FAFC] border-[#CBD5E1]'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePlanTask(task.id)}
+                    disabled={!onUpdateActionPlan}
+                    className="mt-0.5 shrink-0 disabled:opacity-60"
+                    title="Toggle completion in Action Plan"
+                  >
+                    {isDone ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-[#64748B] hover:text-[#2563EB]" />
+                    )}
+                  </button>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
+                        {task.priority}
+                      </span>
+                      <span className="text-[10px] text-[#475569] font-medium">
+                        {task.accountableRole} · {task.targetCompletionDate || task.timeframe}
+                      </span>
+                    </div>
+                    <p className={`font-semibold text-[#0F172A] ${isDone ? 'line-through text-[#475569]' : ''}`}>
+                      {task.action}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 3 Sprint Cards */}
       <div className="space-y-5">
@@ -140,8 +228,8 @@ ${profile.name}`;
         <div
           className={`p-6 rounded border transition-all ${
             completedActions['sprint-1']
-              ? 'bg-[#F8F7F4] border-[#A7F3D0] opacity-85'
-              : 'bg-white border-[#111113]/12'
+              ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+              : 'bg-white border-[#0F172A]/12'
           }`}
         >
           <div className="flex items-start space-x-3.5">
@@ -154,7 +242,7 @@ ${profile.name}`;
               {completedActions['sprint-1'] ? (
                 <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
               ) : (
-                <Circle className="w-6 h-6 text-[#71717A] hover:text-[#D97706]" />
+                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#2563EB]" />
               )}
             </button>
             <div className="flex-1 space-y-4">
@@ -163,11 +251,11 @@ ${profile.name}`;
                   <span className="px-2 py-0.5 rounded bg-[#FEF2F2] text-[#B91C1C] font-bold text-xs border border-[#FECACA]">
                     #1 · Day 1–3 Priority
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F8F7F4] text-[#111113] font-semibold border border-[#111113]/15">
+                  <span className="text-xs px-2 py-0.5 rounded bg-[#F8FAFC] text-[#0F172A] font-semibold border border-[#0F172A]/15">
                     {isDemo ? 'Owners: Finance Lead + Vish' : `Owner: Managing Director (${profile.name})`}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-[#111113] mt-2">
+                <h3 className="text-lg font-bold text-[#0F172A] mt-2">
                   {isDemo
                     ? 'Execute 48-Hour Collection Notices on NZ$58,000 Overdue Accounts'
                     : 'Immediate 48–72 Hour Cash & Priority Control'}
@@ -175,9 +263,9 @@ ${profile.name}`;
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
-                <div className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-2 text-[#111113] leading-relaxed">
+                <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-2 text-[#0F172A] leading-relaxed">
                   <strong>Action Summary:</strong>
-                  <p className="text-[#52525B]">
+                  <p className="text-[#475569]">
                     {isDemo
                       ? 'Send written 48-hour payment notices to accounts over 45 days overdue and telephone the top 3 debtors directly to agree payment dates.'
                       : customRecImmediate}
@@ -186,23 +274,23 @@ ${profile.name}`;
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#111113]">
+                    <span className="font-bold text-[#0F172A]">
                       Ready-to-Use Overdue Account Email Template:
                     </span>
                     <button
                       type="button"
                       onClick={() => copyToClipboard(action1Script, 'action-1')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] border border-[#111113]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#0F172A]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
                     >
                       {copiedKey === 'action-1' ? (
                         <Check className="w-3 h-3 text-[#15803D]" />
                       ) : (
-                        <Copy className="w-3 h-3 text-[#D97706]" />
+                        <Copy className="w-3 h-3 text-[#2563EB]" />
                       )}
                       <span>{copiedKey === 'action-1' ? 'Copied' : 'Copy Email'}</span>
                     </button>
                   </div>
-                  <pre className="p-3 bg-[#FCFCFC] rounded border border-[#111113]/15 text-[#111113] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
+                  <pre className="p-3 bg-[#FCFCFC] rounded border border-[#0F172A]/15 text-[#0F172A] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
                     {action1Script}
                   </pre>
                 </div>
@@ -215,8 +303,8 @@ ${profile.name}`;
         <div
           className={`p-6 rounded border transition-all ${
             completedActions['sprint-2']
-              ? 'bg-[#F8F7F4] border-[#A7F3D0] opacity-85'
-              : 'bg-white border-[#111113]/12'
+              ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+              : 'bg-white border-[#0F172A]/12'
           }`}
         >
           <div className="flex items-start space-x-3.5">
@@ -229,7 +317,7 @@ ${profile.name}`;
               {completedActions['sprint-2'] ? (
                 <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
               ) : (
-                <Circle className="w-6 h-6 text-[#71717A] hover:text-[#D97706]" />
+                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#2563EB]" />
               )}
             </button>
             <div className="flex-1 space-y-4">
@@ -238,11 +326,11 @@ ${profile.name}`;
                   <span className="px-2 py-0.5 rounded bg-[#FFFBEB] text-[#B45309] font-bold text-xs border border-[#FDE68A]">
                     #2 · Day 2–5 Priority
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F8F7F4] text-[#111113] font-semibold border border-[#111113]/15">
+                  <span className="text-xs px-2 py-0.5 rounded bg-[#F8FAFC] text-[#0F172A] font-semibold border border-[#0F172A]/15">
                     {isDemo ? 'Owner: Vish' : `Owner: Account / Client Lead (${profile.name})`}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-[#111113] mt-2">
+                <h3 className="text-lg font-bold text-[#0F172A] mt-2">
                   {isDemo
                     ? 'Protect Anchor Customer Relationship with Direct MD Outreach'
                     : `Proactive Executive Check-In with Top Customers (${profile.mainCustomerTypes || 'Key Accounts'})`}
@@ -250,8 +338,8 @@ ${profile.name}`;
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
-                <div className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 space-y-1.5 text-[#52525B] leading-relaxed">
-                  <strong className="text-[#111113] block">Why This Protects Margin:</strong>
+                <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1.5 text-[#475569] leading-relaxed">
+                  <strong className="text-[#0F172A] block">Why This Protects Margin:</strong>
                   <p>
                     {isDemo
                       ? 'Meet the flight-risk anchor client face-to-face to reinforce named engineer accountability and service responsiveness rather than offering desperate fee discounts.'
@@ -261,21 +349,21 @@ ${profile.name}`;
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#111113]">Executive Check-In Message:</span>
+                    <span className="font-bold text-[#0F172A]">Executive Check-In Message:</span>
                     <button
                       type="button"
                       onClick={() => copyToClipboard(action2Script, 'action-2')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8F7F4] hover:bg-[#EFECE6] text-[#111113] border border-[#111113]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#0F172A]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
                     >
                       {copiedKey === 'action-2' ? (
                         <Check className="w-3 h-3 text-[#15803D]" />
                       ) : (
-                        <Copy className="w-3 h-3 text-[#D97706]" />
+                        <Copy className="w-3 h-3 text-[#2563EB]" />
                       )}
                       <span>{copiedKey === 'action-2' ? 'Copied' : 'Copy Invite'}</span>
                     </button>
                   </div>
-                  <pre className="p-3 bg-[#FCFCFC] rounded border border-[#111113]/15 text-[#111113] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
+                  <pre className="p-3 bg-[#FCFCFC] rounded border border-[#0F172A]/15 text-[#0F172A] font-mono text-[11px] whitespace-pre-wrap max-h-44 overflow-y-auto">
                     {action2Script}
                   </pre>
                 </div>
@@ -288,8 +376,8 @@ ${profile.name}`;
         <div
           className={`p-6 rounded border transition-all ${
             completedActions['sprint-3']
-              ? 'bg-[#F8F7F4] border-[#A7F3D0] opacity-85'
-              : 'bg-white border-[#111113]/12'
+              ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+              : 'bg-white border-[#0F172A]/12'
           }`}
         >
           <div className="flex items-start space-x-3.5">
@@ -302,26 +390,26 @@ ${profile.name}`;
               {completedActions['sprint-3'] ? (
                 <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
               ) : (
-                <Circle className="w-6 h-6 text-[#71717A] hover:text-[#D97706]" />
+                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#2563EB]" />
               )}
             </button>
             <div className="flex-1 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-[#111113] text-white font-bold text-xs border border-[#111113]">
+                <span className="px-2 py-0.5 rounded bg-[#0F172A] text-white font-bold text-xs border border-[#0F172A]">
                   #3 · Day 1–7 Priority
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded bg-[#F8F7F4] text-[#111113] font-semibold border border-[#111113]/15">
+                <span className="text-xs px-2 py-0.5 rounded bg-[#F8FAFC] text-[#0F172A] font-semibold border border-[#0F172A]/15">
                   {isDemo
                     ? 'Owners: Senior Tech + Service Desk'
                     : `Owner: Operations & Delivery (${profile.name})`}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-[#111113]">
+              <h3 className="text-lg font-bold text-[#0F172A]">
                 {isDemo
                   ? 'Install Service Desk Triage Firewall & 4-Hour Deep Work Shield'
                   : 'Stabilize Delivery Workflow & Protect Core Team Capacity'}
               </h3>
-              <p className="text-xs text-[#52525B] leading-relaxed bg-[#F8F7F4] p-4 rounded border border-[#111113]/12">
+              <p className="text-xs text-[#475569] leading-relaxed bg-[#F8FAFC] p-4 rounded border border-[#0F172A]/12">
                 {isDemo
                   ? 'Route all incoming phone calls through the service desk queue so the senior technician gets uninterrupted 10:00 AM–2:00 PM project and outage resolution blocks.'
                   : customRecCore}

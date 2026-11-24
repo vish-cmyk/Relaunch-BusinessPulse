@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -43,7 +44,361 @@ interface AuthenticatedRequest extends express.Request {
   rawBody?: Buffer;
 }
 
-// Server-side Firebase ID token verification middleware
+// ==========================================
+// SERVER-SIDE SAAS PLAN CATALOG & METERING
+// ==========================================
+type CanonicalTierId = 'free_trial' | 'starter_monthly' | 'growth_monthly' | 'business_plus_monthly';
+type UsageBucket = 'coach' | 'documents' | 'recommendations';
+
+interface PlanDefinition {
+  tierId: CanonicalTierId;
+  planName: string;
+  priceMonthlyNzd: number;
+  maxCustomCases: number;
+  coachMessagesPerMonth: number;
+  documentAuditsPerMonth: number;
+  recommendationsPerMonth: number;
+  description: string;
+}
+
+const SAAS_PLANS: Record<CanonicalTierId, PlanDefinition> = {
+  free_trial: {
+    tierId: 'free_trial',
+    planName: 'Free Trial',
+    priceMonthlyNzd: 0,
+    maxCustomCases: 1,
+    coachMessagesPerMonth: 15,
+    documentAuditsPerMonth: 2,
+    recommendationsPerMonth: 3,
+    description: '1 custom business case, 15 monthly AI coach turns, 2 document audits, 3 diagnostics.',
+  },
+  starter_monthly: {
+    tierId: 'starter_monthly',
+    planName: 'Starter',
+    priceMonthlyNzd: 29,
+    maxCustomCases: 3,
+    coachMessagesPerMonth: 35,
+    documentAuditsPerMonth: 10,
+    recommendationsPerMonth: 10,
+    description: 'Up to 3 active business sessions, 35 AI coach/challenge turns/mo, 10 document audits/mo, 10 diagnostics.',
+  },
+  growth_monthly: {
+    tierId: 'growth_monthly',
+    planName: 'Growth',
+    priceMonthlyNzd: 59,
+    maxCustomCases: 10,
+    coachMessagesPerMonth: 150,
+    documentAuditsPerMonth: 40,
+    recommendationsPerMonth: 30,
+    description: 'Up to 10 active business sessions, 150 AI coach/challenge turns/mo, 40 document audits/mo, 30 diagnostics.',
+  },
+  business_plus_monthly: {
+    tierId: 'business_plus_monthly',
+    planName: 'Business Plus',
+    priceMonthlyNzd: 99,
+    maxCustomCases: 30,
+    coachMessagesPerMonth: 500,
+    documentAuditsPerMonth: 150,
+    recommendationsPerMonth: 100,
+    description: 'Up to 30 multi-entity business sessions, 500 AI turns/mo, 150 document audits/mo, 100 diagnostics.',
+  },
+};
+
+function normalizeTierId(raw?: string | null): CanonicalTierId {
+  if (raw === 'starter_monthly' || raw === 'essential_monthly') return 'starter_monthly';
+  if (raw === 'growth_monthly') return 'growth_monthly';
+  if (raw === 'business_plus_monthly' || raw === 'founding_monthly') return 'business_plus_monthly';
+  return 'free_trial';
+}
+
+interface MonthlyUsageCounters {
+  coachMessages: number;
+  documentAudits: number;
+  recommendations: number;
+  promptTokens: number;
+  outputTokens: number;
+  thinkingTokens: number;
+  totalTokens: number;
+  estimatedCostUsd: number;
+  requestCount: number;
+}
+
+interface ServerUserAccountState {
+  uid: string;
+  email?: string;
+  subscriptionTier: CanonicalTierId;
+  subscriptionStatus: string;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  currentPeriodEnd?: string | null;
+  ownedCaseIds: string[];
+  monthlyUsage: Record<string, MonthlyUsageCounters>;
+  updatedAt: string;
+}
+
+const SAAS_STATE_FILE = '/tmp/bizpulse_saas_state.json';
+let cachedSaasState: { users: Record<string, ServerUserAccountState>; caseOwners: Record<string, string> } | null = null;
+
+function loadSaasState() {
+  if (cachedSaasState) return cachedSaasState;
+  try {
+    if (fs.existsSync(SAAS_STATE_FILE)) {
+      const raw = fs.readFileSync(SAAS_STATE_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      cachedSaasState = {
+        users: parsed?.users && typeof parsed.users === 'object' ? parsed.users : {},
+        caseOwners: parsed?.caseOwners && typeof parsed.caseOwners === 'object' ? parsed.caseOwners : {},
+      };
+      return cachedSaasState;
+    }
+  } catch (err: any) {
+    console.warn('Could not read SaaS state store, starting fresh:', err.message);
+  }
+  cachedSaasState = { users: {}, caseOwners: {} };
+  return cachedSaasState;
+}
+
+function saveSaasState() {
+  if (!cachedSaasState) return;
+  try {
+    fs.writeFileSync(SAAS_STATE_FILE, JSON.stringify(cachedSaasState, null, 2), 'utf8');
+  } catch (err: any) {
+    console.warn('Could not persist SaaS state store:', err.message);
+  }
+}
+
+function getCurrentMonthKey(): string {
+  return new Date().toISOString().slice(0, 7); // YYYY-MM
+}
+
+function getOrInitUserState(uid: string, email?: string): ServerUserAccountState {
+  const state = loadSaasState();
+  if (!state.users[uid]) {
+    state.users[uid] = {
+      uid,
+      email,
+      subscriptionTier: 'free_trial',
+      subscriptionStatus: 'free',
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      currentPeriodEnd: null,
+      ownedCaseIds: [],
+      monthlyUsage: {},
+      updatedAt: new Date().toISOString(),
+    };
+    saveSaasState();
+  } else if (email && !state.users[uid].email) {
+    state.users[uid].email = email;
+  }
+  const monthKey = getCurrentMonthKey();
+  if (!state.users[uid].monthlyUsage[monthKey]) {
+    state.users[uid].monthlyUsage[monthKey] = {
+      coachMessages: 0,
+      documentAudits: 0,
+      recommendations: 0,
+      promptTokens: 0,
+      outputTokens: 0,
+      thinkingTokens: 0,
+      totalTokens: 0,
+      estimatedCostUsd: 0,
+      requestCount: 0,
+    };
+  }
+  return state.users[uid];
+}
+
+async function syncUserStateFromAdminFirestore(uid: string): Promise<void> {
+  if (!hasAdminCredentials) return;
+  try {
+    const snap = await adminDb.collection('users').doc(uid).collection('account').doc('billing').get();
+    if (snap.exists) {
+      const data = snap.data() || {};
+      const userState = getOrInitUserState(uid);
+      if (data.subscriptionTier) userState.subscriptionTier = normalizeTierId(data.subscriptionTier);
+      if (data.subscriptionStatus) userState.subscriptionStatus = String(data.subscriptionStatus);
+      if (data.stripeCustomerId) userState.stripeCustomerId = String(data.stripeCustomerId);
+      if (data.stripeSubscriptionId) userState.stripeSubscriptionId = String(data.stripeSubscriptionId);
+      if (data.currentPeriodEnd) userState.currentPeriodEnd = String(data.currentPeriodEnd);
+      const monthKey = getCurrentMonthKey();
+      if (data.monthlyUsage?.[monthKey]) {
+        const fsMonth = data.monthlyUsage[monthKey];
+        const localMonth = userState.monthlyUsage[monthKey];
+        localMonth.coachMessages = Math.max(localMonth.coachMessages, Number(fsMonth.coachMessages) || 0);
+        localMonth.documentAudits = Math.max(localMonth.documentAudits, Number(fsMonth.documentAudits) || 0);
+        localMonth.recommendations = Math.max(localMonth.recommendations, Number(fsMonth.recommendations) || 0);
+        localMonth.promptTokens = Math.max(localMonth.promptTokens, Number(fsMonth.promptTokens) || 0);
+        localMonth.outputTokens = Math.max(localMonth.outputTokens, Number(fsMonth.outputTokens) || 0);
+        localMonth.thinkingTokens = Math.max(localMonth.thinkingTokens, Number(fsMonth.thinkingTokens) || 0);
+        localMonth.totalTokens = Math.max(localMonth.totalTokens, Number(fsMonth.totalTokens) || 0);
+        localMonth.estimatedCostUsd = Math.max(localMonth.estimatedCostUsd, Number(fsMonth.estimatedCostUsd) || 0);
+        localMonth.requestCount = Math.max(localMonth.requestCount, Number(fsMonth.requestCount) || 0);
+      }
+      saveSaasState();
+    }
+  } catch (err: any) {
+    console.warn('Firestore billing sync read notice:', err.message);
+  }
+}
+
+async function persistUserStateToAdminFirestore(uid: string): Promise<void> {
+  if (!hasAdminCredentials) return;
+  try {
+    const userState = getOrInitUserState(uid);
+    await adminDb
+      .collection('users')
+      .doc(uid)
+      .collection('account')
+      .doc('billing')
+      .set(userState, { merge: true });
+  } catch (err: any) {
+    console.warn('Firestore billing sync write notice:', err.message);
+  }
+}
+
+function buildAccountUsageSummary(uid: string, stripeConfigured: boolean) {
+  const userState = getOrInitUserState(uid);
+  const monthKey = getCurrentMonthKey();
+  const counters = userState.monthlyUsage[monthKey];
+  const plan = SAAS_PLANS[normalizeTierId(userState.subscriptionTier)];
+  const USD_TO_NZD = 1.65;
+
+  return {
+    monthKey,
+    limits: {
+      maxCustomCases: plan.maxCustomCases,
+      coachMessagesPerMonth: plan.coachMessagesPerMonth,
+      documentAuditsPerMonth: plan.documentAuditsPerMonth,
+      recommendationsPerMonth: plan.recommendationsPerMonth,
+    },
+    used: {
+      coachMessages: counters.coachMessages,
+      documentAudits: counters.documentAudits,
+      recommendations: counters.recommendations,
+    },
+    remaining: {
+      coachMessages: Math.max(0, plan.coachMessagesPerMonth - counters.coachMessages),
+      documentAudits: Math.max(0, plan.documentAuditsPerMonth - counters.documentAudits),
+      recommendations: Math.max(0, plan.recommendationsPerMonth - counters.recommendations),
+    },
+    tokenUsage: {
+      promptTokens: counters.promptTokens,
+      outputTokens: counters.outputTokens,
+      thinkingTokens: counters.thinkingTokens,
+      totalTokens: counters.totalTokens,
+      estimatedCostUsd: Number(counters.estimatedCostUsd.toFixed(4)),
+      estimatedCostNzd: Number((counters.estimatedCostUsd * USD_TO_NZD).toFixed(4)),
+      requestCount: counters.requestCount,
+    },
+    subscription: {
+      tierId: plan.tierId,
+      planName: plan.planName,
+      priceMonthlyNzd: plan.priceMonthlyNzd,
+      status: userState.subscriptionStatus || 'free',
+      currentPeriodEnd: userState.currentPeriodEnd || null,
+      stripeCustomerId: userState.stripeCustomerId || null,
+      stripeSubscriptionId: userState.stripeSubscriptionId || null,
+      stripeConfigured,
+    },
+  };
+}
+
+// Per-user sliding window rate limiter (20 AI requests per 60 seconds)
+const userMinuteTimestamps = new Map<string, number[]>();
+const MAX_AI_REQUESTS_PER_MINUTE = 20;
+
+function checkSlidingRateLimit(uid: string): boolean {
+  const now = Date.now();
+  const windowStart = now - 60_000;
+  const existing = (userMinuteTimestamps.get(uid) || []).filter((ts) => ts > windowStart);
+  if (existing.length >= MAX_AI_REQUESTS_PER_MINUTE) {
+    userMinuteTimestamps.set(uid, existing);
+    return false;
+  }
+  existing.push(now);
+  userMinuteTimestamps.set(uid, existing);
+  return true;
+}
+
+async function enforceAiQuota(
+  uid: string,
+  bucket: UsageBucket,
+  stripeConfigured: boolean
+): Promise<{ allowed: boolean; statusCode?: number; error?: string; code?: string; accountUsage?: any }> {
+  if (!checkSlidingRateLimit(uid)) {
+    return {
+      allowed: false,
+      statusCode: 429,
+      code: 'RATE_LIMIT_EXCEEDED',
+      error: 'Too many AI requests in the last minute. Please wait a few seconds before sending another request.',
+    };
+  }
+
+  await syncUserStateFromAdminFirestore(uid);
+  const summary = buildAccountUsageSummary(uid, stripeConfigured);
+
+  if (bucket === 'coach' && summary.remaining.coachMessages <= 0) {
+    return {
+      allowed: false,
+      statusCode: 429,
+      code: 'QUOTA_EXCEEDED',
+      error: `Monthly AI Coaching limit reached (${summary.limits.coachMessagesPerMonth}/${summary.limits.coachMessagesPerMonth} on ${summary.subscription.planName}). Upgrade your plan to continue.`,
+      accountUsage: summary,
+    };
+  }
+  if (bucket === 'documents' && summary.remaining.documentAudits <= 0) {
+    return {
+      allowed: false,
+      statusCode: 429,
+      code: 'QUOTA_EXCEEDED',
+      error: `Monthly Document Intelligence limit reached (${summary.limits.documentAuditsPerMonth}/${summary.limits.documentAuditsPerMonth} on ${summary.subscription.planName}). Upgrade your plan to analyze more files.`,
+      accountUsage: summary,
+    };
+  }
+  if (bucket === 'recommendations' && summary.remaining.recommendations <= 0) {
+    return {
+      allowed: false,
+      statusCode: 429,
+      code: 'QUOTA_EXCEEDED',
+      error: `Monthly Diagnostic Recommendations limit reached (${summary.limits.recommendationsPerMonth}/${summary.limits.recommendationsPerMonth} on ${summary.subscription.planName}). Upgrade your plan to run additional diagnostics.`,
+      accountUsage: summary,
+    };
+  }
+
+  return { allowed: true, accountUsage: summary };
+}
+
+function recordAiUsage(uid: string, bucket: UsageBucket, usageMetadata?: any) {
+  const userState = getOrInitUserState(uid);
+  const monthKey = getCurrentMonthKey();
+  const month = userState.monthlyUsage[monthKey];
+
+  if (bucket === 'coach') month.coachMessages += 1;
+  if (bucket === 'documents') month.documentAudits += 1;
+  if (bucket === 'recommendations') month.recommendations += 1;
+
+  const promptTokens = Number(usageMetadata?.promptTokenCount) || 0;
+  const outputTokens = Number(usageMetadata?.candidatesTokenCount) || 0;
+  const thinkingTokens = Number(usageMetadata?.thoughtsTokenCount) || 0;
+  const totalTokens = Number(usageMetadata?.totalTokenCount) || promptTokens + outputTokens + thinkingTokens;
+
+  // Conservative commercial blended rate estimate ($1.25 / 1M input, $5.00 / 1M output+thinking)
+  const callCostUsd = (promptTokens / 1_000_000) * 1.25 + ((outputTokens + thinkingTokens) / 1_000_000) * 5.0;
+
+  month.promptTokens += promptTokens;
+  month.outputTokens += outputTokens;
+  month.thinkingTokens += thinkingTokens;
+  month.totalTokens += totalTokens;
+  month.estimatedCostUsd += callCostUsd;
+  month.requestCount += 1;
+  userState.updatedAt = new Date().toISOString();
+
+  saveSaasState();
+  void persistUserStateToAdminFirestore(uid);
+}
+
+// ==========================================
+// AUTH & CASE OWNERSHIP MIDDLEWARE
+// ==========================================
 async function requireAuth(req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -57,18 +412,43 @@ async function requireAuth(req: AuthenticatedRequest, res: express.Response, nex
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     req.user = decodedToken;
+    getOrInitUserState(decodedToken.uid, decodedToken.email);
     next();
   } catch (err: any) {
     console.error('Server Firebase ID token verification failed:', err.message);
     return res.status(401).json({
       error: 'Unauthorized: Invalid or expired session token. Please sign in again.',
       code: 'INVALID_TOKEN',
-      details: err.message,
     });
   }
 }
 
-// Strict Case Ownership & Payload Scope Verification Middleware
+function toSafeApiError(
+  err: any,
+  fallbackMessage: string,
+  defaultStatus = 500
+): { status: number; message: string } {
+  const statusCode = Number(err?.statusCode);
+  const msg = String(err?.message || '');
+  if (statusCode === 503 && msg.includes('GEMINI_API_KEY')) {
+    return { status: 503, message: msg };
+  }
+  if (statusCode >= 400 && statusCode < 500 && msg) {
+    return { status: statusCode, message: msg };
+  }
+  if (
+    msg.includes('Unsupported file type') ||
+    msg.includes('8 MB') ||
+    msg.includes('appears to be empty')
+  ) {
+    return { status: 400, message: msg };
+  }
+  return {
+    status: statusCode >= 500 && statusCode < 600 ? statusCode : defaultStatus,
+    message: fallbackMessage,
+  };
+}
+
 async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) {
   if (!req.user?.uid) {
     return res.status(401).json({ error: 'Unauthorized: User identity missing.' });
@@ -82,7 +462,6 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
     return res.status(400).json({ error: 'Bad Request: A valid caseId is required for isolation.' });
   }
 
-  // Reject cross-user spoofing if a different ownerId/userId was injected in payload
   if (req.body?.ownerUid && req.body.ownerUid !== req.user.uid) {
     return res.status(403).json({ error: 'Forbidden: Case access denied for this account.' });
   }
@@ -91,7 +470,15 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
     return next();
   }
 
-  // When Admin SDK service account is present, verify Firestore ownership directly
+  // Enforce case ownership tracking across both Admin SDK mode and preview JSON store mode
+  const state = loadSaasState();
+  const existingOwner = state.caseOwners[caseId];
+  if (existingOwner && existingOwner !== req.user.uid) {
+    return res.status(403).json({
+      error: 'Forbidden: This business case ID belongs to a different account.',
+    });
+  }
+
   if (hasAdminCredentials) {
     try {
       const docSnap = await adminDb
@@ -106,8 +493,20 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
         });
       }
     } catch (err: any) {
-      console.warn('Firestore admin ownership check notice:', err.message);
+      console.error('Firestore admin ownership verification failed:', err.message);
+      return res.status(503).json({
+        error: 'Unable to verify business case ownership right now. Please try again shortly.',
+      });
     }
+  }
+
+  if (!existingOwner) {
+    state.caseOwners[caseId] = req.user.uid;
+    const u = getOrInitUserState(req.user.uid, req.user.email);
+    if (!u.ownedCaseIds.includes(caseId)) {
+      u.ownedCaseIds.push(caseId);
+    }
+    saveSaasState();
   }
 
   next();
@@ -131,8 +530,56 @@ async function extractDocumentContent(fileName: string, mimeType: string, base64
   }
 
   if (ext === '.pdf') {
+    let extractedPdfText = '';
+    try {
+      const zlib = await import('zlib');
+      const rawLatin1 = buffer.toString('latin1');
+      const textChunks: string[] = [];
+
+      const extractOperatorsFromContent = (content: string) => {
+        // Match PDF literal strings inside (...) before Tj/TJ or inside BT...ET blocks
+        const literalMatches = content.matchAll(/\(([^()\\]*(?:\\.[^()\\]*)*)\)/g);
+        for (const m of literalMatches) {
+          const decoded = m[1]
+            .replace(/\\n/g, ' ')
+            .replace(/\\r/g, ' ')
+            .replace(/\\t/g, ' ')
+            .replace(/\\\(/g, '(')
+            .replace(/\\\)/g, ')')
+            .replace(/\\\\/g, '\\')
+            .replace(/[^\x20-\x7E\u00A0-\u024F]/g, ' ')
+            .trim();
+          if (decoded.length >= 2 && /[A-Za-z0-9]/.test(decoded)) {
+            textChunks.push(decoded);
+          }
+        }
+      };
+
+      // First scan uncompressed PDF content streams
+      extractOperatorsFromContent(rawLatin1);
+
+      // Also attempt inflating FlateDecode streams safely
+      const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+      let match: RegExpExecArray | null;
+      let inspectedStreams = 0;
+      while ((match = streamRegex.exec(rawLatin1)) !== null && inspectedStreams < 40) {
+        inspectedStreams++;
+        try {
+          const rawStreamBuf = Buffer.from(match[1], 'latin1');
+          const inflated = zlib.inflateSync(rawStreamBuf).toString('latin1');
+          extractOperatorsFromContent(inflated);
+        } catch {
+          // Non-flate or image stream; safely skip and rely on Gemini multimodal inlinePart
+        }
+      }
+
+      extractedPdfText = textChunks.join(' ').replace(/\s{2,}/g, ' ').trim().slice(0, 60000);
+    } catch {
+      extractedPdfText = '';
+    }
+
     return {
-      textContent: '',
+      textContent: extractedPdfText,
       inlinePart: {
         inlineData: {
           mimeType: 'application/pdf',
@@ -188,7 +635,6 @@ async function extractDocumentContent(fileName: string, mimeType: string, base64
     return { textContent: sheetsText.join('\n\n').slice(0, 60000) };
   }
 
-  // Plain text / CSV / JSON / Markdown
   const decoded = buffer.toString('utf8').trim();
   if (!decoded) {
     throw new Error('The uploaded file appears to be empty.');
@@ -198,6 +644,15 @@ async function extractDocumentContent(fileName: string, mimeType: string, base64
 
 async function startServer() {
   const app = express();
+  app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    next();
+  });
+
   const isProduction = process.env.NODE_ENV === 'production';
   const envPort = Number(process.env.PORT);
   const defaultAppPort = Number(process.env.DEFAULT_APP_PORT) || 3000;
@@ -241,24 +696,13 @@ async function startServer() {
     ? new Stripe(stripeSecretKey!, { apiVersion: '2025-02-24.acacia' as any })
     : null;
 
-  const verifiedPaidCases = new Map<
-    string,
-    {
-      sessionId: string;
-      caseId: string;
-      amount: number;
-      currency: string;
-      status: 'paid';
-      tier: string;
-      unlockedAt: string;
-      customerEmail?: string;
-      paymentMode: 'stripe_live' | 'stripe_test';
-    }
-  >();
   const processedWebhookEventIds = new Set<string>();
 
-  // Gemini 4 Hydrogen helper with transient exponential backoff (never passes deprecated params or deprecated models)
-  async function generateWithGemini4(params: { contents: any; config?: any }): Promise<any> {
+  // Gemini 4 Hydrogen helper with transient backoff & token/quota telemetry recording
+  async function generateWithGemini4(
+    params: { contents: any; config?: any },
+    tracking?: { uid: string; bucket: UsageBucket }
+  ): Promise<any> {
     if (!process.env.GEMINI_API_KEY) {
       throw Object.assign(
         new Error('GEMINI_API_KEY is not configured on the server. Please check Settings > Secrets.'),
@@ -271,20 +715,26 @@ async function startServer() {
     delete cleanConfig.topP;
     delete cleanConfig.topK;
     delete cleanConfig.candidateCount;
+    delete cleanConfig.thinkingConfig;
 
     const ai = getAiClient();
     let lastError: any;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await ai.models.generateContent({
+        const result = await ai.models.generateContent({
           model: 'gemini-4-hydrogen',
           contents: params.contents,
           config: cleanConfig,
         });
+        if (tracking) {
+          recordAiUsage(tracking.uid, tracking.bucket, result?.usageMetadata);
+        }
+        return result;
       } catch (err: any) {
         lastError = err;
         const msg = String(err?.message || '');
-        const isTransient = msg.includes('503') || msg.includes('500') || msg.includes('UNAVAILABLE') || msg.includes('ECONNRESET');
+        const isTransient =
+          msg.includes('503') || msg.includes('500') || msg.includes('UNAVAILABLE') || msg.includes('ECONNRESET');
         if (!isTransient || attempt === 1) break;
         await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
       }
@@ -301,49 +751,78 @@ async function startServer() {
     crmContacts?: any[],
     roiScenarios?: any[],
     recommendations?: any,
-    actionPlan?: any[]
+    actionPlan?: any[],
+    crossDocumentSynthesis?: any
   ): string {
     const businessName = profile?.name || 'Client SME';
     const industry = profile?.industry || 'Small & Medium Enterprise';
     const businessType = profile?.businessType || 'Privately-owned business';
     const country = profile?.country || 'New Zealand';
     const currency = profile?.currency || 'NZD';
+    const turnoverRange = profile?.turnoverRange || 'Not specified';
     const staff = `${profile?.employeeCount ?? 'Unspecified'} employees and ${profile?.subcontractorCount ?? '0'} subcontractors`;
     const primaryObjective = profile?.primaryObjective || 'Improve profitability, cash flow, and operational resilience';
     const primaryConcern = profile?.primaryConcern || 'Unspecified commercial pressure';
     const productsServices = profile?.mainProductsServices || 'General products/services';
     const customerTypes = profile?.mainCustomerTypes || 'General clients';
 
-    let healthSummary = 'EIGHT HEALTH DIMENSIONS (Owner-Reported):\n';
+    let healthSummary = 'TWELVE BUSINESS HEALTH CAPABILITIES (Owner-Reported):\n';
     if (healthInputs && typeof healthInputs === 'object') {
       for (const [key, val] of Object.entries<any>(healthInputs)) {
-        healthSummary += `- ${val.title || key}: Status=${val.status || 'unanswered'}. Notes: ${val.notes || 'None provided'}\n`;
+        const evidenceLabel = val.evidenceType ? ` | Evidence: ${val.evidenceType}` : '';
+        healthSummary += `- ${val.title || key}: Status=${val.status || 'unanswered'}${evidenceLabel}. Notes: ${val.notes || 'None provided'}\n`;
       }
     } else {
-      healthSummary += 'Health dimensions not yet completed by owner.\n';
+      healthSummary += 'Health capabilities not yet completed by owner.\n';
     }
 
-    let financialSummary = 'FINANCIAL LEDGER INPUTS:\n';
+    if (Array.isArray(overallHealth?.dimensionScores) && overallHealth.dimensionScores.length > 0) {
+      const missingDims = overallHealth.dimensionScores
+        .filter((d: any) => d.status === 'not_sure' || d.status === 'unanswered')
+        .map((d: any) => d.title);
+      const riskDims = overallHealth.dimensionScores
+        .filter((d: any) => d.status === 'at_risk')
+        .map((d: any) => `${d.title} (${d.score ?? 'N/A'}/100)`);
+      if (riskDims.length > 0) {
+        healthSummary += `CONFIRMED AT-RISK CAPABILITIES: ${riskDims.join('; ')}\n`;
+      }
+      if (missingDims.length > 0) {
+        healthSummary += `INSUFFICIENT INFO / UNVERIFIED CAPABILITIES (DO NOT CONFUSE WITH CONFIRMED RISK): ${missingDims.join('; ')}\n`;
+      }
+    }
+
+    if (Array.isArray(overallHealth?.topThreePriorities) && overallHealth.topThreePriorities.length > 0) {
+      healthSummary += 'TOP 3 DETERMINISTIC IMPROVEMENT PRIORITIES:\n';
+      for (const p of overallHealth.topThreePriorities) {
+        healthSummary += `  #${p.rank} ${p.title} (${p.status}): ${p.rationale} -> Focus: ${p.recommendedFocus}\n`;
+      }
+    }
+
+    const fmtNum = (n: any) => (n !== null && n !== undefined && n !== '' && !Number.isNaN(Number(n)) ? `${currency} ${Number(n).toLocaleString()}` : 'Not supplied');
+    const fmtPct = (n: any) => (n !== null && n !== undefined && n !== '' && !Number.isNaN(Number(n)) ? `${Number(n)}%` : 'Not supplied');
+    const fmtDays = (n: any) => (n !== null && n !== undefined && n !== '' && !Number.isNaN(Number(n)) ? `${Number(n)} days` : 'Not supplied');
+
+    let financialSummary = 'FINANCIAL LEDGER INPUTS (16 Core Fields):\n';
     if (
       financials &&
-      (financials.annualRevenue != null ||
-        financials.cashInBank != null ||
-        financials.accountsReceivable != null)
+      Object.values(financials).some((v) => v !== null && v !== undefined && v !== '')
     ) {
-      financialSummary += `- Annual Revenue: ${currency} ${financials.annualRevenue?.toLocaleString() ?? 'Not supplied'}\n`;
-      financialSummary += `- Operating Profit: ${currency} ${financials.operatingProfit?.toLocaleString() ?? 'Not supplied'}\n`;
-      financialSummary += `- Cash in Bank: ${currency} ${financials.cashInBank?.toLocaleString() ?? 'Not supplied'}\n`;
-      financialSummary += `- Accounts Receivable: ${currency} ${financials.accountsReceivable?.toLocaleString() ?? 'Not supplied'} (Overdue >60d: ${currency} ${financials.overdueReceivables?.toLocaleString() ?? 'Not supplied'})\n`;
-      financialSummary += `- Accounts Payable: ${currency} ${financials.accountsPayable?.toLocaleString() ?? 'Not supplied'}\n`;
-      financialSummary += `- Credit Facility: ${currency} ${financials.creditFacilityUsed?.toLocaleString() ?? '0'} used of ${currency} ${financials.creditFacilityLimit?.toLocaleString() ?? '0'} limit\n`;
+      financialSummary += `- Annual Revenue: ${fmtNum(financials.annualRevenue)} | Direct Costs: ${fmtNum(financials.directCosts)} | Operating Expenses: ${fmtNum(financials.operatingExpenses)} | Operating Profit: ${fmtNum(financials.operatingProfit)}\n`;
+      financialSummary += `- Cash in Bank: ${fmtNum(financials.cashInBank)} | Accounts Receivable: ${fmtNum(financials.accountsReceivable)} | Overdue >60d: ${fmtNum(financials.overdueReceivables)} | Accounts Payable: ${fmtNum(financials.accountsPayable)}\n`;
+      financialSummary += `- Credit Facility Limit: ${fmtNum(financials.creditFacilityLimit)} | Credit Facility Drawn: ${fmtNum(financials.creditFacilityUsed)}\n`;
+      financialSummary += `- Customer Count: ${financials.customerCount ?? 'Not supplied'} | Top-5 Concentration: ${fmtPct(financials.top5ConcentrationPercent)} | Top-12 Concentration: ${fmtPct(financials.top12ConcentrationPercent)}\n`;
+      financialSummary += `- Standard Payment Terms: ${fmtDays(financials.standardPaymentTermsDays)} | Actual Payment Delay: ${fmtDays(financials.actualPaymentDelayDays)} | Years Since Pricing Review: ${financials.pricingReviewLastYears ?? 'Not supplied'}\n`;
     } else {
       financialSummary += 'No quantitative financial ledger figures supplied yet by owner. NEVER invent or estimate missing numbers.\n';
     }
 
     let docsSummary = 'UPLOADED BUSINESS DOCUMENTS (Verified vs Assumed):\n';
     if (Array.isArray(uploadedDocuments) && uploadedDocuments.length > 0) {
-      for (const docItem of uploadedDocuments.slice(0, 5)) {
+      for (const docItem of uploadedDocuments.slice(0, 6)) {
         docsSummary += `- Document "${docItem.fileName}" (${docItem.uploadedAt}): Summary: ${docItem.summary}. Verified Facts: ${(docItem.verifiedFacts || []).slice(0, 4).join('; ')}. Missing Figures: ${(docItem.missingFinancialFigures || []).slice(0, 3).join('; ')}\n`;
+      }
+      if (crossDocumentSynthesis?.summary) {
+        docsSummary += `- Cross-Document Synthesis: ${crossDocumentSynthesis.summary}\n  Trends: ${(crossDocumentSynthesis.trends || []).slice(0, 3).join('; ')}\n  Unusual Movements: ${(crossDocumentSynthesis.unusualMovements || []).slice(0, 3).join('; ')}\n`;
       }
     } else {
       docsSummary += 'No supporting documents uploaded yet.\n';
@@ -385,39 +864,44 @@ async function startServer() {
       roiSummary += 'No custom ROI scenarios modeled yet.\n';
     }
 
-    let recommendationsSummary = 'EXISTING DIAGNOSTIC RECOMMENDATIONS & EVIDENCE AUDIT:\n';
+    let recommendationsSummary = 'EXISTING DIAGNOSTIC RECOMMENDATIONS, PROFIT OPPORTUNITIES & SUSTAINABILITY:\n';
     if (recommendations && (recommendations.initialObservation || recommendations.initialRecommendation)) {
       recommendationsSummary += `- Observation: ${recommendations.initialObservation || 'N/A'}\n`;
       recommendationsSummary += `- Commercial Why: ${recommendations.commercialWhy || 'N/A'}\n`;
       recommendationsSummary += `- Core Recommendation: ${recommendations.initialRecommendation || 'N/A'}\n`;
       recommendationsSummary += `- Immediate Action: ${recommendations.immediateAction || 'N/A'}\n`;
-      if (Array.isArray(recommendations.sustainabilityRisks) && recommendations.sustainabilityRisks.length > 0) {
-        recommendationsSummary += `- Sustainability Risks: ${recommendations.sustainabilityRisks.slice(0, 4).join('; ')}\n`;
+      if (Array.isArray(recommendations.profitOpportunities) && recommendations.profitOpportunities.length > 0) {
+        recommendationsSummary += `- Structured Profit Opportunities (${recommendations.profitOpportunities.length}): ${recommendations.profitOpportunities.slice(0, 6).map((o: any) => `${o.title} [${o.horizon}, ${o.area}]`).join('; ')}\n`;
+      }
+      if (recommendations.sustainabilityAssessment) {
+        const sust = recommendations.sustainabilityAssessment;
+        const weakAreas = (sust.areas || [])
+          .filter((a: any) => a.status === 'At Risk' || a.status === 'Needs Attention')
+          .map((a: any) => `${a.area} (${a.status})`)
+          .join(', ');
+        recommendationsSummary += `- Sustainability & Business Choice: Recommended Choice=${sust.recommendedChoice || 'Stabilise'}. Current Position: ${sust.currentPosition || 'N/A'}. Outlook: ${sust.futureOutlook || 'N/A'}.${weakAreas ? ` Flagged Areas: ${weakAreas}.` : ''}\n`;
       }
       if (recommendations.knownsVsAssumptions) {
         recommendationsSummary += `- Flagged Assumptions: ${(recommendations.knownsVsAssumptions.assumptions || []).slice(0, 4).join('; ') || 'None'}\n`;
         recommendationsSummary += `- Missing Unknowns: ${(recommendations.knownsVsAssumptions.unknowns || []).slice(0, 4).join('; ') || 'None'}\n`;
       }
-      if (Array.isArray(recommendations.actionItems) && recommendations.actionItems.length > 0) {
-        const done = recommendations.actionItems.filter((i: any) => i.completed).length;
-        recommendationsSummary += `- Recommendation Action Items: ${done}/${recommendations.actionItems.length} completed\n`;
-      }
     } else {
       recommendationsSummary += 'No diagnostic recommendation generated yet.\n';
     }
 
-    let actionPlanSummary = '90-DAY ACTION PLAN STATUS:\n';
+    let actionPlanSummary = '30/60/90-DAY ACTION & ACCOUNTABILITY STATUS:\n';
     if (Array.isArray(actionPlan) && actionPlan.length > 0) {
       const completedCount = actionPlan.filter((a) => a.completed || a.status === 'completed').length;
+      const acceptedCount = actionPlan.filter((a) => a.decisionStatus === 'accepted').length;
       const urgentPending = actionPlan
-        .filter((a) => !a.completed && a.status !== 'completed')
-        .slice(0, 5);
-      actionPlanSummary += `- Total Planned Actions: ${actionPlan.length} (${completedCount} completed)\n`;
+        .filter((a) => !a.completed && a.status !== 'completed' && a.decisionStatus !== 'rejected')
+        .slice(0, 6);
+      actionPlanSummary += `- Total Planned Actions: ${actionPlan.length} (${completedCount} completed, ${acceptedCount} accepted)\n`;
       for (const act of urgentPending) {
-        actionPlanSummary += `  • [${act.priority || 'Action'}] ${act.action} (Owner: ${act.accountableRole || 'Owner'}, Timeframe: ${act.timeframe || 'TBD'})\n`;
+        actionPlanSummary += `  • [${act.horizon || '30 Days'} | ${act.priority || 'Action'} | Status: ${act.status || 'pending'} | Decision: ${act.decisionStatus || 'pending_review'}${act.metricLink ? ` | Metric: ${act.metricLink}` : ''}] ${act.action} (Owner: ${act.accountableRole || 'Owner'}, Due: ${act.targetCompletionDate || act.timeframe || 'TBD'}${act.actualResult ? `, Actual Result: ${act.actualResult}` : ''})\n`;
       }
     } else {
-      actionPlanSummary += 'No 90-day action plan tasks saved yet.\n';
+      actionPlanSummary += 'No 30/60/90-day action plan tasks saved yet.\n';
     }
 
     return `
@@ -427,13 +911,13 @@ You are advising the owner of "${businessName}", an SME operating in the "${indu
 ACTIVE BUSINESS CONTEXT:
 - Business Name: ${businessName}
 - Industry: ${industry} (${businessType})
-- Location: ${country} | Currency: ${currency}
+- Location: ${country} | Currency: ${currency} | Annual Turnover Range: ${turnoverRange}
 - Team Size: ${staff}
 - Products & Services: ${productsServices}
 - Customer Base: ${customerTypes}
 - Primary Objective: ${primaryObjective}
 - Stated Primary Concern: ${primaryConcern}
-- Overall Health Score: ${overallHealth?.overallScore ?? 'Pending'} / 100 (${overallHealth?.overallRating ?? 'Pending Assessment'})
+- Overall Health Score: ${overallHealth?.overallScore ?? 'Pending'} / 100 (${overallHealth?.overallRating ?? 'Pending Assessment'} | Data Visibility: ${overallHealth?.dataVisibilityScore ?? 'N/A'}%)
 
 ${healthSummary}
 ${financialSummary}
@@ -444,51 +928,158 @@ ${recommendationsSummary}
 ${actionPlanSummary}
 
 COACHING & EVIDENCE RULES:
-1. Context Fidelity: Tailor all advice strictly to "${businessName}" (${industry}, ${country}, ${currency}, ${staff}). Never assume it is an IT MSP unless industry is IT & Managed Services.
-2. Evidence Discipline: Explicitly distinguish Verified Evidence, Owner-Reported Information, Working Assumptions, and Unknowns / Missing Data.
-3. Zero Fabricated Numbers: NEVER invent revenue, profit, cash, debtor, or percentage figures not supplied in the profile, financials, notes, CRM, ROI scenarios, or uploaded documents. If figures are missing, state exactly what figure is needed.
-4. Connected Integration: Connect Business Health risks directly to CRM priorities (retention, collections, follow-ups), ROI payback & cash headroom, and practical actions naming owner role, priority, and timeframe.
+1. Context Fidelity: Tailor all advice strictly to "${businessName}" (${industry}, ${country}, ${currency}, ${staff}, Turnover: ${turnoverRange}). Never assume it is an IT MSP unless industry is IT & Managed Services.
+2. Evidence Discipline: Explicitly distinguish Verified Evidence, Owner-Reported Information, Working Assumptions, and Unknowns / Missing Data (Insufficient Information).
+3. Zero Fabricated Numbers: NEVER invent revenue, profit, cash, debtor, or percentage figures not supplied in the profile, financials, notes, CRM, ROI scenarios, or uploaded documents. If figures are missing, state clearly what figure is needed.
+4. Connected Integration: Connect 12-Capability Health findings, Sustainability Choice, and Top 3 Priorities directly to Revenue/Profit Opportunities, CRM priorities (retention, collections, follow-ups), ROI payback & cash headroom, and accountable 30/60/90-day actions.
 5. Specialist Triggers: Note clearly whenever a Chartered Accountant, commercial lawyer, HR/employment adviser, or banker should review decisions.
+6. Anti-Repetition & Memory: NEVER re-ask for facts, numbers, team sizes, CRM accounts, or capability notes already provided in this context or earlier in the conversation—reference supplied facts directly and move straight to commercial analysis or genuinely missing gaps.
 `;
   }
 
   // ==========================================
-  // STRIPE PAYMENT ENDPOINTS (Gated until STRIPE_SECRET_KEY configured)
+  // ACCOUNT USAGE, QUOTA & DELETION ENDPOINTS
   // ==========================================
-  app.post('/api/payment/create-checkout-session', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/account/usage', requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      await syncUserStateFromAdminFirestore(uid);
+      return res.json({ accountUsage: buildAccountUsageSummary(uid, isStripeConfigured) });
+    } catch (err: any) {
+      console.error('Account usage read error:', err);
+      const safe = toSafeApiError(err, 'Unable to load account usage summary.');
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  app.post('/api/account/check-case-limit', requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      await syncUserStateFromAdminFirestore(uid);
+      const summary = buildAccountUsageSummary(uid, isStripeConfigured);
+
+      const clientCustomIds = Array.isArray(req.body?.customCaseIds)
+        ? req.body.customCaseIds
+            .map((id: any) => String(id || '').trim())
+            .filter((id: string) => id && id !== 'case-demo-msp-nz')
+        : [];
+      const clientCount = Math.max(0, Number(req.body?.currentCustomCaseCount) || 0, clientCustomIds.length);
+
+      let authoritativeCount = clientCount;
+      if (hasAdminCredentials) {
+        const casesSnap = await adminDb.collection('users').doc(uid).collection('cases').get();
+        const serverCustomCases = casesSnap.docs.filter((d) => {
+          const data = d.data() || {};
+          return d.id !== 'case-demo-msp-nz' && !data?.profile?.isDemonstrationCase;
+        });
+        authoritativeCount = serverCustomCases.length;
+      } else {
+        const userState = getOrInitUserState(uid, req.user?.email);
+        const serverTrackedNonDemo = (userState.ownedCaseIds || []).filter(
+          (id) => id && id !== 'case-demo-msp-nz'
+        );
+        authoritativeCount = Math.max(clientCount, serverTrackedNonDemo.length);
+      }
+
+      const allowed = authoritativeCount < summary.limits.maxCustomCases;
+      return res.json({
+        allowed,
+        currentCustomCaseCount: authoritativeCount,
+        maxCustomCases: summary.limits.maxCustomCases,
+        planName: summary.subscription.planName,
+        accountUsage: summary,
+      });
+    } catch (err: any) {
+      console.error('Case limit check error:', err);
+      const safe = toSafeApiError(err, 'Unable to verify business session limit.');
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  app.post('/api/account/delete', requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const userState = getOrInitUserState(uid, req.user?.email);
+
+      // Cancel active Stripe subscription immediately if present
+      if (stripe && isStripeConfigured && userState.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(userState.stripeSubscriptionId);
+        } catch (stripeErr: any) {
+          console.warn('Stripe cancellation during account delete notice:', stripeErr.message);
+        }
+      }
+
+      // Purge server-side state and owned case tracking
+      const state = loadSaasState();
+      for (const cid of userState.ownedCaseIds || []) {
+        if (state.caseOwners[cid] === uid) {
+          delete state.caseOwners[cid];
+        }
+      }
+      delete state.users[uid];
+      saveSaasState();
+
+      // If Admin SDK credentials are configured, wipe Firestore subcollections + Auth record cleanly
+      if (hasAdminCredentials) {
+        try {
+          const casesSnap = await adminDb.collection('users').doc(uid).collection('cases').get();
+          for (const docSnap of casesSnap.docs) {
+            await docSnap.ref.delete();
+          }
+          await adminDb.collection('users').doc(uid).collection('account').doc('billing').delete().catch(() => {});
+          await adminDb.collection('users').doc(uid).delete().catch(() => {});
+          await adminAuth.deleteUser(uid).catch(() => {});
+        } catch (adminErr: any) {
+          console.warn('Admin account cleanup notice:', adminErr.message);
+        }
+      }
+
+      return res.json({ deleted: true });
+    } catch (err: any) {
+      console.error('Account deletion error:', err);
+      const safe = toSafeApiError(err, 'Failed to delete server-side account state.');
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  // ==========================================
+  // STRIPE ACCOUNT-LEVEL SAAS BILLING ENDPOINTS
+  // ==========================================
+  app.post('/api/payment/create-checkout-session', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { caseId, businessName, userEmail, currency, tierId } = req.body;
-      if (!caseId) {
-        return res.status(400).json({ error: 'caseId is required' });
+      const uid = req.user!.uid;
+      const canonicalTier = normalizeTierId(tierId);
+      if (canonicalTier === 'free_trial') {
+        return res.status(400).json({ error: 'Please select Starter, Growth, or Business Plus for paid checkout.' });
       }
 
       if (!stripe || !isStripeConfigured) {
         return res.status(503).json({
-          error: 'Live billing is currently disabled (preview mode). Subscription checkout is not activated and no charges will be made.',
+          error: 'Live billing is not configured on this server (STRIPE_SECRET_KEY missing). No charges will be made.',
           configured: false,
         });
       }
 
+      const plan = SAAS_PLANS[canonicalTier];
       const appBaseUrl = process.env.APP_URL || req.headers.origin || `http://localhost:${PORT}`;
       const safeCurrency = (currency || 'NZD').toLowerCase();
-      const isFounding = tierId === 'founding_monthly';
-      const amountCents = isFounding ? 9900 : 4900;
-      const tierTitle = isFounding ? 'BizPulse Founding Member Growth OS (Monthly)' : 'BizPulse Essential Coach (Monthly)';
+      const amountCents = plan.priceMonthlyNzd * 100;
       const customerEmail = userEmail || req.user?.email || undefined;
+      const userState = getOrInitUserState(uid, customerEmail);
 
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
-        customer_email: customerEmail,
+        ...(userState.stripeCustomerId ? { customer: userState.stripeCustomerId } : { customer_email: customerEmail }),
         line_items: [
           {
             price_data: {
               currency: safeCurrency,
               recurring: { interval: 'month' },
               product_data: {
-                name: `${tierTitle} — ${businessName || 'SME Workspace'}`,
-                description: isFounding
-                  ? 'Unlimited cases, AI coaching, document audits, and executive exports.'
-                  : 'Up to 3 active business cases, 8D diagnostics, and monthly AI coaching.',
+                name: `BizPulse ${plan.planName} Monthly`,
+                description: plan.description,
               },
               unit_amount: amountCents,
             },
@@ -496,13 +1087,13 @@ COACHING & EVIDENCE RULES:
           },
         ],
         metadata: {
-          caseId,
-          userId: req.user?.uid || '',
-          businessName: businessName || 'SME Client',
-          tierId: tierId || 'essential_monthly',
+          caseId: caseId || '',
+          userId: uid,
+          businessName: businessName || 'SME Account',
+          tierId: canonicalTier,
         },
-        success_url: `${appBaseUrl}/?session_id={CHECKOUT_SESSION_ID}&case_id=${encodeURIComponent(caseId)}&payment=success`,
-        cancel_url: `${appBaseUrl}/?case_id=${encodeURIComponent(caseId)}&payment=cancelled`,
+        success_url: `${appBaseUrl}/?session_id={CHECKOUT_SESSION_ID}&case_id=${encodeURIComponent(caseId || '')}&payment=success`,
+        cancel_url: `${appBaseUrl}/?case_id=${encodeURIComponent(caseId || '')}&payment=cancelled`,
       } as any);
 
       return res.json({
@@ -513,15 +1104,17 @@ COACHING & EVIDENCE RULES:
       });
     } catch (err: any) {
       console.error('Stripe Session Creation Error:', err);
-      return res.status(500).json({ error: err.message || 'Error creating checkout session' });
+      const safe = toSafeApiError(err, 'Error creating checkout session.');
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
   app.post('/api/payment/verify-session', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { sessionId, caseId } = req.body;
-      if (!sessionId || !caseId) {
-        return res.status(400).json({ error: 'sessionId and caseId are required' });
+      const uid = req.user!.uid;
+      if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required' });
       }
       if (!stripe || !isStripeConfigured) {
         return res.status(503).json({ error: 'Stripe is not configured on this server.' });
@@ -532,46 +1125,113 @@ COACHING & EVIDENCE RULES:
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       if (session.payment_status === 'paid') {
-        if (session.metadata?.userId && session.metadata.userId !== req.user?.uid) {
+        if (session.metadata?.userId && session.metadata.userId !== uid) {
           return res.status(403).json({ error: 'Payment session belongs to another authenticated account.' });
         }
 
+        const canonicalTier = normalizeTierId(session.metadata?.tierId || 'starter_monthly');
+        const plan = SAAS_PLANS[canonicalTier];
+        const userState = getOrInitUserState(uid, session.customer_details?.email || req.user?.email);
+        userState.subscriptionTier = canonicalTier;
+        userState.subscriptionStatus = 'active';
+        if (typeof session.customer === 'string') userState.stripeCustomerId = session.customer;
+        if (typeof session.subscription === 'string') {
+          userState.stripeSubscriptionId = session.subscription;
+          try {
+            const sub: any = await stripe.subscriptions.retrieve(session.subscription);
+            if (sub?.current_period_end) {
+              userState.currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+            }
+          } catch {}
+        }
+        userState.updatedAt = new Date().toISOString();
+        saveSaasState();
+        await persistUserStateToAdminFirestore(uid);
+
         const record = {
           sessionId: session.id,
-          caseId,
-          amount: (session.amount_total || 9900) / 100,
+          caseId: caseId || session.metadata?.caseId || '',
+          amount: (session.amount_total || plan.priceMonthlyNzd * 100) / 100,
           currency: (session.currency || 'nzd').toUpperCase(),
           status: 'paid' as const,
-          tier: session.metadata?.tierId === 'founding_monthly' ? 'Founding Member Growth OS Monthly' : 'Essential Coach Monthly',
+          tier: `BizPulse ${plan.planName} Monthly`,
           unlockedAt: new Date().toISOString(),
           customerEmail: session.customer_details?.email || undefined,
-          paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as 'stripe_live' | 'stripe_test',
+          paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as
+            | 'stripe_live'
+            | 'stripe_test',
         };
 
-        verifiedPaidCases.set(caseId, record);
-
-        if (req.user?.uid && hasAdminCredentials) {
-          try {
-            await adminDb.collection('users').doc(req.user.uid).collection('cases').doc(caseId).set(
-              {
-                isUnlocked: true,
-                paymentStatus: 'paid',
-                paymentRecord: record,
-                updatedAt: new Date().toISOString(),
-              },
-              { merge: true }
-            );
-          } catch (fsErr: any) {
-            console.warn('Direct Firestore payment write notice:', fsErr.message);
-          }
-        }
-
-        return res.json({ paid: true, record });
+        return res.json({
+          paid: true,
+          record,
+          tierId: canonicalTier,
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        });
       }
       return res.json({ paid: false, status: session.payment_status });
     } catch (err: any) {
       console.error('Session Verification Error:', err);
-      return res.status(500).json({ error: err.message || 'Error verifying checkout session' });
+      const safe = toSafeApiError(err, 'Error verifying checkout session.');
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  app.post('/api/payment/create-portal-session', requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      if (!stripe || !isStripeConfigured) {
+        return res.status(503).json({ error: 'Stripe billing portal is not available in preview mode.' });
+      }
+      await syncUserStateFromAdminFirestore(uid);
+      const userState = getOrInitUserState(uid);
+      if (!userState.stripeCustomerId) {
+        return res.status(400).json({ error: 'No active Stripe customer profile found for this account yet.' });
+      }
+      const returnUrl = process.env.APP_URL || req.headers.origin || `http://localhost:${PORT}`;
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: userState.stripeCustomerId,
+        return_url: returnUrl,
+      });
+      return res.json({ portalUrl: portalSession.url });
+    } catch (err: any) {
+      console.error('Billing Portal Error:', err);
+      const safe = toSafeApiError(err, 'Unable to create billing portal session.');
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  app.post('/api/payment/cancel-subscription', requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      await syncUserStateFromAdminFirestore(uid);
+      const userState = getOrInitUserState(uid);
+
+      if (stripe && isStripeConfigured && userState.stripeSubscriptionId) {
+        const sub: any = await stripe.subscriptions.update(userState.stripeSubscriptionId, {
+          cancel_at_period_end: true,
+        });
+        userState.subscriptionStatus = 'canceling';
+        if (sub?.current_period_end) {
+          userState.currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        }
+      } else {
+        userState.subscriptionTier = 'free_trial';
+        userState.subscriptionStatus = 'canceled';
+      }
+
+      userState.updatedAt = new Date().toISOString();
+      saveSaasState();
+      await persistUserStateToAdminFirestore(uid);
+
+      return res.json({
+        canceled: true,
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+      });
+    } catch (err: any) {
+      console.error('Subscription Cancellation Error:', err);
+      const safe = toSafeApiError(err, 'Unable to cancel subscription.');
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
@@ -604,37 +1264,29 @@ COACHING & EVIDENCE RULES:
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data?.object;
-      const caseId = session?.metadata?.caseId;
       const userId = session?.metadata?.userId;
-      if (caseId && session.payment_status === 'paid') {
-        const record = {
-          sessionId: session.id,
-          caseId,
-          amount: (session.amount_total || 9900) / 100,
-          currency: (session.currency || 'nzd').toUpperCase(),
-          status: 'paid' as const,
-          tier: session.metadata?.tierId === 'founding_monthly' ? 'Founding Member Growth OS Monthly' : 'Essential Coach Monthly',
-          unlockedAt: new Date().toISOString(),
-          customerEmail: session.customer_details?.email,
-          paymentMode: (stripeSecretKey?.startsWith('sk_live_') ? 'stripe_live' : 'stripe_test') as 'stripe_live' | 'stripe_test',
-        };
-        verifiedPaidCases.set(caseId, record);
-
-        if (userId && hasAdminCredentials) {
-          try {
-            await adminDb.collection('users').doc(userId).collection('cases').doc(caseId).set(
-              {
-                isUnlocked: true,
-                paymentStatus: 'paid',
-                paymentRecord: record,
-                updatedAt: new Date().toISOString(),
-              },
-              { merge: true }
-            );
-          } catch (fsErr: any) {
-            console.warn('Webhook Firestore persistence note:', fsErr.message);
-          }
-        }
+      if (userId && session.payment_status === 'paid') {
+        const canonicalTier = normalizeTierId(session.metadata?.tierId || 'starter_monthly');
+        const userState = getOrInitUserState(userId, session.customer_details?.email);
+        userState.subscriptionTier = canonicalTier;
+        userState.subscriptionStatus = 'active';
+        if (typeof session.customer === 'string') userState.stripeCustomerId = session.customer;
+        if (typeof session.subscription === 'string') userState.stripeSubscriptionId = session.subscription;
+        userState.updatedAt = new Date().toISOString();
+        saveSaasState();
+        await persistUserStateToAdminFirestore(userId);
+      }
+    } else if (event.type === 'customer.subscription.deleted') {
+      const sub = event.data?.object;
+      const state = loadSaasState();
+      const targetUser = Object.values(state.users).find((u) => u.stripeSubscriptionId === sub?.id);
+      if (targetUser) {
+        targetUser.subscriptionTier = 'free_trial';
+        targetUser.subscriptionStatus = 'canceled';
+        targetUser.stripeSubscriptionId = null;
+        targetUser.updatedAt = new Date().toISOString();
+        saveSaasState();
+        await persistUserStateToAdminFirestore(targetUser.uid);
       }
     }
 
@@ -642,12 +1294,13 @@ COACHING & EVIDENCE RULES:
   });
 
   app.get('/api/payment/status/:caseId', requireAuth, verifyCaseOwnership, (req: AuthenticatedRequest, res) => {
-    const { caseId } = req.params;
-    const record = verifiedPaidCases.get(caseId);
-    if (record) {
-      return res.json({ isUnlocked: true, paymentStatus: 'paid', record });
-    }
-    return res.json({ isUnlocked: false, paymentStatus: 'free', record: null });
+    const summary = buildAccountUsageSummary(req.user!.uid, isStripeConfigured);
+    const isPaid = summary.subscription.tierId !== 'free_trial' && summary.subscription.status !== 'canceled';
+    return res.json({
+      isUnlocked: isPaid,
+      paymentStatus: isPaid ? 'paid' : 'free',
+      accountUsage: summary,
+    });
   });
 
   // ==========================================
@@ -657,6 +1310,16 @@ COACHING & EVIDENCE RULES:
   // 1. Live Conversational AI Business Coach Query ("Chat with Coach")
   app.post('/api/coach/query', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
       const {
         prompt,
         conversationHistory,
@@ -665,6 +1328,7 @@ COACHING & EVIDENCE RULES:
         financials,
         overallHealth,
         uploadedDocuments,
+        crossDocumentSynthesis,
         crmContacts,
         roiScenarios,
         recommendations,
@@ -690,7 +1354,8 @@ COACHING & EVIDENCE RULES:
           crmContacts,
           roiScenarios,
           recommendations,
-          actionPlan
+          actionPlan,
+          crossDocumentSynthesis
         ) +
         `\nCHAT WITH COACH CONVERSATION PROTOCOL:
 Speaking with: ${userRole || 'Owner/Director'}. Active Focus Topic: ${topic || 'General Strategy'}.
@@ -700,7 +1365,6 @@ Speaking with: ${userRole || 'Owner/Director'}. Active Focus Topic: ${topic || '
 - Whenever the discussion surfaces concrete next steps or client/lead follow-ups, include 1–3 structured items in "suggestedActions" (using targetType: "crm_followup" for customer/prospect outreach or collections, and "action_plan" for internal operational/financial tasks).
 Return strictly valid JSON matching the schema.`;
 
-      // Build multi-turn Gemini contents array from recent case-scoped conversationHistory
       const contentsTurns: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
       if (Array.isArray(conversationHistory)) {
         const recentHistory = conversationHistory
@@ -708,7 +1372,6 @@ Return strictly valid JSON matching the schema.`;
           .slice(-14);
         for (const msg of recentHistory) {
           const role: 'user' | 'model' = msg.sender === 'user' ? 'user' : 'model';
-          // Skip leading model turn because Gemini multi-turn chats must begin with a user turn
           if (contentsTurns.length === 0 && role === 'model') continue;
           const prev = contentsTurns[contentsTurns.length - 1];
           if (prev && prev.role === role) {
@@ -726,43 +1389,46 @@ Return strictly valid JSON matching the schema.`;
         contentsTurns.push({ role: 'user', parts: [{ text: prompt.trim() }] });
       }
 
-      const response = await generateWithGemini4({
-        contents: contentsTurns,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              reply: { type: Type.STRING },
-              estimatesAndAssumptions: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-              followUpQuestions: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-              suggestedActions: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.STRING },
-                    title: { type: Type.STRING },
-                    ownerRole: { type: Type.STRING },
-                    priority: { type: Type.STRING },
-                    timeframe: { type: Type.STRING },
-                    targetType: { type: Type.STRING },
+      const response = await generateWithGemini4(
+        {
+          contents: contentsTurns,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                reply: { type: Type.STRING },
+                estimatesAndAssumptions: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                followUpQuestions: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                suggestedActions: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      title: { type: Type.STRING },
+                      ownerRole: { type: Type.STRING },
+                      priority: { type: Type.STRING },
+                      timeframe: { type: Type.STRING },
+                      targetType: { type: Type.STRING },
+                    },
+                    required: ['id', 'title', 'ownerRole', 'priority', 'timeframe', 'targetType'],
                   },
-                  required: ['id', 'title', 'ownerRole', 'priority', 'timeframe', 'targetType'],
                 },
               },
+              required: ['reply', 'estimatesAndAssumptions', 'followUpQuestions', 'suggestedActions'],
             },
-            required: ['reply', 'estimatesAndAssumptions', 'followUpQuestions', 'suggestedActions'],
           },
         },
-      });
+        { uid, bucket: 'coach' }
+      );
 
       const parsed = JSON.parse((response.text || '{}').trim());
       const normalizePriority = (raw?: string): 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)' => {
@@ -788,26 +1454,38 @@ Return strictly valid JSON matching the schema.`;
         estimatesAndAssumptions: Array.isArray(parsed.estimatesAndAssumptions) ? parsed.estimatesAndAssumptions : [],
         followUpQuestions: Array.isArray(parsed.followUpQuestions) ? parsed.followUpQuestions : [],
         suggestedActions,
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
       });
     } catch (err: any) {
       console.error('Gemini Coaching Error:', err);
-      return res.status(err?.statusCode || 502).json({
-        error: err?.message || 'Unable to reach AI Coach service.',
-      });
+      const safe = toSafeApiError(err, 'Unable to reach AI Coach service.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
-  // 2. Dynamic Structured Recommendation & Action Plan Generator
+  // 2. Dynamic Structured Recommendation & 12-Area Profit Opportunity Engine
   app.post('/api/coach/generate-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'recommendations', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
       const {
         businessProfile,
         healthInputs,
         financials,
         overallHealth,
         uploadedDocuments,
+        crossDocumentSynthesis,
         crmContacts,
         roiScenarios,
+        actionPlan,
       } = req.body;
 
       const systemInstruction = buildDynamicSystemInstruction(
@@ -817,106 +1495,296 @@ Return strictly valid JSON matching the schema.`;
         overallHealth,
         uploadedDocuments,
         crmContacts,
-        roiScenarios
+        roiScenarios,
+        null,
+        actionPlan,
+        crossDocumentSynthesis
       );
 
       const prompt = `
-Analyze the business profile, stated primary concern, 8 health dimension scores/notes, financial inputs (if any), and uploaded documents (if any).
-Produce a tailored, practical SME diagnostic matching every requirement:
+Analyze the business profile (including turnoverRange), Top 3 Improvement Priorities, 12 Business Health Capabilities, financial ledger inputs (16 fields), uploaded documents/synthesis, CRM pipeline, and ROI scenarios.
+Produce a tailored SME Revenue, Margin, Profit Leakage, & Sustainability Diagnostic matching every requirement:
 1. Initial commercial observation grounded in actual answers.
 2. Commercial rationale explaining impact on cash flow, profitability, and capacity.
 3. Sustainability risks (2–4 concrete risks specific to this business).
-4. Hidden profit opportunities (2–4 pricing, margin, waste, or client mix opportunities).
-5. Revenue flow improvements (2–4 cash collection, billing cadence, or recurring structure improvements).
-6. Knowns vs. Assumptions vs. Unknowns audit.
-7. Critical missing evidence needed next.
-8. 2–3 focused contextual follow-up questions.
-9. Core strategic recommendation + immediate 48–72 hour step.
-10. Practical prioritized actionItems (4–6 specific actions with priority, ownerRole, timeframe, action, expectedImpact).
-11. Specialist advice trigger (Accountant, Lawyer, HR, Banker if warranted).
+4. sustainabilityAssessment: Structured "Business Sustainability & Future Earning Potential" covering:
+   - currentPositionSummary: honest plain-language summary of current cash, margin, workload, and operational resilience.
+   - futureOutlook6to12Months: realistic 6–12 month trajectory if nothing changes vs if priority actions execute.
+   - recommendedChoice: MUST be strictly one of "Stabilise", "Improve", "Expand", "Restructure", or "Reconsider".
+   - choiceRationale: why this strategic choice fits the evidence (no hype, no false certainty).
+   - areas: evaluate ALL 10 sustainability dimensions:
+     1) Owner Workload, Burnout & Single-Point Failure
+     2) Cash Resilience & Liquidity Stress
+     3) Profit Durability & Margin Erosion
+     4) Customer & Revenue Concentration
+     5) Staff Capability, Retention & Key-Person Risk
+     6) Operational Reliability & Scalability
+     7) Market Demand & Competition
+     8) Pricing Power
+     9) Tech, Automation & AI Readiness
+     10) Compliance & Financial-Control Risk
+     For each: { area, status ("green" | "amber" | "red" | "blue" where blue = insufficient information), assessment, keyDriverOrGap }.
+   - keyAssumptions: explicit assumptions behind the sustainability assessment.
+   - disclaimer: "Commercial decision-support only — not formal business valuation, tax, legal, or insolvency advice."
+5. Hidden profit opportunities (2–4 concise summaries).
+6. Revenue flow improvements (2–4 cash collection, billing cadence, or recurring structure improvements).
+7. profitOpportunities (6–12 structured opportunities evaluating ALL 16 SME profit & revenue leakage areas and surfacing the highest-value ones):
+   1. Pricing Too Low | 2. Unbilled Extra or Out-of-Scope Work | 3. Weak Quoting or Low Win Rates | 4. Slow Invoicing or Late Collections |
+   5. Poor Margin Tracking | 6. Unprofitable or Low-Value Customers | 7. Excessive Discounting | 8. Ineffective Marketing or Poor Lead Follow-Up |
+   9. High Employee or Contractor Rework | 10. Inefficient Scheduling or Idle Capacity | 11. Poor Inventory or Supplier Cost Control |
+   12. Lack of Repeat Business / Upsell / Cross-Sell | 13. Over-Reliance on 1–2 Big Customers or Channels | 14. Software or Admin Duplication |
+   15. Missed AI / Automation Time Savings | 16. Tax or Cash Timing Errors.
+   For EACH item in profitOpportunities provide all 6 practical parts:
+   - id: unique string
+   - area: matching numbered area from the 16 areas above
+   - title: crisp opportunity name
+   - horizon: MUST be strictly one of "0-30 Days", "30-90 Days", or "90-180 Days"
+   - evidenceBasis: plain-language explanation citing supplied inputs/CRM/ledger/docs (or noting missing figures)
+   - whyHappening: root cause explaining why this leakage occurs in this SME
+   - infoNeeded: exact figure/record still needed to verify or size the upside
+   - whatToDoFirst: concrete first action this week
+   - illustrativeExample: transparent example labeled "Illustrative scenario: ..." showing the math logic if verified baseline figures are incomplete (NEVER pass an illustrative figure off as verified client fact)
+   - estimatedFinancialImpact: supplied-data range or qualified estimate requiring verification
+   - effortCost: realistic implementation effort/cash cost
+   - risks: 1–2 execution or client risks
+   - linkedCrmId: optional exact CRM contact ID if applicable
+8. Knowns vs. Assumptions vs. Unknowns audit.
+9. Critical missing evidence needed next.
+10. 2–3 focused contextual follow-up questions.
+11. Core strategic recommendation + immediate 48–72 hour step.
+12. Practical prioritized actionItems (4–6 specific actions with priority, ownerRole, timeframe, action, expectedImpact).
+13. Specialist advice trigger (Accountant, Lawyer, HR, Banker if warranted).
 
-Strictly do NOT invent any financial figures that were not supplied. Return strictly valid JSON matching the schema.
+Strictly do NOT invent financial facts that were not supplied. Return strictly valid JSON matching the schema.
 `;
 
-      const response = await generateWithGemini4({
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              initialObservation: { type: Type.STRING },
-              commercialWhy: { type: Type.STRING },
-              sustainabilityRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
-              hiddenProfitOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-              revenueFlowImprovements: { type: Type.ARRAY, items: { type: Type.STRING } },
-              knownsVsAssumptions: {
-                type: Type.OBJECT,
-                properties: {
-                  knowns: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  assumptions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  unknowns: { type: Type.ARRAY, items: { type: Type.STRING } },
-                },
-                required: ['knowns', 'assumptions', 'unknowns'],
-              },
-              missingEvidence: { type: Type.ARRAY, items: { type: Type.STRING } },
-              contextualQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-              initialRecommendation: { type: Type.STRING },
-              immediateAction: { type: Type.STRING },
-              actionItems: {
-                type: Type.ARRAY,
-                items: {
+      const response = await generateWithGemini4(
+        {
+          contents: prompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                initialObservation: { type: Type.STRING },
+                commercialWhy: { type: Type.STRING },
+                sustainabilityRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                sustainabilityAssessment: {
                   type: Type.OBJECT,
                   properties: {
-                    id: { type: Type.STRING },
-                    priority: { type: Type.STRING },
-                    ownerRole: { type: Type.STRING },
-                    timeframe: { type: Type.STRING },
-                    action: { type: Type.STRING },
-                    expectedImpact: { type: Type.STRING },
+                    currentPositionSummary: { type: Type.STRING },
+                    futureOutlook6to12Months: { type: Type.STRING },
+                    recommendedChoice: { type: Type.STRING },
+                    choiceRationale: { type: Type.STRING },
+                    areas: {
+                      type: Type.ARRAY,
+                      items: {
+                        type: Type.OBJECT,
+                        properties: {
+                          area: { type: Type.STRING },
+                          status: { type: Type.STRING },
+                          assessment: { type: Type.STRING },
+                          keyDriverOrGap: { type: Type.STRING },
+                        },
+                        required: ['area', 'status', 'assessment', 'keyDriverOrGap'],
+                      },
+                    },
+                    keyAssumptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    disclaimer: { type: Type.STRING },
                   },
-                  required: ['id', 'priority', 'ownerRole', 'timeframe', 'action', 'expectedImpact'],
+                  required: [
+                    'currentPositionSummary',
+                    'futureOutlook6to12Months',
+                    'recommendedChoice',
+                    'choiceRationale',
+                    'areas',
+                    'keyAssumptions',
+                    'disclaimer',
+                  ],
                 },
+                hiddenProfitOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                revenueFlowImprovements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                profitOpportunities: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      area: { type: Type.STRING },
+                      title: { type: Type.STRING },
+                      horizon: { type: Type.STRING },
+                      evidenceBasis: { type: Type.STRING },
+                      whyHappening: { type: Type.STRING },
+                      infoNeeded: { type: Type.STRING },
+                      whatToDoFirst: { type: Type.STRING },
+                      illustrativeExample: { type: Type.STRING },
+                      estimatedFinancialImpact: { type: Type.STRING },
+                      effortCost: { type: Type.STRING },
+                      risks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      linkedCrmId: { type: Type.STRING },
+                    },
+                    required: [
+                      'id',
+                      'area',
+                      'title',
+                      'horizon',
+                      'evidenceBasis',
+                      'whyHappening',
+                      'infoNeeded',
+                      'whatToDoFirst',
+                      'illustrativeExample',
+                      'estimatedFinancialImpact',
+                      'effortCost',
+                      'risks',
+                    ],
+                  },
+                },
+                knownsVsAssumptions: {
+                  type: Type.OBJECT,
+                  properties: {
+                    knowns: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    assumptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    unknowns: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  },
+                  required: ['knowns', 'assumptions', 'unknowns'],
+                },
+                missingEvidence: { type: Type.ARRAY, items: { type: Type.STRING } },
+                contextualQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                initialRecommendation: { type: Type.STRING },
+                immediateAction: { type: Type.STRING },
+                actionItems: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      priority: { type: Type.STRING },
+                      ownerRole: { type: Type.STRING },
+                      timeframe: { type: Type.STRING },
+                      action: { type: Type.STRING },
+                      expectedImpact: { type: Type.STRING },
+                    },
+                    required: ['id', 'priority', 'ownerRole', 'timeframe', 'action', 'expectedImpact'],
+                  },
+                },
+                specialistAdviceNeeded: { type: Type.STRING },
               },
-              specialistAdviceNeeded: { type: Type.STRING },
+              required: [
+                'initialObservation',
+                'commercialWhy',
+                'sustainabilityRisks',
+                'sustainabilityAssessment',
+                'hiddenProfitOpportunities',
+                'revenueFlowImprovements',
+                'profitOpportunities',
+                'knownsVsAssumptions',
+                'missingEvidence',
+                'contextualQuestions',
+                'initialRecommendation',
+                'immediateAction',
+                'actionItems',
+              ],
             },
-            required: [
-              'initialObservation',
-              'commercialWhy',
-              'sustainabilityRisks',
-              'hiddenProfitOpportunities',
-              'revenueFlowImprovements',
-              'knownsVsAssumptions',
-              'missingEvidence',
-              'contextualQuestions',
-              'initialRecommendation',
-              'immediateAction',
-              'actionItems',
-            ],
           },
         },
-      });
+        { uid, bucket: 'recommendations' }
+      );
 
       const parsedJson = JSON.parse((response.text || '{}').trim());
+      const normalizeHorizon = (raw?: string): '0-30 Days' | '30-90 Days' | '90-180 Days' => {
+        if (raw?.includes('90-180') || raw?.includes('180')) return '90-180 Days';
+        if (raw?.includes('30-90') || raw?.includes('60') || raw?.includes('90')) return '30-90 Days';
+        return '0-30 Days';
+      };
+
+      const normalizeSustChoice = (raw?: string) => {
+        const s = String(raw || '').toLowerCase();
+        if (s.includes('reconsider')) return 'Reconsider';
+        if (s.includes('restruct')) return 'Restructure';
+        if (s.includes('expand')) return 'Expand';
+        if (s.includes('improv')) return 'Improve';
+        return 'Stabilise';
+      };
+
+      const normalizeSustStatus = (raw?: string): 'green' | 'amber' | 'red' | 'blue' => {
+        const s = String(raw || '').toLowerCase();
+        if (s.includes('green') || s.includes('healthy')) return 'green';
+        if (s.includes('red') || s.includes('risk')) return 'red';
+        if (s.includes('blue') || s.includes('missing') || s.includes('unsure') || s.includes('insufficient')) return 'blue';
+        return 'amber';
+      };
+
+      const profitOpportunities = Array.isArray(parsedJson.profitOpportunities)
+        ? parsedJson.profitOpportunities.map((item: any, idx: number) => ({
+            id: item.id || `opp-${Date.now()}-${idx}`,
+            area: String(item.area || '1. Pricing Too Low'),
+            title: String(item.title || 'Commercial Profit Lever'),
+            horizon: normalizeHorizon(String(item.horizon || '')),
+            evidenceBasis: String(item.evidenceBasis || 'Owner diagnostic inputs'),
+            whyHappening: String(item.whyHappening || 'Pricing, scope, or tracking controls need tightening.'),
+            infoNeeded: String(item.infoNeeded || 'Verify job/contract margin breakdown.'),
+            whatToDoFirst: String(item.whatToDoFirst || 'Audit top 10 accounts this week.'),
+            illustrativeExample: String(item.illustrativeExample || ''),
+            estimatedFinancialImpact: String(item.estimatedFinancialImpact || 'Requires baseline figures to quantify'),
+            effortCost: String(item.effortCost || 'Low to moderate effort'),
+            risks: Array.isArray(item.risks) ? item.risks.map(String) : [],
+            ...(item.linkedCrmId ? { linkedCrmId: String(item.linkedCrmId) } : {}),
+          }))
+        : [];
+
+      const rawSust = parsedJson.sustainabilityAssessment;
+      const sustainabilityAssessment = rawSust
+        ? {
+            currentPositionSummary: String(rawSust.currentPositionSummary || ''),
+            futureOutlook6to12Months: String(rawSust.futureOutlook6to12Months || ''),
+            recommendedChoice: normalizeSustChoice(rawSust.recommendedChoice),
+            choiceRationale: String(rawSust.choiceRationale || ''),
+            areas: Array.isArray(rawSust.areas)
+              ? rawSust.areas.map((a: any) => ({
+                  area: String(a.area || 'Sustainability Area'),
+                  status: normalizeSustStatus(a.status),
+                  assessment: String(a.assessment || ''),
+                  keyDriverOrGap: String(a.keyDriverOrGap || ''),
+                }))
+              : [],
+            keyAssumptions: Array.isArray(rawSust.keyAssumptions) ? rawSust.keyAssumptions.map(String) : [],
+            disclaimer:
+              String(rawSust.disclaimer || '') ||
+              'Commercial decision-support only — not formal business valuation, tax, legal, or insolvency advice.',
+          }
+        : undefined;
+
       return res.json({
         recommendation: {
           ...parsedJson,
+          profitOpportunities,
+          ...(sustainabilityAssessment ? { sustainabilityAssessment } : {}),
           challenges: [],
           generatedAt: new Date().toISOString(),
         },
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
       });
     } catch (err: any) {
       console.error('Recommendation Generation Error:', err);
-      return res.status(err?.statusCode || 502).json({
-        error: err?.message || 'Unable to generate structured recommendation from Gemini.',
-      });
+      const safe = toSafeApiError(err, 'Unable to generate structured recommendation from Gemini.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
   // 3. Challenge Recommendation / Follow-up Endpoint
   app.post('/api/coach/challenge-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
       const {
         challengeText,
         challengeQuestion,
@@ -926,16 +1794,18 @@ Strictly do NOT invent any financial figures that were not supplied. Return stri
         financials,
         overallHealth,
         uploadedDocuments,
+        crossDocumentSynthesis,
         crmContacts,
         roiScenarios,
         actionPlan,
       } = req.body;
 
-      const challengeInput = typeof challengeQuestion === 'string' && challengeQuestion.trim()
-        ? challengeQuestion.trim()
-        : typeof challengeText === 'string'
-        ? challengeText.trim()
-        : '';
+      const challengeInput =
+        typeof challengeQuestion === 'string' && challengeQuestion.trim()
+          ? challengeQuestion.trim()
+          : typeof challengeText === 'string'
+          ? challengeText.trim()
+          : '';
 
       if (!challengeInput) {
         return res.status(400).json({ error: 'Please enter your question or challenge.' });
@@ -953,7 +1823,8 @@ Strictly do NOT invent any financial figures that were not supplied. Return stri
         crmContacts,
         roiScenarios,
         currentRecommendation,
-        actionPlan
+        actionPlan,
+        crossDocumentSynthesis
       );
 
       const prompt = `
@@ -973,10 +1844,13 @@ Respond directly, respectfully, and rigorously:
 - Provide the concrete next adjustment or verification step without inventing any financial numbers.
 `;
 
-      const response = await generateWithGemini4({
-        contents: prompt,
-        config: { systemInstruction },
-      });
+      const response = await generateWithGemini4(
+        {
+          contents: prompt,
+          config: { systemInstruction },
+        },
+        { uid, bucket: 'coach' }
+      );
 
       const replyText = response.text || 'Unable to formulate response.';
       const createdAt = new Date().toISOString();
@@ -990,19 +1864,44 @@ Respond directly, respectfully, and rigorously:
           coachResponse: replyText,
           createdAt,
         },
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
       });
     } catch (err: any) {
       console.error('Challenge Recommendation Error:', err);
-      return res.status(err?.statusCode || 502).json({
-        error: err?.message || 'Unable to process follow-up challenge.',
-      });
+      const safe = toSafeApiError(err, 'Unable to process follow-up challenge.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
-  // 4. Document Analysis Endpoint (Strictly Case-Scoped, Evidence vs Assumptions, Zero Fabricated Figures)
+  // 4. Document Analysis Endpoint (Full Workspace Context + Zero Fabricated Figures)
   app.post('/api/coach/analyze-document', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
-      const { caseId, fileName, mimeType, fileSizeBytes, base64Data, businessProfile, healthInputs, financials, overallHealth } = req.body;
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'documents', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
+      const {
+        caseId,
+        fileName,
+        mimeType,
+        fileSizeBytes,
+        base64Data,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan,
+      } = req.body;
 
       if (!fileName || !base64Data) {
         return res.status(400).json({ error: 'fileName and base64Data are required.' });
@@ -1013,15 +1912,25 @@ Respond directly, respectfully, and rigorously:
 
       const extracted = await extractDocumentContent(fileName, mimeType || '', base64Data);
       const systemInstruction =
-        buildDynamicSystemInstruction(businessProfile, healthInputs, financials, overallHealth) +
-        `\nCRITICAL DOCUMENT AUDIT RULE: You are auditing an uploaded business document ("${fileName}") for case "${caseId}". NEVER invent, estimate, or guess financial numbers that are absent from the document. Distinguish verified figures directly present in the file from assumptions and missing data.`;
+        buildDynamicSystemInstruction(
+          businessProfile,
+          healthInputs,
+          financials,
+          overallHealth,
+          uploadedDocuments,
+          crmContacts,
+          roiScenarios,
+          recommendations,
+          actionPlan
+        ) +
+        `\nCRITICAL DOCUMENT AUDIT RULE: You are auditing a newly uploaded business document ("${fileName}") for case "${caseId}". Compare it with any previously uploaded documents or owner claims listed above, and NEVER invent or estimate financial numbers absent from the document.`;
 
       const auditInstruction = `
 Analyze the attached business document ("${fileName}") for "${businessProfile?.name || 'this SME'}" (${businessProfile?.industry || 'SME'}).
 Produce a structured audit JSON with:
 - summary: concise factual summary of what the document contains.
 - verifiedFacts: concrete facts/figures directly observable inside the document.
-- ownerSuppliedClaims: claims from the owner's profile/notes compared against this file.
+- ownerSuppliedClaims: claims from the owner's profile/notes or prior uploads compared against this file (note confirmations or discrepancies).
 - assumptionsFlagged: assumptions that remain unverified by this document alone (e.g., cash vs accrual timing, missing tax liabilities, unverified collectability).
 - missingFinancialFigures: specific financial figures or schedules absent from this file that are still needed.
 - earningPotentialAssessment: reasoned assessment of future earning potential based strictly on supplied evidence (no invented numbers).
@@ -1034,49 +1943,52 @@ Produce a structured audit JSON with:
         ? { parts: [extracted.inlinePart, { text: auditInstruction }] }
         : `${auditInstruction}\n\n=== EXTRACTED DOCUMENT CONTENT (${fileName}) ===\n${extracted.textContent}`;
 
-      const response = await generateWithGemini4({
-        contents,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              summary: { type: Type.STRING },
-              verifiedFacts: { type: Type.ARRAY, items: { type: Type.STRING } },
-              ownerSuppliedClaims: { type: Type.ARRAY, items: { type: Type.STRING } },
-              assumptionsFlagged: { type: Type.ARRAY, items: { type: Type.STRING } },
-              missingFinancialFigures: { type: Type.ARRAY, items: { type: Type.STRING } },
-              earningPotentialAssessment: { type: Type.STRING },
-              risksIdentified: { type: Type.ARRAY, items: { type: Type.STRING } },
-              opportunitiesIdentified: { type: Type.ARRAY, items: { type: Type.STRING } },
-              metricsFound: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    label: { type: Type.STRING },
-                    value: { type: Type.STRING },
-                    sourceBasis: { type: Type.STRING },
+      const response = await generateWithGemini4(
+        {
+          contents,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                summary: { type: Type.STRING },
+                verifiedFacts: { type: Type.ARRAY, items: { type: Type.STRING } },
+                ownerSuppliedClaims: { type: Type.ARRAY, items: { type: Type.STRING } },
+                assumptionsFlagged: { type: Type.ARRAY, items: { type: Type.STRING } },
+                missingFinancialFigures: { type: Type.ARRAY, items: { type: Type.STRING } },
+                earningPotentialAssessment: { type: Type.STRING },
+                risksIdentified: { type: Type.ARRAY, items: { type: Type.STRING } },
+                opportunitiesIdentified: { type: Type.ARRAY, items: { type: Type.STRING } },
+                metricsFound: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      label: { type: Type.STRING },
+                      value: { type: Type.STRING },
+                      sourceBasis: { type: Type.STRING },
+                    },
+                    required: ['label', 'value', 'sourceBasis'],
                   },
-                  required: ['label', 'value', 'sourceBasis'],
                 },
               },
+              required: [
+                'summary',
+                'verifiedFacts',
+                'ownerSuppliedClaims',
+                'assumptionsFlagged',
+                'missingFinancialFigures',
+                'earningPotentialAssessment',
+                'risksIdentified',
+                'opportunitiesIdentified',
+                'metricsFound',
+              ],
             },
-            required: [
-              'summary',
-              'verifiedFacts',
-              'ownerSuppliedClaims',
-              'assumptionsFlagged',
-              'missingFinancialFigures',
-              'earningPotentialAssessment',
-              'risksIdentified',
-              'opportunitiesIdentified',
-              'metricsFound',
-            ],
           },
         },
-      });
+        { uid, bucket: 'documents' }
+      );
 
       const parsed = JSON.parse((response.text || '{}').trim());
       return res.json({
@@ -1097,24 +2009,181 @@ Produce a structured audit JSON with:
           metricsFound: Array.isArray(parsed.metricsFound) ? parsed.metricsFound : [],
           extractedPreview: extracted.textContent ? extracted.textContent.slice(0, 500) : undefined,
         },
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
       });
     } catch (err: any) {
       console.error('Document Analysis Error:', err);
-      const statusCode = err?.statusCode || (err?.message?.includes('Unsupported file type') || err?.message?.includes('8 MB') ? 400 : 502);
-      return res.status(statusCode).json({
-        error: err?.message || 'Unable to analyze uploaded document.',
-      });
+      const safe = toSafeApiError(err, 'Unable to analyze uploaded document.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
-  // 5. Dynamic Script Generation API
+  // 4b. Cross-Document Financial & Future Earnings Synthesis Endpoint
+  app.post('/api/coach/synthesize-documents', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'documents', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
+      const {
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan,
+      } = req.body;
+
+      if (!Array.isArray(uploadedDocuments) || uploadedDocuments.length === 0) {
+        return res.status(400).json({ error: 'Upload at least one business document before running synthesis.' });
+      }
+
+      const systemInstruction = buildDynamicSystemInstruction(
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan
+      );
+
+      const docsDetail = uploadedDocuments
+        .slice(0, 10)
+        .map(
+          (d: any, idx: number) =>
+            `[Document ${idx + 1}: ${d.fileName} (${d.uploadedAt})]\nSummary: ${d.summary}\nVerified Facts: ${(d.verifiedFacts || []).join(' | ')}\nMetrics Extracted: ${(d.metricsFound || []).map((m: any) => `${m.label}: ${m.value}`).join(' | ')}\nRisks: ${(d.risksIdentified || []).join(' | ')}\nOpportunities: ${(d.opportunitiesIdentified || []).join(' | ')}\nMissing Figures: ${(d.missingFinancialFigures || []).join(' | ')}`
+        )
+        .join('\n\n---\n\n');
+
+      const prompt = `
+Synthesize ALL ${uploadedDocuments.length} uploaded business documents for "${businessProfile?.name || 'this SME'}" together with the owner's financial ledger and CRM data.
+
+UPLOADED DOCUMENTS ARCHIVE:
+${docsDetail}
+
+Produce strictly valid JSON:
+- summary: cohesive executive synthesis comparing all documents, cash flow vs profit reality, and operational implications.
+- trends: 2–5 concrete multi-period or cross-document trends directly supported by the extracted metrics/facts.
+- unusualMovements: 1–4 discrepancies, margin squeezes, unusual expense/debtor spikes, or mismatches between documents and owner notes.
+- conservativeScenario: realistic future earnings / cash trajectory if pricing stays flat and debtor delays persist (ONLY cite supplied numbers; never invent figures).
+- baseScenario: realistic base future earnings trajectory executing core turnaround & CRM follow-ups.
+- optimisticScenario: realistic upside earnings drivers when pricing/margin/utilization improvements land cleanly.
+- verifiedFiguresUsed: list of exact figures/facts verified from the documents.
+- dataGaps: missing schedules or time periods still required to forecast with higher precision.
+`;
+
+      const response = await generateWithGemini4(
+        {
+          contents: prompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                summary: { type: Type.STRING },
+                trends: { type: Type.ARRAY, items: { type: Type.STRING } },
+                unusualMovements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                conservativeScenario: { type: Type.STRING },
+                baseScenario: { type: Type.STRING },
+                optimisticScenario: { type: Type.STRING },
+                verifiedFiguresUsed: { type: Type.ARRAY, items: { type: Type.STRING } },
+                dataGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+              },
+              required: [
+                'summary',
+                'trends',
+                'unusualMovements',
+                'conservativeScenario',
+                'baseScenario',
+                'optimisticScenario',
+                'verifiedFiguresUsed',
+                'dataGaps',
+              ],
+            },
+          },
+        },
+        { uid, bucket: 'documents' }
+      );
+
+      const parsed = JSON.parse((response.text || '{}').trim());
+      return res.json({
+        crossDocumentSynthesis: {
+          summary: parsed.summary || 'Cross-document synthesis complete.',
+          trends: Array.isArray(parsed.trends) ? parsed.trends : [],
+          unusualMovements: Array.isArray(parsed.unusualMovements) ? parsed.unusualMovements : [],
+          conservativeScenario: parsed.conservativeScenario || '',
+          baseScenario: parsed.baseScenario || '',
+          optimisticScenario: parsed.optimisticScenario || '',
+          verifiedFiguresUsed: Array.isArray(parsed.verifiedFiguresUsed) ? parsed.verifiedFiguresUsed : [],
+          dataGaps: Array.isArray(parsed.dataGaps) ? parsed.dataGaps : [],
+          synthesizedAt: new Date().toISOString(),
+        },
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+      });
+    } catch (err: any) {
+      console.error('Document Synthesis Error:', err);
+      const safe = toSafeApiError(err, 'Unable to synthesize uploaded documents.', 502);
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  // 5. Dynamic Script Generation API (Uses Full Case Context)
   app.post('/api/coach/generate-script', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
-      const { scriptType, businessProfile, details } = req.body;
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
+      const {
+        scriptType,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan,
+        details,
+      } = req.body;
       const bName = businessProfile?.name || 'Our Company';
       const industry = businessProfile?.industry || 'Business Services';
       const currency = businessProfile?.currency || 'NZD';
       const country = businessProfile?.country || 'New Zealand';
+
+      const systemInstruction =
+        buildDynamicSystemInstruction(
+          businessProfile,
+          healthInputs,
+          financials,
+          overallHealth,
+          uploadedDocuments,
+          crmContacts,
+          roiScenarios,
+          recommendations,
+          actionPlan
+        ) +
+        `\nCOMMERCIAL SCRIPT PROTOCOL: Write clear, respectful, commercially firm correspondence tailored strictly to "${bName}" in ${country}.`;
 
       const prompt = `Generate a realistic, professional commercial communication script for "${bName}" in the ${industry} sector located in ${country} (Currency: ${currency}).
 Script Type: ${scriptType}
@@ -1125,31 +2194,45 @@ Include:
 2. Phone call talking points & objection handling
 3. Escalation follow-up trigger (48–72 hours).`;
 
-      const response = await generateWithGemini4({
-        contents: prompt,
-        config: {
-          systemInstruction: `You are an executive commercial adviser for SME owners in ${country}. Write clear, respectful, commercially firm correspondence.`,
+      const response = await generateWithGemini4(
+        {
+          contents: prompt,
+          config: { systemInstruction },
         },
-      });
+        { uid, bucket: 'coach' }
+      );
 
-      return res.json({ script: response.text });
+      return res.json({
+        script: response.text,
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+      });
     } catch (err: any) {
       console.error('Script Generation Error:', err);
-      return res.status(err?.statusCode || 502).json({
-        error: err?.message || 'Unable to generate script.',
-      });
+      const safe = toSafeApiError(err, 'Unable to generate script.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
   // 6. Connected Business Development, Lead Generation & Outreach Plan API
   app.post('/api/coach/business-development', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
       const {
         businessProfile,
         healthInputs,
         financials,
         overallHealth,
         uploadedDocuments,
+        crossDocumentSynthesis,
         crmContacts,
         roiScenarios,
         recommendations,
@@ -1166,7 +2249,8 @@ Include:
         crmContacts,
         roiScenarios,
         recommendations,
-        actionPlan
+        actionPlan,
+        crossDocumentSynthesis
       );
 
       const prompt = `
@@ -1174,7 +2258,7 @@ Build a practical, connected Business Development & Outreach Plan for "${busines
 ${focusArea ? `Requested Owner Focus: ${focusArea}` : ''}
 
 Synthesize ALL connected workspace evidence:
-1. Business Health realities (especially Money/Cash, Customers/Concentration, Sales, and Operations capacity). If Money or Operations is At Risk, prioritize collecting/stabilizing margin and targeting high-fit/fast-paying buyers rather than low-margin volume.
+1. Business Health realities (especially Money/Cash, Pricing & Margins, Customers/Concentration, Sales, and Operations capacity). If Money or Operations is At Risk, prioritize collecting/stabilizing margin and targeting high-fit/fast-paying buyers rather than low-margin volume.
 2. Actual CRM contacts, sales stages, due follow-ups, and at-risk accounts supplied above (reference their exact CRM ID in linkedCrmId when suggesting outreach for an existing CRM record).
 3. Modeled ROI scenarios (payback & cash requirements).
 
@@ -1185,42 +2269,45 @@ Return strictly valid JSON matching the schema:
 - outreachSuggestions: 3–4 ready-to-use prospecting or follow-up outreach items ({ title, targetSegment, channel, rationale, messageDraft, linkedCrmId }). Do NOT fabricate financial figures.
 `;
 
-      const response = await generateWithGemini4({
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              idealCustomerProfile: { type: Type.STRING },
-              targetOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-              followUpPriorities: { type: Type.ARRAY, items: { type: Type.STRING } },
-              outreachSuggestions: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    targetSegment: { type: Type.STRING },
-                    channel: { type: Type.STRING },
-                    rationale: { type: Type.STRING },
-                    messageDraft: { type: Type.STRING },
-                    linkedCrmId: { type: Type.STRING },
+      const response = await generateWithGemini4(
+        {
+          contents: prompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                idealCustomerProfile: { type: Type.STRING },
+                targetOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                followUpPriorities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                outreachSuggestions: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      title: { type: Type.STRING },
+                      targetSegment: { type: Type.STRING },
+                      channel: { type: Type.STRING },
+                      rationale: { type: Type.STRING },
+                      messageDraft: { type: Type.STRING },
+                      linkedCrmId: { type: Type.STRING },
+                    },
+                    required: ['title', 'targetSegment', 'channel', 'rationale', 'messageDraft'],
                   },
-                  required: ['title', 'targetSegment', 'channel', 'rationale', 'messageDraft'],
                 },
               },
+              required: [
+                'idealCustomerProfile',
+                'targetOpportunities',
+                'followUpPriorities',
+                'outreachSuggestions',
+              ],
             },
-            required: [
-              'idealCustomerProfile',
-              'targetOpportunities',
-              'followUpPriorities',
-              'outreachSuggestions',
-            ],
           },
         },
-      });
+        { uid, bucket: 'coach' }
+      );
 
       const parsed = JSON.parse((response.text || '{}').trim());
       return res.json({
@@ -1231,18 +2318,28 @@ Return strictly valid JSON matching the schema:
           outreachSuggestions: Array.isArray(parsed.outreachSuggestions) ? parsed.outreachSuggestions : [],
           generatedAt: new Date().toISOString(),
         },
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
       });
     } catch (err: any) {
       console.error('Business Development Generation Error:', err);
-      return res.status(err?.statusCode || 502).json({
-        error: err?.message || 'Unable to generate Business Development Plan.',
-      });
+      const safe = toSafeApiError(err, 'Unable to generate Business Development Plan.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 
   // 7. Interactive "Challenge Me" Socratic & Scenario Interrogation Endpoint
   app.post('/api/coach/challenge-me', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
+      const uid = req.user!.uid;
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
       const {
         action,
         focusTopic,
@@ -1253,6 +2350,7 @@ Return strictly valid JSON matching the schema:
         financials,
         overallHealth,
         uploadedDocuments,
+        crossDocumentSynthesis,
         crmContacts,
         roiScenarios,
         recommendations,
@@ -1273,13 +2371,14 @@ Return strictly valid JSON matching the schema:
           crmContacts,
           roiScenarios,
           recommendations,
-          actionPlan
+          actionPlan,
+          crossDocumentSynthesis
         ) +
         `\n"CHALLENGE ME" INTERROGATION MODE RULES:
 - Role: You are stress-testing the business owner's thinking before capital, time, or team capacity is committed.
 - Tone: Constructive, commercially intelligent, direct, and occasionally uncomfortable. Challenge the thinking, assumptions, and numbers—never criticize the person.
 - STRICTLY FORBIDDEN: Generic motivational questions ("What inspires you?"), vague platitudes, multi-question checklists (ALWAYS ask strictly ONE sharp, challenging question per round), and inventing unverified financial numbers.
-- Ground every contradiction, scenario, and implication in the specific business data above (8D Health notes/statuses, financial ledger/cash/AR, CRM pipeline/at-risk clients, ROI assumptions, and prior recommendations).`;
+- Ground every contradiction, scenario, and implication in the specific business data above (12-Capability Health notes/statuses, Top 3 Priorities, financial ledger/cash/AR, CRM pipeline/at-risk clients, ROI assumptions, and prior recommendations).`;
 
       if (action === 'start') {
         const startPrompt = `
@@ -1291,31 +2390,34 @@ Conduct a sharp diagnostic scan of "${businessProfile?.name || 'this business'}"
 
 Return strictly valid JSON matching the schema.`;
 
-        const response = await generateWithGemini4({
-          contents: startPrompt,
-          config: {
-            systemInstruction,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                contradictionsDetected: { type: Type.ARRAY, items: { type: Type.STRING } },
-                questionableAssumptions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                blindSpots: { type: Type.ARRAY, items: { type: Type.STRING } },
-                firstRound: {
-                  type: Type.OBJECT,
-                  properties: {
-                    contradictionOrBlindSpot: { type: Type.STRING },
-                    scenarioContext: { type: Type.STRING },
-                    question: { type: Type.STRING },
+        const response = await generateWithGemini4(
+          {
+            contents: startPrompt,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  contradictionsDetected: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  questionableAssumptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  blindSpots: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  firstRound: {
+                    type: Type.OBJECT,
+                    properties: {
+                      contradictionOrBlindSpot: { type: Type.STRING },
+                      scenarioContext: { type: Type.STRING },
+                      question: { type: Type.STRING },
+                    },
+                    required: ['contradictionOrBlindSpot', 'scenarioContext', 'question'],
                   },
-                  required: ['contradictionOrBlindSpot', 'scenarioContext', 'question'],
                 },
+                required: ['contradictionsDetected', 'questionableAssumptions', 'blindSpots', 'firstRound'],
               },
-              required: ['contradictionsDetected', 'questionableAssumptions', 'blindSpots', 'firstRound'],
             },
           },
-        });
+          { uid, bucket: 'coach' }
+        );
 
         const parsed = JSON.parse((response.text || '{}').trim());
         return res.json({
@@ -1323,6 +2425,7 @@ Return strictly valid JSON matching the schema.`;
           questionableAssumptions: Array.isArray(parsed.questionableAssumptions) ? parsed.questionableAssumptions : [],
           blindSpots: Array.isArray(parsed.blindSpots) ? parsed.blindSpots : [],
           firstRound: parsed.firstRound,
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
         });
       }
 
@@ -1358,40 +2461,43 @@ Instructions:
 
 Return strictly valid JSON matching the schema.`;
 
-        const response = await generateWithGemini4({
-          contents: respondPrompt,
-          config: {
-            systemInstruction,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                businessImplication: { type: Type.STRING },
-                shouldConclude: { type: Type.BOOLEAN },
-                nextRound: {
-                  type: Type.OBJECT,
-                  properties: {
-                    contradictionOrBlindSpot: { type: Type.STRING },
-                    scenarioContext: { type: Type.STRING },
-                    question: { type: Type.STRING },
+        const response = await generateWithGemini4(
+          {
+            contents: respondPrompt,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  businessImplication: { type: Type.STRING },
+                  shouldConclude: { type: Type.BOOLEAN },
+                  nextRound: {
+                    type: Type.OBJECT,
+                    properties: {
+                      contradictionOrBlindSpot: { type: Type.STRING },
+                      scenarioContext: { type: Type.STRING },
+                      question: { type: Type.STRING },
+                    },
+                    required: ['contradictionOrBlindSpot', 'scenarioContext', 'question'],
                   },
-                  required: ['contradictionOrBlindSpot', 'scenarioContext', 'question'],
                 },
+                required: ['businessImplication', 'shouldConclude'],
               },
-              required: ['businessImplication', 'shouldConclude'],
             },
           },
-        });
+          { uid, bucket: 'coach' }
+        );
 
         const parsed = JSON.parse((response.text || '{}').trim());
         return res.json({
           businessImplication: parsed.businessImplication || '',
           shouldConclude: Boolean(parsed.shouldConclude),
           nextRound: parsed.shouldConclude ? null : parsed.nextRound || null,
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
         });
       }
 
-      // action === 'conclude'
       const rounds = Array.isArray(currentSession?.rounds) ? currentSession.rounds : [];
       const transcript = rounds
         .map(
@@ -1416,40 +2522,43 @@ ${transcript || 'No round responses recorded.'}
 Produce a decisive executive wrap-up:
 1. "keyInsights": 3–5 sharp commercial takeaways revealed by how the owner answered (separating facts from assumptions).
 2. "recommendedDecisions": 2–4 clear stop/start/reprice/defer executive decisions the owner needs to make right now.
-3. "nextActions": 3–5 practical, sequenced next actions ({ id, action, ownerRole, priority, timeframe, rationale }) ready to add directly to the 90-Day Action Plan.
+3. "nextActions": 3–5 practical, sequenced next actions ({ id, action, ownerRole, priority, timeframe, rationale }) ready to add directly to the 30/60/90-Day Action Plan.
 
 Return strictly valid JSON matching the schema.`;
 
-      const response = await generateWithGemini4({
-        contents: concludePrompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              keyInsights: { type: Type.ARRAY, items: { type: Type.STRING } },
-              recommendedDecisions: { type: Type.ARRAY, items: { type: Type.STRING } },
-              nextActions: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.STRING },
-                    action: { type: Type.STRING },
-                    ownerRole: { type: Type.STRING },
-                    priority: { type: Type.STRING },
-                    timeframe: { type: Type.STRING },
-                    rationale: { type: Type.STRING },
+      const response = await generateWithGemini4(
+        {
+          contents: concludePrompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                keyInsights: { type: Type.ARRAY, items: { type: Type.STRING } },
+                recommendedDecisions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                nextActions: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      action: { type: Type.STRING },
+                      ownerRole: { type: Type.STRING },
+                      priority: { type: Type.STRING },
+                      timeframe: { type: Type.STRING },
+                      rationale: { type: Type.STRING },
+                    },
+                    required: ['id', 'action', 'ownerRole', 'priority', 'timeframe', 'rationale'],
                   },
-                  required: ['id', 'action', 'ownerRole', 'priority', 'timeframe', 'rationale'],
                 },
               },
+              required: ['keyInsights', 'recommendedDecisions', 'nextActions'],
             },
-            required: ['keyInsights', 'recommendedDecisions', 'nextActions'],
           },
         },
-      });
+        { uid, bucket: 'coach' }
+      );
 
       const parsed = JSON.parse((response.text || '{}').trim());
       const normalizePriority = (raw?: string): 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)' => {
@@ -1468,19 +2577,19 @@ Return strictly valid JSON matching the schema.`;
                 action: String(a.action || ''),
                 ownerRole: String(a.ownerRole || 'Owner'),
                 priority: normalizePriority(String(a.priority || '')),
-                timeframe: String(a.timeframe || 'Within 7 days'),
+                timeframe: String(a.timeframe || 'Within 30 days'),
                 rationale: String(a.rationale || ''),
                 addedToPlan: false,
               }))
             : [],
           concludedAt: new Date().toISOString(),
         },
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
       });
     } catch (err: any) {
       console.error('Challenge Me Error:', err);
-      return res.status(err?.statusCode || 502).json({
-        error: err?.message || 'Unable to run Challenge Me coaching session.',
-      });
+      const safe = toSafeApiError(err, 'Unable to run Challenge Me coaching session.', 502);
+      return res.status(safe.status).json({ error: safe.message });
     }
   });
 

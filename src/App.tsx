@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { deleteUser } from 'firebase/auth';
 import { Header } from './components/Header';
 import { CaseManagerBar } from './components/CaseManagerBar';
 import { BusinessEssentialsView } from './components/BusinessEssentialsView';
@@ -29,10 +30,12 @@ import {
   FinancialData,
   UploadedDocument,
   TurnaroundAction,
-  SubscriptionTier,
   CrmRecord,
   RoiScenario,
   BusinessDevPlan,
+  AccountUsageSummary,
+  CrossDocumentSynthesis,
+  ProfitOpportunityItem,
 } from './types/bizpulse';
 import {
   subscribeUserCases,
@@ -41,7 +44,8 @@ import {
   createPristineBlankCase,
   seedDemoCaseForUser,
 } from './services/firestoreStorage';
-import { calculateOverallHealth } from './services/caseStorage';
+import { calculateOverallHealth } from './services/healthScoring';
+import { getAuthHeaders } from './services/firebase';
 import { Database, AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 function BizPulseWorkspace() {
@@ -54,6 +58,7 @@ function BizPulseWorkspace() {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const [workspaceNotice, setWorkspaceNotice] = useState<string | null>(null);
+  const [accountUsage, setAccountUsage] = useState<AccountUsageSummary | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>('essentials');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
@@ -63,11 +68,81 @@ function BizPulseWorkspace() {
 
   const activeCaseRef = useRef<CaseRecord | null>(null);
   activeCaseRef.current = activeCase;
+  const pendingSaveCountRef = useRef<number>(0);
 
   const showNotice = (msg: string) => {
     setWorkspaceNotice(msg);
-    setTimeout(() => setWorkspaceNotice(null), 4000);
+    setTimeout(() => setWorkspaceNotice(null), 5000);
   };
+
+  const refreshAccountUsage = useCallback(async () => {
+    if (!currentUser) {
+      setAccountUsage(null);
+      return;
+    }
+    try {
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch('/api/account/usage', { headers: authHeaders });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.accountUsage) {
+          setAccountUsage(data.accountUsage);
+        }
+      }
+    } catch (err) {
+      console.warn('Unable to load account usage summary:', err);
+    }
+  }, [currentUser]);
+
+  // Verify returning Stripe checkout session & load account usage on auth
+  useEffect(() => {
+    if (!currentUser) {
+      setAccountUsage(null);
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const paymentFlag = params.get('payment');
+    const sessionId = params.get('session_id');
+    const caseIdParam = params.get('case_id');
+
+    const runVerificationAndUsage = async () => {
+      if (paymentFlag === 'success' && sessionId) {
+        try {
+          const authHeaders = await getAuthHeaders();
+          const res = await fetch('/api/payment/verify-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...authHeaders,
+            },
+            body: JSON.stringify({
+              sessionId,
+              caseId: caseIdParam || activeCaseRef.current?.id || '',
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.paid) {
+            if (data.accountUsage) {
+              setAccountUsage(data.accountUsage);
+            }
+            showNotice(`Subscription activated: ${data.record?.tier || 'Paid Plan'}.`);
+          }
+        } catch (err) {
+          console.warn('Payment verification error:', err);
+        } finally {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else if (paymentFlag === 'cancelled') {
+        showNotice('Checkout cancelled. No charges were made.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      await refreshAccountUsage();
+    };
+
+    runVerificationAndUsage();
+  }, [currentUser, refreshAccountUsage]);
 
   // Real-time Firestore subscription strictly scoped to users/{userId}/cases
   useEffect(() => {
@@ -150,10 +225,13 @@ function BizPulseWorkspace() {
 
   const persistCase = async (updatedCase: CaseRecord, announceSave = false) => {
     if (!currentUser) return;
+    pendingSaveCountRef.current += 1;
     setIsSyncing(true);
     try {
       await saveCaseToFirestore(currentUser.uid, updatedCase);
-      setActiveCase(updatedCase);
+      if (activeCaseRef.current?.id === updatedCase.id) {
+        setActiveCase(updatedCase);
+      }
       setCases((prev) => prev.map((c) => (c.id === updatedCase.id ? updatedCase : c)));
       setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       if (announceSave) {
@@ -163,7 +241,10 @@ function BizPulseWorkspace() {
       console.error('Error saving case to Firestore:', err);
       setFirestoreError('Failed to save changes: ' + (err.message || ''));
     } finally {
-      setIsSyncing(false);
+      pendingSaveCountRef.current = Math.max(0, pendingSaveCountRef.current - 1);
+      if (pendingSaveCountRef.current === 0) {
+        setIsSyncing(false);
+      }
     }
   };
 
@@ -197,6 +278,36 @@ function BizPulseWorkspace() {
   const handleNewCase = async () => {
     if (!currentUser) return;
     try {
+      const customCaseIds = cases.filter((c) => !c.profile.isDemonstrationCase).map((c) => c.id);
+      const authHeaders = await getAuthHeaders();
+      const checkRes = await fetch('/api/account/check-case-limit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({
+          currentCustomCaseCount: customCaseIds.length,
+          customCaseIds,
+        }),
+      });
+
+      const limitData = await checkRes.json().catch(() => ({}));
+      if (!checkRes.ok) {
+        setFirestoreError(limitData.error || 'Unable to verify plan session quota. Please try again.');
+        return;
+      }
+      if (limitData.accountUsage) {
+        setAccountUsage(limitData.accountUsage);
+      }
+      if (!limitData.allowed) {
+        setIsCheckoutModalOpen(true);
+        showNotice(
+          `Your ${limitData.planName} allows up to ${limitData.maxCustomCases} custom business session(s). Upgrade your plan to add more businesses.`
+        );
+        return;
+      }
+
       setIsSyncing(true);
       const blank = createPristineBlankCase();
       await saveCaseToFirestore(currentUser.uid, blank);
@@ -269,6 +380,66 @@ function BizPulseWorkspace() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+  };
+
+  const handleExportAllAccountData = () => {
+    const bundle = {
+      exportedAt: new Date().toISOString(),
+      accountEmail: currentUser?.email || null,
+      accountUsage,
+      cases,
+    };
+    const dataStr =
+      'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bundle, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute(
+      'download',
+      `bizpulse_account_export_${new Date().toISOString().slice(0, 10)}.json`
+    );
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showNotice('Exported all account data (.json) cleanly.');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+
+    const authHeaders = await getAuthHeaders();
+
+    // 1. Delete every user case from client Firestore while user token is active
+    for (const c of cases) {
+      await deleteCaseFromFirestore(currentUser.uid, c.id).catch(() => {});
+    }
+
+    // 2. Cancel Stripe subscription + wipe server-side quota/billing records
+    const res = await fetch('/api/account/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Unable to purge server-side account state.');
+    }
+
+    // 3. Delete Firebase Auth record from client SDK
+    try {
+      await deleteUser(currentUser);
+    } catch (err: any) {
+      if (err?.code === 'auth/requires-recent-login') {
+        await logout();
+        throw new Error(
+          'Your workspace data and subscription were deleted. Please sign in again once to finalize Firebase credential removal.'
+        );
+      }
+      // If server Admin SDK already deleted the Auth record, sign out gracefully
+      await logout().catch(() => {});
+    }
+    setIsCheckoutModalOpen(false);
   };
 
   const handleImportJson = async (jsonString: string) => {
@@ -379,6 +550,71 @@ function BizPulseWorkspace() {
     });
   };
 
+  const handleSynthesizeDocuments = (synthesis: CrossDocumentSynthesis) => {
+    if (!activeCase) return;
+    persistCase(
+      {
+        ...activeCase,
+        crossDocumentSynthesis: synthesis,
+        updatedAt: new Date().toISOString(),
+      },
+      true
+    );
+  };
+
+  const handleAddOpportunityToPlan = (opp: ProfitOpportunityItem) => {
+    if (!activeCase) return;
+    const horizon: TurnaroundAction['horizon'] =
+      opp.horizon === '0-30 Days'
+        ? '30 Days (Quick Wins & Control)'
+        : opp.horizon === '30-90 Days'
+        ? '60 Days (Systems & Margin Fixes)'
+        : '90 Days (Sustainable Growth)';
+
+    const existingPlan = activeCase.actionPlan || [];
+    if (existingPlan.some((a) => a.action.toLowerCase() === opp.title.toLowerCase())) {
+      showNotice(`"${opp.title}" is already in your 30/60/90-Day Action Plan.`);
+      return;
+    }
+
+    const newAction: TurnaroundAction = {
+      id: `act-opp-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      horizon,
+      priority: opp.horizon === '0-30 Days' ? 'Priority 1 (Urgent)' : 'Priority 2 (High)',
+      businessIssue: `Profit Opportunity (${opp.area})`,
+      action: opp.title,
+      accountableRole: 'Business Owner',
+      timeframe: opp.horizon,
+      requiredInformationOrResources: [opp.evidenceBasis],
+      measurableSuccessIndicator: opp.estimatedFinancialImpact,
+      dependencyOrRisk: opp.risks?.[0] || 'Confirm baseline margins before scaling.',
+      status: 'pending',
+      completed: false,
+      decisionStatus: 'accepted',
+      estimatedCostEffort: opp.effortCost,
+      intendedImprovement: opp.estimatedFinancialImpact,
+      sourceTag: 'Profit Opportunity',
+    };
+
+    persistCase({
+      ...activeCase,
+      actionPlan: [newAction, ...existingPlan],
+      updatedAt: new Date().toISOString(),
+    });
+    showNotice(`Added "${opp.title}" to your 30/60/90-Day Action Plan.`);
+  };
+
+  const handleTestOpportunityInRoi = (opp: ProfitOpportunityItem) => {
+    setPendingRoiDraft({
+      linkedCrmId: opp.linkedCrmId || opp.id,
+      linkedCrmLabel: opp.title,
+      opportunityValue: 0,
+      monthlyValue: 0,
+      notes: `[${opp.area} · ${opp.horizon}] Impact: ${opp.estimatedFinancialImpact}. Effort/Cost: ${opp.effortCost}. Basis: ${opp.evidenceBasis}`,
+    });
+    setActiveTab('options');
+  };
+
   const handleTrackUsage = (
     field: 'coachMessagesCount' | 'documentsAnalyzedCount' | 'recommendationsCount'
   ) => {
@@ -463,27 +699,6 @@ function BizPulseWorkspace() {
     setActiveTab('options');
   };
 
-  const handleSelectPreviewTier = (tier: SubscriptionTier) => {
-    if (!activeCase) return;
-    persistCase({
-      ...activeCase,
-      subscriptionTier: tier,
-      updatedAt: new Date().toISOString(),
-    });
-  };
-
-  const handlePaymentSuccess = (paymentRecord: any) => {
-    if (!activeCase) return;
-    persistCase({
-      ...activeCase,
-      isUnlocked: true,
-      paymentStatus: 'paid',
-      paymentRecord,
-      updatedAt: new Date().toISOString(),
-    });
-    setIsCheckoutModalOpen(false);
-  };
-
   const handlePrint = () => {
     setActiveTab('memo');
     setIsExportModalOpen(false);
@@ -503,12 +718,12 @@ function BizPulseWorkspace() {
   // 1. Auth verification screen
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center text-[#111113] font-sans">
-        <div className="w-12 h-12 rounded bg-[#111113] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#D97706]">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center text-[#0F172A] font-sans">
+        <div className="w-12 h-12 rounded bg-[#0B1324] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#2563EB]">
           BP
         </div>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#52525B] font-mono">
-          <RefreshCw className="w-4 h-4 animate-spin text-[#D97706]" />
+        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#475569] font-mono">
+          <RefreshCw className="w-4 h-4 animate-spin text-[#2563EB]" />
           <span>Verifying session...</span>
         </div>
       </div>
@@ -523,12 +738,12 @@ function BizPulseWorkspace() {
   // 3. Initial Firestore load
   if (casesLoading || !activeCase) {
     return (
-      <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center text-[#111113] font-sans">
-        <div className="w-12 h-12 rounded bg-[#111113] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#D97706]">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center text-[#0F172A] font-sans">
+        <div className="w-12 h-12 rounded bg-[#0B1324] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#2563EB]">
           BP
         </div>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#52525B] font-mono">
-          <Database className="w-4 h-4 text-[#D97706]" />
+        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#475569] font-mono">
+          <Database className="w-4 h-4 text-[#2563EB]" />
           <span>Loading your private SME workspace...</span>
         </div>
       </div>
@@ -537,13 +752,14 @@ function BizPulseWorkspace() {
 
   // 4. Authenticated Workspace
   return (
-    <div className="min-h-screen bg-[#F8F7F4] text-[#111113] flex flex-col font-sans selection:bg-[#D97706]/20 selection:text-[#111113]">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-[#2563EB]/20 selection:text-[#0F172A]">
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeProfile={activeCase.profile}
         overallHealth={activeCase.overallHealth}
         subscriptionTier={activeCase.subscriptionTier}
+        accountUsage={accountUsage}
         isUnlocked={activeCase.isUnlocked}
         userEmail={currentUser.email}
         onOpenCoachModal={() => {
@@ -598,7 +814,7 @@ function BizPulseWorkspace() {
             <button
               type="button"
               onClick={() => setFirestoreError(null)}
-              className="text-[#B45309] hover:text-[#111113] text-xs px-2 py-0.5 rounded font-semibold"
+              className="text-[#B45309] hover:text-[#0F172A] text-xs px-2 py-0.5 rounded font-semibold"
             >
               Dismiss
             </button>
@@ -636,6 +852,8 @@ function BizPulseWorkspace() {
             caseRecord={activeCase}
             onAddDocument={handleAddDocument}
             onDeleteDocument={handleDeleteDocument}
+            onSynthesizeDocuments={handleSynthesizeDocuments}
+            onAccountUsageUpdate={setAccountUsage}
             onDiscussInCoach={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -651,10 +869,15 @@ function BizPulseWorkspace() {
             financials={activeCase.financials}
             overallHealth={activeCase.overallHealth}
             uploadedDocuments={activeCase.uploadedDocuments}
+            crossDocumentSynthesis={activeCase.crossDocumentSynthesis}
             crmContacts={activeCase.crmContacts}
             roiScenarios={activeCase.roiScenarios}
+            actionPlan={activeCase.actionPlan}
             recommendations={activeCase.recommendations}
             onUpdateRecommendations={handleUpdateRecommendations}
+            onAddOpportunityToPlan={handleAddOpportunityToPlan}
+            onTestOpportunityInRoi={handleTestOpportunityInRoi}
+            onAccountUsageUpdate={setAccountUsage}
             onTrackUsage={handleTrackUsage}
             onOpenChallengeMe={() => setActiveTab('challengeme')}
             onNavigateToConsole={(prompt) => {
@@ -694,6 +917,7 @@ function BizPulseWorkspace() {
             onUpdateBusinessDevPlan={handleUpdateBusinessDevPlan}
             onEvaluateOpportunityInRoi={handleEvaluateOpportunityInRoi}
             onTrackUsage={handleTrackUsage}
+            onAccountUsageUpdate={setAccountUsage}
             onOpenCoachWithPrompt={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -736,6 +960,7 @@ function BizPulseWorkspace() {
             key={`sprint-${activeCase.id}`}
             caseRecord={activeCase}
             onToggleSprintItem={handleToggleSprintItem}
+            onUpdateActionPlan={handleUpdateActionPlan}
           />
         )}
 
@@ -747,6 +972,7 @@ function BizPulseWorkspace() {
               persistCase(updated);
             }}
             onTrackUsage={handleTrackUsage}
+            onAccountUsageUpdate={setAccountUsage}
             onOpenCoachWithPrompt={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -760,6 +986,7 @@ function BizPulseWorkspace() {
             caseRecord={activeCase}
             initialPrompt={coachInitialPrompt}
             onTrackUsage={handleTrackUsage}
+            onAccountUsageUpdate={setAccountUsage}
             onOpenChallengeMe={() => setActiveTab('challengeme')}
             onUpdateCase={(updated) => {
               persistCase(updated);
@@ -786,19 +1013,22 @@ function BizPulseWorkspace() {
         caseRecord={activeCase}
         isOpen={isCheckoutModalOpen}
         onClose={() => setIsCheckoutModalOpen(false)}
-        onPaymentSuccess={handlePaymentSuccess}
-        onSelectPreviewTier={handleSelectPreviewTier}
+        accountUsage={accountUsage}
+        userEmail={currentUser.email}
+        onUsageUpdated={setAccountUsage}
+        onExportAllAccountData={handleExportAllAccountData}
+        onDeleteAccount={handleDeleteAccount}
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#111113]/10 py-5 text-center text-xs text-[#52525B] print:hidden">
+      <footer className="bg-white border-t border-[#0F172A]/10 py-5 text-center text-xs text-[#475569] print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             Relaunch BizPulse © 2026 • Executive Coaching &amp; Diagnostic OS
           </span>
           <div className="flex items-center gap-2">
             <span>Active Session:</span>
-            <strong className="text-[#111113]">{activeCase.profile.name}</strong>
+            <strong className="text-[#0F172A]">{activeCase.profile.name}</strong>
           </div>
         </div>
       </footer>

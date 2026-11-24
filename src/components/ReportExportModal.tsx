@@ -176,7 +176,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         }
       );
       slide2.addText(
-        `Summary: ${overallHealth?.overallExplanation || 'Complete all 8 dimensions for diagnostic synthesis.'}\n\nPrimary Objective: ${profile.primaryObjective}\nStated Concern: ${profile.primaryConcern || 'Unspecified'}\nWorkforce: ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors`,
+        `Summary: ${overallHealth?.overallExplanation || 'Complete all 12 capabilities for diagnostic synthesis.'}\n\nPrimary Objective: ${profile.primaryObjective}\nStated Concern: ${profile.primaryConcern || 'Unspecified'}\nWorkforce: ${profile.employeeCount} staff, ${profile.subcontractorCount} subcontractors${profile.turnoverRange ? `\nTurnover Range: ${profile.turnoverRange}` : ''}`,
         {
           x: 0.8,
           y: 2.0,
@@ -187,10 +187,10 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         }
       );
 
-      // Slide 3: 8 Dimensions Scorecard Table
+      // Slide 3: 12 Capabilities Scorecard Table
       const slide3 = pres.addSlide();
       slide3.background = { color: '0F172A' };
-      slide3.addText('Eight Commercial Health Dimensions', {
+      slide3.addText('Twelve Business Health Capabilities', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
@@ -213,7 +213,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               ? 'F87171'
               : item.status === 'needs_attention'
               ? 'FBBF24'
-              : '94A3B8';
+              : '60A5FA';
           return [
             { text: item.title, options: { color: 'FFFFFF', fill: '0F172A' } },
             { text: item.status.replace('_', ' ').toUpperCase(), options: { color, bold: true, fill: '0F172A' } },
@@ -224,10 +224,10 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       ];
       slide3.addTable(tableData, { x: 0.8, y: 1.2, w: 11.5, fontSize: 10 });
 
-      // Slide 4: Coaching Recommendations
+      // Slide 4: Coaching Recommendations & Sustainability
       const slide4 = pres.addSlide();
       slide4.background = { color: '0F172A' };
-      slide4.addText('Diagnostic Coaching & Immediate Priority Actions', {
+      slide4.addText('Diagnostic Coaching & Strategic Choice', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
@@ -235,15 +235,18 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         bold: true,
       });
       if (recommendations) {
+        const sustLine = recommendations.sustainabilityAssessment
+          ? `\n\nSustainability Choice: ${recommendations.sustainabilityAssessment.recommendedChoice} — ${recommendations.sustainabilityAssessment.choiceRationale}`
+          : '';
         slide4.addText(
-          `Primary Observation:\n${recommendations.initialObservation}\n\nCommercial Why:\n${recommendations.commercialWhy}\n\nCore Recommendation:\n${recommendations.initialRecommendation}\n\nImmediate 48–72h Action:\n${recommendations.immediateAction}`,
+          `Primary Observation:\n${recommendations.initialObservation}\n\nCommercial Why:\n${recommendations.commercialWhy}\n\nCore Recommendation:\n${recommendations.initialRecommendation}\n\nImmediate 48–72h Action:\n${recommendations.immediateAction}${sustLine}`,
           {
             x: 0.8,
             y: 1.3,
             w: 11.5,
-            fontSize: 12,
+            fontSize: 11.5,
             color: 'E2E8F0',
-            lineSpacing: 17,
+            lineSpacing: 16,
           }
         );
       } else {
@@ -253,6 +256,47 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           fontSize: 14,
           color: '94A3B8',
         });
+      }
+
+      // Slide 5: CRM & ROI Highlights (when populated)
+      if ((caseRecord.crmContacts?.length || 0) > 0 || (caseRecord.roiScenarios?.length || 0) > 0) {
+        const slide5 = pres.addSlide();
+        slide5.background = { color: '0F172A' };
+        slide5.addText('CRM Pipeline & ROI Investment Scenarios', {
+          x: 0.8,
+          y: 0.6,
+          fontSize: 22,
+          color: '60A5FA',
+          bold: true,
+        });
+        const crmLines = (caseRecord.crmContacts || [])
+          .slice(0, 5)
+          .map(
+            (c) =>
+              `• ${c.companyOrName} (${c.recordType} · ${c.salesStage}) — ${profile.currency} ${Number(c.monthlyValue || 0).toLocaleString()}/mo | Opp ${profile.currency} ${Number(c.opportunityValue || 0).toLocaleString()}`
+          )
+          .join('\n');
+        const roiLines = (caseRecord.roiScenarios || [])
+          .slice(0, 4)
+          .map((s) => {
+            const netGain =
+              ((s.expectedMonthlyRevenue * s.grossMarginPct) / 100 - s.monthlyOperatingCost) *
+                s.monthsHorizon -
+              s.upfrontInvestment;
+            return `• ${s.name}: Upfront ${profile.currency} ${s.upfrontInvestment.toLocaleString()} -> ${s.monthsHorizon}m Net ${profile.currency} ${Math.round(netGain).toLocaleString()}`;
+          })
+          .join('\n');
+        slide5.addText(
+          `${crmLines ? `Top CRM Pipeline:\n${crmLines}\n\n` : ''}${roiLines ? `ROI Scenarios:\n${roiLines}` : ''}`,
+          {
+            x: 0.8,
+            y: 1.3,
+            w: 11.5,
+            fontSize: 11.5,
+            color: 'E2E8F0',
+            lineSpacing: 17,
+          }
+        );
       }
 
       await pres.writeFile({ fileName: `${safeFilename}_Presentation.pptx` });
@@ -292,14 +336,14 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         : '#F87171';
 
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" style="background:#070B14; font-family:sans-serif;">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="790" viewBox="0 0 900 790" style="background:#070B14; font-family:sans-serif;">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#070B14"/>
       <stop offset="100%" stop-color="#0F172A"/>
     </linearGradient>
   </defs>
-  <rect width="900" height="620" fill="url(#bg)"/>
+  <rect width="900" height="790" fill="url(#bg)"/>
   <text x="40" y="48" fill="#60A5FA" font-size="16" font-weight="bold">Relaunch BizPulse • Executive Health Infographic</text>
   <text x="40" y="80" fill="#FFFFFF" font-size="24" font-weight="bold">${safeName}</text>
   <text x="40" y="106" fill="#CBD5E1" font-size="13">${safeIndustry} • ${safeCountry} (${safeCurrency}) • Case: ${safeCaseId}</text>
@@ -309,7 +353,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   <text x="755" y="90" fill="${scoreColor}" font-size="26" text-anchor="middle" font-weight="bold">${escapeXml(scoreText)}</text>
   <text x="755" y="110" fill="#E2E8F0" font-size="11" text-anchor="middle">${escapeXml(rating)}</text>
 
-  <text x="40" y="152" fill="#93C5FD" font-size="15" font-weight="bold">The Eight Commercial Health Dimensions</text>
+  <text x="40" y="152" fill="#93C5FD" font-size="15" font-weight="bold">The Twelve Business Health Capabilities</text>
   ${dims
     .map((d, i) => {
       const col = i % 2;
@@ -323,7 +367,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           ? '#F59E0B'
           : d.status === 'at_risk'
           ? '#EF4444'
-          : '#64748B';
+          : '#3B82F6';
       const safeTitle = escapeXml(d.title);
       const safeStatus = escapeXml(d.status.replace('_', ' ').toUpperCase());
       const safeNotes = escapeXml((d.notes || 'No specific notes entered').substring(0, 52));
@@ -338,8 +382,8 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     })
     .join('')}
 
-  <rect x="40" y="545" width="820" height="44" rx="8" fill="#111C33" stroke="#1E3A8A" stroke-width="1"/>
-  <text x="56" y="572" fill="#CBD5E1" font-size="11">Objective: ${safeObjective.substring(0, 75)}</text>
+  <rect x="40" y="720" width="820" height="44" rx="8" fill="#111C33" stroke="#1E3A8A" stroke-width="1"/>
+  <text x="56" y="747" fill="#CBD5E1" font-size="11">Objective: ${safeObjective.substring(0, 75)}</text>
 </svg>`;
 
     const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -376,7 +420,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       md += `- **Assessment Date:** ${overallHealth.assessmentDate}\n\n`;
     }
 
-    md += `## 3. Eight Commercial Health Dimensions\n\n`;
+    md += `## 3. Twelve Business Health Capabilities\n\n`;
     Object.values(healthInputs).forEach((h) => {
       md += `### ${h.title}\n`;
       md += `- **Status:** ${h.status.replace('_', ' ').toUpperCase()}\n`;
@@ -389,6 +433,20 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       md += `### Commercial Why\n${recommendations.commercialWhy}\n\n`;
       md += `### Strategic Recommendation\n${recommendations.initialRecommendation}\n\n`;
       md += `### Immediate 48–72 Hour Action\n${recommendations.immediateAction}\n\n`;
+      if (recommendations.profitOpportunities?.length) {
+        md += `### Profit & Revenue Opportunities\n`;
+        recommendations.profitOpportunities.forEach((opp) => {
+          md += `- **${opp.title}** (${opp.area} · ${opp.horizon}): ${opp.estimatedFinancialImpact} — ${opp.whatToDoFirst || opp.evidenceBasis}\n`;
+        });
+        md += `\n`;
+      }
+      if (recommendations.sustainabilityAssessment) {
+        const sust = recommendations.sustainabilityAssessment;
+        md += `### Business Sustainability & Strategic Choice: ${sust.recommendedChoice}\n`;
+        md += `- **Current Position:** ${sust.currentPositionSummary}\n`;
+        md += `- **6–12 Month Outlook:** ${sust.futureOutlook6to12Months}\n`;
+        md += `- **Rationale:** ${sust.choiceRationale}\n\n`;
+      }
       if (recommendations.actionItems?.length) {
         md += `### Prioritized Action Checklist\n`;
         recommendations.actionItems.forEach((a) => {
@@ -396,6 +454,22 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         });
         md += `\n`;
       }
+    }
+
+    if ((caseRecord.crmContacts?.length || 0) > 0) {
+      md += `## CRM Pipeline (${caseRecord.crmContacts?.length})\n\n`;
+      caseRecord.crmContacts?.forEach((c) => {
+        md += `- **${c.companyOrName}** (${c.recordType} · ${c.tier}) — Stage: ${c.salesStage} · Monthly: ${profile.currency} ${c.monthlyValue} · Opp: ${profile.currency} ${c.opportunityValue}\n`;
+      });
+      md += `\n`;
+    }
+
+    if ((caseRecord.roiScenarios?.length || 0) > 0) {
+      md += `## ROI Scenarios (${caseRecord.roiScenarios?.length})\n\n`;
+      caseRecord.roiScenarios?.forEach((s) => {
+        md += `- **${s.name}** (${s.category}) — Upfront: ${profile.currency} ${s.upfrontInvestment}, Monthly Rev: ${profile.currency} ${s.expectedMonthlyRevenue} @ ${s.grossMarginPct}% GM\n`;
+      });
+      md += `\n`;
     }
 
     if (uploadedDocuments && uploadedDocuments.length > 0) {
@@ -467,6 +541,22 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       rows.push(['Credit Facility Limit', financials.creditFacilityLimit?.toString() || '', profile.currency]);
     }
 
+    if (caseRecord.crmContacts && caseRecord.crmContacts.length > 0) {
+      rows.push([]);
+      rows.push(['CRM Account', 'Type', 'Tier', 'Stage', 'Status', `Monthly (${profile.currency})`, `Opportunity (${profile.currency})`]);
+      caseRecord.crmContacts.forEach((c) => {
+        rows.push([
+          `"${c.companyOrName.replace(/"/g, '""')}"`,
+          `"${c.recordType}"`,
+          `"${c.tier}"`,
+          `"${c.salesStage}"`,
+          `"${c.status}"`,
+          String(c.monthlyValue || 0),
+          String(c.opportunityValue || 0),
+        ]);
+      });
+    }
+
     const csvContent = rows.map((r) => r.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -481,19 +571,19 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111113]/65 backdrop-blur-xs p-4">
-      <div className="bg-white border border-[#111113]/15 rounded w-full max-w-2xl shadow-2xl overflow-hidden text-[#111113]">
-        {/* Architectural Charcoal Modal Header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/65 backdrop-blur-xs p-4">
+      <div className="bg-white border border-[#0F172A]/15 rounded w-full max-w-2xl shadow-2xl overflow-hidden text-[#0F172A]">
+        {/* Architectural Executive Navy Modal Header */}
         <div className="bizpulse-bar-gradient text-white px-6 py-4 flex items-center justify-between border-b border-white/10">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded bg-[#D97706] text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-[#2563EB] text-white flex items-center justify-center">
               <Download className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-bold text-white text-base">
                 Export Executive Reports &amp; Presentations
               </h3>
-              <p className="text-xs text-[#D4D4D8]">
+              <p className="text-xs text-[#CBD5E1]">
                 Isolated Export for {profile.name} ({profile.country})
               </p>
             </div>
@@ -501,7 +591,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded text-[#D4D4D8] hover:text-white hover:bg-white/10 transition"
+            className="p-1.5 rounded text-[#CBD5E1] hover:text-white hover:bg-white/10 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -527,16 +617,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadDirectPdf}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
               <div className="w-8 h-8 rounded bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center border border-[#FECACA]">
                 <Printer className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
                   PDF Report (.pdf)
                 </span>
-                <span className="text-[11px] text-[#52525B]">
+                <span className="text-[11px] text-[#475569]">
                   Paginated layout with radar &amp; bar charts
                 </span>
               </div>
@@ -547,16 +637,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadWordDoc}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded bg-[#111113] text-[#FBBF24] flex items-center justify-center border border-[#111113]">
+              <div className="w-8 h-8 rounded bg-[#0F172A] text-[#60A5FA] flex items-center justify-center border border-[#0F172A]">
                 <FileText className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
                   Word (.docx)
                 </span>
-                <span className="text-[11px] text-[#52525B]">
+                <span className="text-[11px] text-[#475569]">
                   Editable OpenXML report + chart image
                 </span>
               </div>
@@ -567,16 +657,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadPowerPointDeck}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded bg-[#FFFBEB] text-[#B45309] flex items-center justify-center border border-[#FDE68A]">
+              <div className="w-8 h-8 rounded bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center border border-[#BFDBFE]">
                 <Presentation className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
                   Slides (.pptx)
                 </span>
-                <span className="text-[11px] text-[#52525B]">
+                <span className="text-[11px] text-[#475569]">
                   Executive presentation briefing deck
                 </span>
               </div>
@@ -587,23 +677,23 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadInfographic}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:border-[#D97706] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
               <div className="w-8 h-8 rounded bg-[#ECFDF5] text-[#15803D] flex items-center justify-center border border-[#A7F3D0]">
                 <ImageIcon className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#111113] text-xs block group-hover:text-[#D97706]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
                   Infographic (.svg)
                 </span>
-                <span className="text-[11px] text-[#52525B]">
-                  Vector 8-dimension health summary
+                <span className="text-[11px] text-[#475569]">
+                  Vector 12-capability health summary
                 </span>
               </div>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#111113]/10 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#0F172A]/10 text-xs">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -611,25 +701,25 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
                   onClose();
                   onPrintReport();
                 }}
-                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
+                className="text-[#475569] hover:text-[#0F172A] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:bg-white transition font-medium"
               >
-                <Printer className="w-3.5 h-3.5 text-[#D97706]" />
+                <Printer className="w-3.5 h-3.5 text-[#2563EB]" />
                 <span>Print View</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleDownloadMarkdown}
-                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
+                className="text-[#475569] hover:text-[#0F172A] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:bg-white transition font-medium"
               >
-                <FileCode className="w-3.5 h-3.5 text-[#111113]" />
+                <FileCode className="w-3.5 h-3.5 text-[#0F172A]" />
                 <span>Markdown (.md)</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleDownloadCsv}
-                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
+                className="text-[#475569] hover:text-[#0F172A] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:bg-white transition font-medium"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-[#15803D]" />
                 <span>Scorecard (.csv)</span>
@@ -638,20 +728,20 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadJson}
-                className="text-[#52525B] hover:text-[#111113] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8F7F4] border border-[#111113]/12 hover:bg-white transition font-medium"
+                className="text-[#475569] hover:text-[#0F172A] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:bg-white transition font-medium"
               >
-                <Database className="w-3.5 h-3.5 text-[#52525B]" />
+                <Database className="w-3.5 h-3.5 text-[#475569]" />
                 <span>Full Data (.json)</span>
               </button>
             </div>
 
-            <span className="text-[11px] text-[#52525B] font-mono">
+            <span className="text-[11px] text-[#475569] font-mono">
               Case ID: {profile.caseId}
             </span>
           </div>
 
-          <div className="p-3 bg-[#F8F7F4] rounded border border-[#111113]/10 text-[11px] text-[#52525B] flex items-start gap-2">
-            <Activity className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
+          <div className="p-3 bg-[#F8FAFC] rounded border border-[#0F172A]/10 text-[11px] text-[#475569] flex items-start gap-2">
+            <Activity className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
             <span>
               All exports compile strictly from <strong>{profile.name}</strong> and never mix figures from other saved businesses.
             </span>

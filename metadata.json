@@ -1,6 +1,6 @@
 {
   "name": "Relaunch BizPulse — Executive IT Coaching & Diagnostic OS",
-  "description": "Executive commercial business coaching, working capital triage, customer profitability matrix, and 90-day turnaround operating system for managed IT service providers.",
+  "description": "AI-powered business health, sustainability, basic CRM, ROI modeling, and 90-day turnaround operating system for SMEs (1–20 employees across trades, services, retail, and family-owned businesses).",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

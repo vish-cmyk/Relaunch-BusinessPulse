@@ -42,7 +42,7 @@ export function sanitizeForFirestore<T>(data: T): T {
 }
 
 /**
- * Generates brand new pristine 8-dimension health inputs with zero answers carry-over.
+ * Generates brand new pristine 12-capability health inputs with zero answers carry-over.
  */
 export function createPristineHealthInputs(): Record<HealthDimensionKey, HealthDimensionInput> {
   const result: Record<string, HealthDimensionInput> = {};
@@ -79,6 +79,7 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
     yearsOperating: profileOverrides?.yearsOperating || 3,
     employeeCount: profileOverrides?.employeeCount ?? 10,
     subcontractorCount: profileOverrides?.subcontractorCount ?? 0,
+    turnoverRange: profileOverrides?.turnoverRange || '',
     mainProductsServices: profileOverrides?.mainProductsServices || '',
     mainCustomerTypes: profileOverrides?.mainCustomerTypes || '',
     primaryObjective: profileOverrides?.primaryObjective || 'Improve profitability and working capital cash flow',
@@ -98,11 +99,12 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
     financials: null,
     recommendations: null,
     uploadedDocuments: [],
+    crossDocumentSynthesis: null,
     conversations: [
       {
         id: 'msg-' + Date.now(),
         sender: 'coach',
-        text: `Welcome to BizPulse. I am your commercial business coach. Please complete your Business Essentials and the 8 Health Dimensions to generate your evidence-based turnaround diagnostic.`,
+        text: `Welcome to BizPulse. I am your commercial business coach. Please complete your Business Essentials and the 12 Business Health Capabilities to generate your evidence-based turnaround diagnostic.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
     ],
@@ -127,9 +129,37 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
 }
 
 function normalizeLoadedCase(data: CaseRecord): CaseRecord {
+  const rawHealth = (data.healthInputs || {}) as Record<string, HealthDimensionInput>;
+  const hydratedHealth: Record<string, HealthDimensionInput> = {};
+  const allKeys = Object.keys(INITIAL_EMPTY_HEALTH_INPUTS) as HealthDimensionKey[];
+
+  for (const key of allKeys) {
+    const existing = rawHealth[key];
+    hydratedHealth[key] = existing
+      ? {
+          ...existing,
+          key,
+          title:
+            key === 'technology'
+              ? INITIAL_EMPTY_HEALTH_INPUTS.technology.title
+              : existing.title || INITIAL_EMPTY_HEALTH_INPUTS[key].title,
+          description: existing.description || INITIAL_EMPTY_HEALTH_INPUTS[key].description,
+        }
+      : {
+          key,
+          title: INITIAL_EMPTY_HEALTH_INPUTS[key].title,
+          description: INITIAL_EMPTY_HEALTH_INPUTS[key].description,
+          status: 'unanswered',
+          notes: '',
+          evidenceType: 'unknown',
+        };
+  }
+
   return {
     ...data,
+    healthInputs: hydratedHealth as Record<HealthDimensionKey, HealthDimensionInput>,
     uploadedDocuments: Array.isArray(data.uploadedDocuments) ? data.uploadedDocuments : [],
+    crossDocumentSynthesis: data.crossDocumentSynthesis ?? null,
     conversations: Array.isArray(data.conversations) ? data.conversations : [],
     actionPlan: Array.isArray(data.actionPlan) ? data.actionPlan : [],
     dashboardMetrics: Array.isArray(data.dashboardMetrics) ? data.dashboardMetrics : [],

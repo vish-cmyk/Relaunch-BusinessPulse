@@ -196,6 +196,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
+          continuity: caseRecord.continuity || null,
         }),
       });
 

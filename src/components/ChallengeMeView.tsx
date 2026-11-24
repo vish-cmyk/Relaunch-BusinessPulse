@@ -140,6 +140,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
     roiScenarios: caseRecord.roiScenarios || [],
     recommendations: caseRecord.recommendations,
     actionPlan: caseRecord.actionPlan || [],
+    continuity: caseRecord.continuity || null,
   });
 
   const handleStartChallenge = async () => {

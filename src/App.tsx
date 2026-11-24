@@ -36,6 +36,7 @@ import {
   AccountUsageSummary,
   CrossDocumentSynthesis,
   ProfitOpportunityItem,
+  MembershipContinuity,
 } from './types/bizpulse';
 import {
   subscribeUserCases,
@@ -512,6 +513,15 @@ function BizPulseWorkspace() {
     });
   };
 
+  const handleUpdateContinuity = (continuity: MembershipContinuity) => {
+    if (!activeCase) return;
+    persistCase({
+      ...activeCase,
+      continuity,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   const handleUpdateFinancials = (fin: FinancialData) => {
     if (!activeCase) return;
     const newOverallHealth = calculateOverallHealth(activeCase.healthInputs, fin);
@@ -873,6 +883,7 @@ function BizPulseWorkspace() {
             crmContacts={activeCase.crmContacts}
             roiScenarios={activeCase.roiScenarios}
             actionPlan={activeCase.actionPlan}
+            continuity={activeCase.continuity}
             recommendations={activeCase.recommendations}
             onUpdateRecommendations={handleUpdateRecommendations}
             onAddOpportunityToPlan={handleAddOpportunityToPlan}
@@ -952,6 +963,8 @@ function BizPulseWorkspace() {
           <WeeklyDashboardView
             key={`dash-${activeCase.id}`}
             caseRecord={activeCase}
+            onUpdateContinuity={handleUpdateContinuity}
+            onAccountUsageUpdate={setAccountUsage}
           />
         )}
 

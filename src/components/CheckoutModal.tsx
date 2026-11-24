@@ -13,9 +13,11 @@ import {
   ExternalLink,
   AlertTriangle,
   Activity,
+  BarChart3,
 } from 'lucide-react';
 import { AccountUsageSummary, CaseRecord } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
+import { PUBLIC_MEMBERSHIP_PLANS, MEMBERSHIP_BILLING_POLICIES } from '../data/membershipPlans';
 
 interface CheckoutModalProps {
   caseRecord: CaseRecord;
@@ -30,55 +32,27 @@ interface CheckoutModalProps {
 
 type PaidTierId = 'starter_monthly' | 'growth_monthly' | 'business_plus_monthly';
 
-const PLAN_CARDS: Array<{
-  id: PaidTierId;
-  badge: string;
-  name: string;
-  priceNzd: number;
-  highlight?: boolean;
-  features: string[];
-}> = [
-  {
-    id: 'starter_monthly',
-    badge: 'Starter',
-    name: 'Starter Plan',
-    priceNzd: 29,
-    features: [
-      'Up to 3 active business sessions',
-      '35 AI Coach & Challenge queries / month',
-      '10 Document audits & synthesis / month',
-      '10 Deep diagnostic plans / month',
-      'Full 12-Capability scoring, CRM, ROI & Exports',
-    ],
-  },
-  {
-    id: 'growth_monthly',
-    badge: 'Most Popular',
-    name: 'Growth Plan',
-    priceNzd: 59,
-    highlight: true,
-    features: [
-      'Up to 10 active business sessions',
-      '150 AI Coach & Challenge queries / month',
-      '40 Document audits & synthesis / month',
-      '30 Deep diagnostic plans / month',
-      'Full 12-Capability scoring, CRM, ROI & Exports',
-    ],
-  },
-  {
-    id: 'business_plus_monthly',
-    badge: 'Business Plus',
-    name: 'Business Plus',
-    priceNzd: 99,
-    features: [
-      'Up to 30 multi-entity business sessions',
-      '500 AI Coach & Challenge queries / month',
-      '150 Document audits & synthesis / month',
-      '100 Deep diagnostic plans / month',
-      'Priority advisor capacity + full telemetry',
-    ],
-  },
-];
+interface AdminMetricsData {
+  monthKey: string;
+  totalRegisteredAccounts: number;
+  tierCounts: Record<string, number>;
+  pastDueAccounts: number;
+  estimatedMonthlyMrrNzd: number;
+  targetMrrNzd: number;
+  targetProgressPct: number;
+  monthlyAiUsage: {
+    totalRequests: number;
+    totalTokens: number;
+    estimatedCostUsd: number;
+    estimatedCostNzd: number;
+    estimatedGrossMarginNzd: number;
+  };
+}
+
+const PAID_PLAN_CARDS = PUBLIC_MEMBERSHIP_PLANS.filter(
+  (p): p is (typeof PUBLIC_MEMBERSHIP_PLANS)[number] & { id: PaidTierId } => p.id !== 'free_trial'
+);
+const FREE_PLAN = PUBLIC_MEMBERSHIP_PLANS.find((p) => p.id === 'free_trial')!;
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   caseRecord,
@@ -102,6 +76,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   );
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [adminMetrics, setAdminMetrics] = useState<AdminMetricsData | null>(null);
 
   useEffect(() => {
     if (
@@ -113,16 +88,34 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
   }, [activeTierId]);
 
+  useEffect(() => {
+    if (!isOpen || !accountUsage?.subscription?.isAdmin) {
+      setAdminMetrics(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const authHeaders = await getAuthHeaders();
+        const res = await fetch('/api/admin/metrics', { headers: authHeaders });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.adminMetrics) {
+          setAdminMetrics(data.adminMetrics);
+        }
+      } catch {
+        // Non-admin or offline; fail quietly
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, accountUsage?.subscription?.isAdmin]);
+
   if (!isOpen) return null;
 
-  const currency = caseRecord.profile.currency || 'NZD';
   const sub = accountUsage?.subscription;
-  const limits = accountUsage?.limits || {
-    maxCustomCases: 1,
-    coachMessagesPerMonth: 15,
-    documentAuditsPerMonth: 2,
-    recommendationsPerMonth: 3,
-  };
+  const limits = accountUsage?.limits || FREE_PLAN.limits;
   const used = accountUsage?.used || {
     coachMessages: 0,
     documentAudits: 0,
@@ -138,8 +131,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     requestCount: 0,
   };
 
-  const selectedPlanObj = PLAN_CARDS.find((p) => p.id === selectedTier) || PLAN_CARDS[0];
+  const selectedPlanObj = PAID_PLAN_CARDS.find((p) => p.id === selectedTier) || PAID_PLAN_CARDS[0];
   const isPaidActive = Boolean(sub && sub.tierId !== 'free_trial' && sub.status !== 'canceled');
+  const isPastDue = sub?.status === 'past_due';
+  const isCanceling = sub?.status === 'canceling';
 
   const handleCheckoutAction = async () => {
     setIsLoading(true);
@@ -157,7 +152,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           caseId: caseRecord.id,
           businessName: caseRecord.profile.name,
           userEmail: userEmail || undefined,
-          currency,
           tierId: selectedTier,
         }),
       });
@@ -169,7 +163,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           tone: 'info',
           text:
             data.error ||
-            'Stripe billing is not configured in this workspace yet. Live card checkout activates once STRIPE_SECRET_KEY is provided on the server.',
+            'Stripe billing is not configured on this server yet. Live card checkout activates once STRIPE_SECRET_KEY is configured.',
         });
         return;
       }
@@ -239,7 +233,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       }
       setNotice({
         tone: 'success',
-        text: 'Subscription cancellation updated cleanly. Your account data remains accessible.',
+        text: 'Subscription cancellation updated cleanly. Your saved business data remains accessible.',
       });
     } catch (err: any) {
       setNotice({ tone: 'error', text: err.message || 'Cancellation failed.' });
@@ -296,7 +290,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#60A5FA] block">
-                Account Plan, AI Usage &amp; Data Ownership
+                Membership Plan, AI Allowances &amp; Data Ownership
               </span>
               <h3 className="text-lg sm:text-xl font-bold text-white">
                 {sub?.planName || 'Free Trial'} · {userEmail || 'Authenticated Account'}
@@ -313,13 +307,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto">
-          {/* Account Stripe Status Notice */}
+          {isPastDue && (
+            <div className="p-3.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#B91C1C] flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <strong>Payment Past Due: </strong>
+                Your latest renewal payment did not succeed, so AI allowances have temporarily reverted to Free Trial limits while all your saved business records remain safe. Update your card in Manage Billing to restore paid allowances.
+              </div>
+            </div>
+          )}
+
+          {isCanceling && sub?.currentPeriodEnd && (
+            <div className="p-3.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs text-[#B45309] flex items-start gap-2.5">
+              <Info className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <strong>Cancellation Scheduled: </strong>
+                Your paid membership remains active until {new Date(sub.currentPeriodEnd).toLocaleDateString()} and will return to Free Trial limits after that date without deleting your saved data.
+              </div>
+            </div>
+          )}
+
           {!sub?.stripeConfigured && (
             <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#0F172A] flex items-start gap-2.5">
               <Info className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[#1D4ED8]">Account Quotas Active · Billing In Test/Preview: </strong>
-                Monthly usage limits and token metering are actively enforced per account. Live Stripe checkout activates automatically when server billing keys are enabled.
+                <strong className="text-[#1D4ED8]">Account Quotas Active · Billing Not Enabled Yet: </strong>
+                Monthly allowances and token metering are actively enforced per account. Card checkout activates automatically once Stripe server keys are connected.
               </div>
             </div>
           )}
@@ -339,7 +352,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {renderUsageMeter('AI Coach & Challenge', used.coachMessages, limits.coachMessagesPerMonth)}
               {renderUsageMeter('Document Audits', used.documentAudits, limits.documentAuditsPerMonth)}
-              {renderUsageMeter('Diagnostic Plans', used.recommendations, limits.recommendationsPerMonth)}
+              {renderUsageMeter('Diagnostics & Reviews', used.recommendations, limits.recommendationsPerMonth)}
               <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
                 <span className="text-[11px] text-[#475569] font-semibold block">
                   Custom Business Limit
@@ -348,19 +361,36 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   Up to {limits.maxCustomCases} session{limits.maxCustomCases === 1 ? '' : 's'}
                 </span>
                 <span className="text-[10px] text-[#475569] block">
-                  Demo MSP case does not consume slots
+                  Sample Demo case does not consume slots
                 </span>
               </div>
             </div>
           </div>
 
-          {/* 3-Tier Monthly Plans */}
+          {/* Free Trial Baseline Strip */}
+          <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div>
+              <span className="font-bold text-[#0F172A] block">
+                Free Trial Plan (NZ$0 / month)
+              </span>
+              <span className="text-[#475569]">
+                1 private business workspace · 15 AI Coach/Challenge turns · 2 document audits · 3 diagnostic plans/reviews per month.
+              </span>
+            </div>
+            {activeTierId === 'free_trial' && (
+              <span className="px-2.5 py-1 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] font-bold text-[11px] shrink-0">
+                Current Plan
+              </span>
+            )}
+          </div>
+
+          {/* 3-Tier Monthly Plans (Strictly NZD) */}
           <div className="space-y-2.5">
             <span className="text-xs font-bold uppercase tracking-wider text-[#475569] block">
-              Select Monthly Account Plan (NZ$ + GST)
+              Select Paid Monthly Membership (Billed in NZD)
             </span>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {PLAN_CARDS.map((plan) => {
+              {PAID_PLAN_CARDS.map((plan) => {
                 const isSelected = selectedTier === plan.id;
                 const isCurrent = activeTierId === plan.id;
                 return (
@@ -491,6 +521,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               )}
             </div>
 
+            <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-[11px] text-[#475569] space-y-1">
+              <p>
+                <strong className="text-[#0F172A]">Billing &amp; Allowance Policy: </strong>
+                {MEMBERSHIP_BILLING_POLICIES.currencyNotice} {MEMBERSHIP_BILLING_POLICIES.gstNotice}
+              </p>
+              <p>{MEMBERSHIP_BILLING_POLICIES.allowancePolicy}</p>
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#475569] px-1 font-medium">
               <span className="flex items-center gap-1">
                 <Lock className="w-3.5 h-3.5 text-[#2563EB]" />
@@ -498,10 +536,58 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </span>
               <span className="flex items-center gap-1 text-[#0F172A]">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#15803D]" />
-                <span>Subscriptions attach strictly to your verified account</span>
+                <span>Memberships attach strictly to your verified account</span>
               </span>
             </div>
           </div>
+
+          {/* Founder / Admin Unit Economics View (rendered strictly when server confirms ADMIN_EMAILS) */}
+          {adminMetrics && (
+            <div className="pt-5 border-t border-[#0F172A]/12 space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+                <BarChart3 className="w-4 h-4" />
+                <span>Founder Unit Economics ({adminMetrics.monthKey})</span>
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs tabular-nums">
+                <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE]">
+                  <span className="text-[10px] text-[#1D4ED8] uppercase font-bold block">Est. MRR vs Target</span>
+                  <strong className="text-base font-mono text-[#0F172A]">
+                    NZ${adminMetrics.estimatedMonthlyMrrNzd.toLocaleString()}
+                  </strong>
+                  <span className="text-[10px] text-[#475569] block">
+                    {adminMetrics.targetProgressPct}% of NZ${adminMetrics.targetMrrNzd.toLocaleString()} target
+                  </span>
+                </div>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/12">
+                  <span className="text-[10px] text-[#475569] uppercase font-bold block">Accounts by Tier</span>
+                  <strong className="text-base font-mono text-[#0F172A]">
+                    {adminMetrics.totalRegisteredAccounts} Total
+                  </strong>
+                  <span className="text-[10px] text-[#475569] block">
+                    F:{adminMetrics.tierCounts.free_trial || 0} S:{adminMetrics.tierCounts.starter_monthly || 0} G:{adminMetrics.tierCounts.growth_monthly || 0} B+:{adminMetrics.tierCounts.business_plus_monthly || 0}
+                  </span>
+                </div>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/12">
+                  <span className="text-[10px] text-[#475569] uppercase font-bold block">Platform AI Cost</span>
+                  <strong className="text-base font-mono text-[#0F172A]">
+                    NZ${adminMetrics.monthlyAiUsage.estimatedCostNzd.toFixed(2)}
+                  </strong>
+                  <span className="text-[10px] text-[#475569] block">
+                    {adminMetrics.monthlyAiUsage.totalTokens.toLocaleString()} tokens ({adminMetrics.monthlyAiUsage.totalRequests} calls)
+                  </span>
+                </div>
+                <div className="p-3 rounded bg-[#ECFDF5] border border-[#A7F3D0]">
+                  <span className="text-[10px] text-[#15803D] uppercase font-bold block">Net Margin Before Infra</span>
+                  <strong className="text-base font-mono text-[#15803D]">
+                    NZ${adminMetrics.monthlyAiUsage.estimatedGrossMarginNzd.toFixed(2)}
+                  </strong>
+                  <span className="text-[10px] text-[#475569] block">
+                    Past-due accounts: {adminMetrics.pastDueAccounts}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Data Ownership & Account Deletion Section */}
           <div className="pt-5 border-t border-[#0F172A]/12 space-y-4">
@@ -511,7 +597,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   Data Ownership, Export &amp; Account Deletion
                 </h4>
                 <p className="text-xs text-[#475569] mt-0.5">
-                  Download a complete JSON archive of all saved businesses, diagnostics, CRM records, and ROI models, or permanently erase your account.
+                  Download a complete JSON archive of all saved businesses, diagnostics, continuity logs, CRM records, and ROI models, or permanently erase your account.
                 </p>
               </div>
               {onExportAllAccountData && (

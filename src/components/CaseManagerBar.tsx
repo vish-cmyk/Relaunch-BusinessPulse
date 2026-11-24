@@ -95,7 +95,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
               </span>
               {activeCase.profile.isDemonstrationCase && (
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#2563EB]">
-                  · Demo
+                  · Sample Demo (Not Real Data)
                 </span>
               )}
               <ChevronDown className="w-3.5 h-3.5 text-[#475569]" />
@@ -220,7 +220,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                     className="p-2 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] border border-[#0F172A]/15 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
                   >
                     <FolderSync className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>Resume Demo MSP</span>
+                    <span>Sample Demo Business</span>
                   </button>
                 </div>
               </div>
@@ -275,7 +275,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
             title="Load benchmark NZ Managed IT Services example"
           >
             <FolderSync className="w-3 h-3 text-[#2563EB]" />
-            <span>Demo Case</span>
+            <span>Sample Demo</span>
           </button>
 
           <button

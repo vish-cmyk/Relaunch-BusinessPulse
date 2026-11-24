@@ -34,6 +34,7 @@ import {
   ProfitOpportunityItem,
   OpportunityHorizon,
   AccountUsageSummary,
+  MembershipContinuity,
 } from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
@@ -47,6 +48,7 @@ interface RecommendationViewProps {
   crmContacts?: CrmRecord[];
   roiScenarios?: RoiScenario[];
   actionPlan?: TurnaroundAction[];
+  continuity?: MembershipContinuity | null;
   recommendations: RecommendationOutput | null;
   onUpdateRecommendations: (rec: RecommendationOutput) => void;
   onAddOpportunityToPlan?: (opp: ProfitOpportunityItem) => void;
@@ -67,6 +69,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   crmContacts = [],
   roiScenarios = [],
   actionPlan = [],
+  continuity = null,
   recommendations,
   onUpdateRecommendations,
   onAddOpportunityToPlan,
@@ -109,6 +112,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           crmContacts,
           roiScenarios,
           actionPlan,
+          continuity,
         }),
       });
 
@@ -174,6 +178,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           crmContacts,
           roiScenarios,
           actionPlan,
+          continuity,
         }),
       });
 
@@ -796,7 +801,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                           {act.action}
                         </p>
                         <p className="text-xs text-[#475569]">
-                          Expected Impact: {act.expectedImpact}
+                          <strong>How to measure progress:</strong> {act.expectedImpact}
                         </p>
                       </div>
                     </div>

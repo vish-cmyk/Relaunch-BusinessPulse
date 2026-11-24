@@ -9,10 +9,17 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['id', 'profile', 'healthInputs'])
         && request.resource.data.id == caseId
         && request.resource.data.profile is map
-        && request.resource.data.healthInputs is map;
+        && request.resource.data.healthInputs is map
+        && (!('continuity' in request.resource.data) || request.resource.data.continuity == null || request.resource.data.continuity is map);
     }
 
-    // Default deny for all other collections
+    // Account billing & quota metadata: owner may read, only verified server Admin SDK may write
+    match /users/{userId}/account/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Default deny for all other collections (including stripeWebhookEvents)
     match /{document=**} {
       allow read, write: if false;
     }

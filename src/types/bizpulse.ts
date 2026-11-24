@@ -414,6 +414,8 @@ export interface AccountUsageSummary {
     stripeCustomerId?: string | null;
     stripeSubscriptionId?: string | null;
     stripeConfigured: boolean;
+    billingMode?: 'live' | 'test' | 'unconfigured';
+    isAdmin?: boolean;
   };
 }
 
@@ -564,6 +566,105 @@ export interface ChallengeMeSession {
   updatedAt: string;
 }
 
+export interface ContinuityMetricSnapshot {
+  healthScore: number | null;
+  healthRating: string;
+  dataVisibilityScore: number | null;
+  cashInBank: number | null;
+  overdueReceivables: number | null;
+  accountsReceivable: number | null;
+  accountsPayable: number | null;
+  annualRevenue: number | null;
+  operatingProfit: number | null;
+  openPipelineValue: number;
+  overdueFollowUpsCount: number;
+  actionsTotal: number;
+  actionsCompleted: number;
+}
+
+export interface ContinuityBaseline {
+  capturedAt: string;
+  primaryConcern: string;
+  primaryObjective: string;
+  initialRecommendationSummary: string;
+  snapshot: ContinuityMetricSnapshot;
+  dimensionStatuses: Record<HealthDimensionKey, HealthStatus>;
+}
+
+export interface WeeklyPulseEntry {
+  id: string;
+  weekOf: string;
+  createdAt: string;
+  snapshot: ContinuityMetricSnapshot;
+  deltaVsBaseline: {
+    healthScoreDelta: number | null;
+    cashDelta: number | null;
+    overdueArDelta: number | null;
+    actionsCompletedDelta: number;
+  };
+  completedThisWeek: string[];
+  stalledActions: string[];
+  emergingConcerns: string[];
+  emergingOpportunities: string[];
+  nextWeekPriorities: string[];
+  ownerNote: string;
+  aiPulseSummary?: string;
+  missingDataPrompt?: string[];
+}
+
+export interface MonthlyReviewEntry {
+  id: string;
+  reviewMonth: string;
+  createdAt: string;
+  snapshot: ContinuityMetricSnapshot;
+  comparisonToBaseline: {
+    healthScoreChange: number | null;
+    cashChange: number | null;
+    overdueArChange: number | null;
+    pipelineChange: number;
+    improvedAreas: string[];
+    deterioratedAreas: string[];
+    unresolvedIssues: string[];
+  };
+  comparisonToPreviousReview?: {
+    previousMonth: string;
+    healthScoreChange: number | null;
+    cashChange: number | null;
+    overdueArChange: number | null;
+  } | null;
+  revenueOpportunities: string[];
+  profitLeakageAlerts: string[];
+  cashFlowConcerns: string[];
+  actionOutcomesReviewed: string[];
+  nextThreePriorities: string[];
+  missingInfoNeeded: string[];
+  executiveSummary: string;
+  ownerReflection: string;
+}
+
+export interface QuarterlySustainabilityReview {
+  id: string;
+  quarterLabel: string;
+  createdAt: string;
+  snapshot: ContinuityMetricSnapshot;
+  resilienceTrend: 'Strengthening' | 'Mixed / Holding' | 'Under Strain' | 'Insufficient Data';
+  strategicChoice: SustainabilityBusinessChoice | 'Pending Evidence';
+  longTermRisks: string[];
+  longTermOpportunities: string[];
+  recommendedAdjustments: string[];
+  ownerDependencyStatus: HealthStatus;
+  customerConcentrationPct: number | null;
+  missingInfoNeeded: string[];
+  executiveSummary: string;
+}
+
+export interface MembershipContinuity {
+  joiningBaseline: ContinuityBaseline | null;
+  weeklyPulses: WeeklyPulseEntry[];
+  monthlyReviews: MonthlyReviewEntry[];
+  quarterlyReviews: QuarterlySustainabilityReview[];
+}
+
 export interface CaseRecord {
   id: string;
   profile: BusinessProfile;
@@ -581,6 +682,7 @@ export interface CaseRecord {
   roiScenarios?: RoiScenario[];
   businessDevPlan?: BusinessDevPlan | null;
   challengeSession?: ChallengeMeSession | null;
+  continuity?: MembershipContinuity | null;
   reportBlocks?: ReportCustomBlock[];
   reportEditorSettings?: ReportEditorSettings;
   subscriptionTier?: SubscriptionTierId;

@@ -10,10 +10,22 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
+import {
+  SAAS_PLANS,
+  normalizeTierId,
+  isAdminEmail,
+  DurableSaasStore,
+  getCurrentMonthKey,
+  createEmptyMonthlyCounters,
+  type UsageBucket,
+  type ServerUserAccountState,
+} from './server/billingStore';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const saasStore = new DurableSaasStore();
 
 // Initialize Firebase Admin SDK for relaunch-bizpulse
 let hasAdminCredentials = false;
@@ -47,164 +59,20 @@ interface AuthenticatedRequest extends express.Request {
 // ==========================================
 // SERVER-SIDE SAAS PLAN CATALOG & METERING
 // ==========================================
-type CanonicalTierId = 'free_trial' | 'starter_monthly' | 'growth_monthly' | 'business_plus_monthly';
-type UsageBucket = 'coach' | 'documents' | 'recommendations';
-
-interface PlanDefinition {
-  tierId: CanonicalTierId;
-  planName: string;
-  priceMonthlyNzd: number;
-  maxCustomCases: number;
-  coachMessagesPerMonth: number;
-  documentAuditsPerMonth: number;
-  recommendationsPerMonth: number;
-  description: string;
-}
-
-const SAAS_PLANS: Record<CanonicalTierId, PlanDefinition> = {
-  free_trial: {
-    tierId: 'free_trial',
-    planName: 'Free Trial',
-    priceMonthlyNzd: 0,
-    maxCustomCases: 1,
-    coachMessagesPerMonth: 15,
-    documentAuditsPerMonth: 2,
-    recommendationsPerMonth: 3,
-    description: '1 custom business case, 15 monthly AI coach turns, 2 document audits, 3 diagnostics.',
-  },
-  starter_monthly: {
-    tierId: 'starter_monthly',
-    planName: 'Starter',
-    priceMonthlyNzd: 29,
-    maxCustomCases: 3,
-    coachMessagesPerMonth: 35,
-    documentAuditsPerMonth: 10,
-    recommendationsPerMonth: 10,
-    description: 'Up to 3 active business sessions, 35 AI coach/challenge turns/mo, 10 document audits/mo, 10 diagnostics.',
-  },
-  growth_monthly: {
-    tierId: 'growth_monthly',
-    planName: 'Growth',
-    priceMonthlyNzd: 59,
-    maxCustomCases: 10,
-    coachMessagesPerMonth: 150,
-    documentAuditsPerMonth: 40,
-    recommendationsPerMonth: 30,
-    description: 'Up to 10 active business sessions, 150 AI coach/challenge turns/mo, 40 document audits/mo, 30 diagnostics.',
-  },
-  business_plus_monthly: {
-    tierId: 'business_plus_monthly',
-    planName: 'Business Plus',
-    priceMonthlyNzd: 99,
-    maxCustomCases: 30,
-    coachMessagesPerMonth: 500,
-    documentAuditsPerMonth: 150,
-    recommendationsPerMonth: 100,
-    description: 'Up to 30 multi-entity business sessions, 500 AI turns/mo, 150 document audits/mo, 100 diagnostics.',
-  },
-};
-
-function normalizeTierId(raw?: string | null): CanonicalTierId {
-  if (raw === 'starter_monthly' || raw === 'essential_monthly') return 'starter_monthly';
-  if (raw === 'growth_monthly') return 'growth_monthly';
-  if (raw === 'business_plus_monthly' || raw === 'founding_monthly') return 'business_plus_monthly';
-  return 'free_trial';
-}
-
-interface MonthlyUsageCounters {
-  coachMessages: number;
-  documentAudits: number;
-  recommendations: number;
-  promptTokens: number;
-  outputTokens: number;
-  thinkingTokens: number;
-  totalTokens: number;
-  estimatedCostUsd: number;
-  requestCount: number;
-}
-
-interface ServerUserAccountState {
-  uid: string;
-  email?: string;
-  subscriptionTier: CanonicalTierId;
-  subscriptionStatus: string;
-  stripeCustomerId?: string | null;
-  stripeSubscriptionId?: string | null;
-  currentPeriodEnd?: string | null;
-  ownedCaseIds: string[];
-  monthlyUsage: Record<string, MonthlyUsageCounters>;
-  updatedAt: string;
-}
-
-const SAAS_STATE_FILE = '/tmp/bizpulse_saas_state.json';
-let cachedSaasState: { users: Record<string, ServerUserAccountState>; caseOwners: Record<string, string> } | null = null;
-
-function loadSaasState() {
-  if (cachedSaasState) return cachedSaasState;
-  try {
-    if (fs.existsSync(SAAS_STATE_FILE)) {
-      const raw = fs.readFileSync(SAAS_STATE_FILE, 'utf8');
-      const parsed = JSON.parse(raw);
-      cachedSaasState = {
-        users: parsed?.users && typeof parsed.users === 'object' ? parsed.users : {},
-        caseOwners: parsed?.caseOwners && typeof parsed.caseOwners === 'object' ? parsed.caseOwners : {},
-      };
-      return cachedSaasState;
-    }
-  } catch (err: any) {
-    console.warn('Could not read SaaS state store, starting fresh:', err.message);
-  }
-  cachedSaasState = { users: {}, caseOwners: {} };
-  return cachedSaasState;
-}
-
-function saveSaasState() {
-  if (!cachedSaasState) return;
-  try {
-    fs.writeFileSync(SAAS_STATE_FILE, JSON.stringify(cachedSaasState, null, 2), 'utf8');
-  } catch (err: any) {
-    console.warn('Could not persist SaaS state store:', err.message);
-  }
-}
-
-function getCurrentMonthKey(): string {
-  return new Date().toISOString().slice(0, 7); // YYYY-MM
-}
+const isStripeConfiguredEnv = Boolean(
+  process.env.STRIPE_SECRET_KEY &&
+    process.env.STRIPE_SECRET_KEY.startsWith('sk_') &&
+    process.env.STRIPE_SECRET_KEY !== 'sk_test_placeholder_key'
+);
+const billingModeResolved: 'live' | 'test' | 'unconfigured' =
+  process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')
+    ? 'live'
+    : isStripeConfiguredEnv
+    ? 'test'
+    : 'unconfigured';
 
 function getOrInitUserState(uid: string, email?: string): ServerUserAccountState {
-  const state = loadSaasState();
-  if (!state.users[uid]) {
-    state.users[uid] = {
-      uid,
-      email,
-      subscriptionTier: 'free_trial',
-      subscriptionStatus: 'free',
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      currentPeriodEnd: null,
-      ownedCaseIds: [],
-      monthlyUsage: {},
-      updatedAt: new Date().toISOString(),
-    };
-    saveSaasState();
-  } else if (email && !state.users[uid].email) {
-    state.users[uid].email = email;
-  }
-  const monthKey = getCurrentMonthKey();
-  if (!state.users[uid].monthlyUsage[monthKey]) {
-    state.users[uid].monthlyUsage[monthKey] = {
-      coachMessages: 0,
-      documentAudits: 0,
-      recommendations: 0,
-      promptTokens: 0,
-      outputTokens: 0,
-      thinkingTokens: 0,
-      totalTokens: 0,
-      estimatedCostUsd: 0,
-      requestCount: 0,
-    };
-  }
-  return state.users[uid];
+  return saasStore.getOrInitUser(uid, email);
 }
 
 async function syncUserStateFromAdminFirestore(uid: string): Promise<void> {
@@ -214,6 +82,7 @@ async function syncUserStateFromAdminFirestore(uid: string): Promise<void> {
     if (snap.exists) {
       const data = snap.data() || {};
       const userState = getOrInitUserState(uid);
+      if (data.email && !userState.email) userState.email = String(data.email);
       if (data.subscriptionTier) userState.subscriptionTier = normalizeTierId(data.subscriptionTier);
       if (data.subscriptionStatus) userState.subscriptionStatus = String(data.subscriptionStatus);
       if (data.stripeCustomerId) userState.stripeCustomerId = String(data.stripeCustomerId);
@@ -222,7 +91,7 @@ async function syncUserStateFromAdminFirestore(uid: string): Promise<void> {
       const monthKey = getCurrentMonthKey();
       if (data.monthlyUsage?.[monthKey]) {
         const fsMonth = data.monthlyUsage[monthKey];
-        const localMonth = userState.monthlyUsage[monthKey];
+        const localMonth = userState.monthlyUsage[monthKey] || createEmptyMonthlyCounters();
         localMonth.coachMessages = Math.max(localMonth.coachMessages, Number(fsMonth.coachMessages) || 0);
         localMonth.documentAudits = Math.max(localMonth.documentAudits, Number(fsMonth.documentAudits) || 0);
         localMonth.recommendations = Math.max(localMonth.recommendations, Number(fsMonth.recommendations) || 0);
@@ -232,8 +101,9 @@ async function syncUserStateFromAdminFirestore(uid: string): Promise<void> {
         localMonth.totalTokens = Math.max(localMonth.totalTokens, Number(fsMonth.totalTokens) || 0);
         localMonth.estimatedCostUsd = Math.max(localMonth.estimatedCostUsd, Number(fsMonth.estimatedCostUsd) || 0);
         localMonth.requestCount = Math.max(localMonth.requestCount, Number(fsMonth.requestCount) || 0);
+        userState.monthlyUsage[monthKey] = localMonth;
       }
-      saveSaasState();
+      saasStore.save();
     }
   } catch (err: any) {
     console.warn('Firestore billing sync read notice:', err.message);
@@ -255,51 +125,8 @@ async function persistUserStateToAdminFirestore(uid: string): Promise<void> {
   }
 }
 
-function buildAccountUsageSummary(uid: string, stripeConfigured: boolean) {
-  const userState = getOrInitUserState(uid);
-  const monthKey = getCurrentMonthKey();
-  const counters = userState.monthlyUsage[monthKey];
-  const plan = SAAS_PLANS[normalizeTierId(userState.subscriptionTier)];
-  const USD_TO_NZD = 1.65;
-
-  return {
-    monthKey,
-    limits: {
-      maxCustomCases: plan.maxCustomCases,
-      coachMessagesPerMonth: plan.coachMessagesPerMonth,
-      documentAuditsPerMonth: plan.documentAuditsPerMonth,
-      recommendationsPerMonth: plan.recommendationsPerMonth,
-    },
-    used: {
-      coachMessages: counters.coachMessages,
-      documentAudits: counters.documentAudits,
-      recommendations: counters.recommendations,
-    },
-    remaining: {
-      coachMessages: Math.max(0, plan.coachMessagesPerMonth - counters.coachMessages),
-      documentAudits: Math.max(0, plan.documentAuditsPerMonth - counters.documentAudits),
-      recommendations: Math.max(0, plan.recommendationsPerMonth - counters.recommendations),
-    },
-    tokenUsage: {
-      promptTokens: counters.promptTokens,
-      outputTokens: counters.outputTokens,
-      thinkingTokens: counters.thinkingTokens,
-      totalTokens: counters.totalTokens,
-      estimatedCostUsd: Number(counters.estimatedCostUsd.toFixed(4)),
-      estimatedCostNzd: Number((counters.estimatedCostUsd * USD_TO_NZD).toFixed(4)),
-      requestCount: counters.requestCount,
-    },
-    subscription: {
-      tierId: plan.tierId,
-      planName: plan.planName,
-      priceMonthlyNzd: plan.priceMonthlyNzd,
-      status: userState.subscriptionStatus || 'free',
-      currentPeriodEnd: userState.currentPeriodEnd || null,
-      stripeCustomerId: userState.stripeCustomerId || null,
-      stripeSubscriptionId: userState.stripeSubscriptionId || null,
-      stripeConfigured,
-    },
-  };
+function buildAccountUsageSummary(uid: string, stripeConfigured: boolean, email?: string | null) {
+  return saasStore.buildAccountUsageSummary(uid, stripeConfigured, billingModeResolved, email);
 }
 
 // Per-user sliding window rate limiter (20 AI requests per 60 seconds)
@@ -322,7 +149,8 @@ function checkSlidingRateLimit(uid: string): boolean {
 async function enforceAiQuota(
   uid: string,
   bucket: UsageBucket,
-  stripeConfigured: boolean
+  stripeConfigured: boolean,
+  email?: string | null
 ): Promise<{ allowed: boolean; statusCode?: number; error?: string; code?: string; accountUsage?: any }> {
   if (!checkSlidingRateLimit(uid)) {
     return {
@@ -334,14 +162,14 @@ async function enforceAiQuota(
   }
 
   await syncUserStateFromAdminFirestore(uid);
-  const summary = buildAccountUsageSummary(uid, stripeConfigured);
+  const summary = buildAccountUsageSummary(uid, stripeConfigured, email);
 
   if (bucket === 'coach' && summary.remaining.coachMessages <= 0) {
     return {
       allowed: false,
       statusCode: 429,
       code: 'QUOTA_EXCEEDED',
-      error: `Monthly AI Coaching limit reached (${summary.limits.coachMessagesPerMonth}/${summary.limits.coachMessagesPerMonth} on ${summary.subscription.planName}). Upgrade your plan to continue.`,
+      error: `Monthly AI Coaching limit reached (${summary.limits.coachMessagesPerMonth}/${summary.limits.coachMessagesPerMonth} on ${summary.subscription.planName}). All saved diagnostics, CRM, ROI, and exports remain accessible—upgrade or wait for monthly reset to run more AI sessions.`,
       accountUsage: summary,
     };
   }
@@ -350,7 +178,7 @@ async function enforceAiQuota(
       allowed: false,
       statusCode: 429,
       code: 'QUOTA_EXCEEDED',
-      error: `Monthly Document Intelligence limit reached (${summary.limits.documentAuditsPerMonth}/${summary.limits.documentAuditsPerMonth} on ${summary.subscription.planName}). Upgrade your plan to analyze more files.`,
+      error: `Monthly Document Intelligence limit reached (${summary.limits.documentAuditsPerMonth}/${summary.limits.documentAuditsPerMonth} on ${summary.subscription.planName}). Upgrade your plan to analyze additional files.`,
       accountUsage: summary,
     };
   }
@@ -359,7 +187,7 @@ async function enforceAiQuota(
       allowed: false,
       statusCode: 429,
       code: 'QUOTA_EXCEEDED',
-      error: `Monthly Diagnostic Recommendations limit reached (${summary.limits.recommendationsPerMonth}/${summary.limits.recommendationsPerMonth} on ${summary.subscription.planName}). Upgrade your plan to run additional diagnostics.`,
+      error: `Monthly Diagnostic & Review limit reached (${summary.limits.recommendationsPerMonth}/${summary.limits.recommendationsPerMonth} on ${summary.subscription.planName}). Upgrade your plan to run additional diagnostics or monthly/quarterly AI reviews.`,
       accountUsage: summary,
     };
   }
@@ -392,7 +220,7 @@ function recordAiUsage(uid: string, bucket: UsageBucket, usageMetadata?: any) {
   month.requestCount += 1;
   userState.updatedAt = new Date().toISOString();
 
-  saveSaasState();
+  saasStore.save();
   void persistUserStateToAdminFirestore(uid);
 }
 
@@ -470,8 +298,8 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
     return next();
   }
 
-  // Enforce case ownership tracking across both Admin SDK mode and preview JSON store mode
-  const state = loadSaasState();
+  // Enforce case ownership tracking across both Admin SDK mode and durable JSON store mode
+  const state = saasStore.load();
   const existingOwner = state.caseOwners[caseId];
   if (existingOwner && existingOwner !== req.user.uid) {
     return res.status(403).json({
@@ -506,7 +334,7 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
     if (!u.ownedCaseIds.includes(caseId)) {
       u.ownedCaseIds.push(caseId);
     }
-    saveSaasState();
+    saasStore.save();
   }
 
   next();
@@ -685,18 +513,11 @@ async function startServer() {
     return aiClient;
   }
 
-  // Stripe Client Initialization
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  const isStripeConfigured = Boolean(
-    stripeSecretKey &&
-      stripeSecretKey.startsWith('sk_') &&
-      stripeSecretKey !== 'sk_test_placeholder_key'
-  );
-  const stripe = isStripeConfigured
-    ? new Stripe(stripeSecretKey!, { apiVersion: '2025-02-24.acacia' as any })
+  const stripe = isStripeConfiguredEnv
+    ? new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia' as any })
     : null;
-
-  const processedWebhookEventIds = new Set<string>();
+  const isStripeConfigured = isStripeConfiguredEnv;
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
   // Gemini 4 Hydrogen helper with transient backoff & token/quota telemetry recording
   async function generateWithGemini4(
@@ -752,7 +573,8 @@ async function startServer() {
     roiScenarios?: any[],
     recommendations?: any,
     actionPlan?: any[],
-    crossDocumentSynthesis?: any
+    crossDocumentSynthesis?: any,
+    continuity?: any
   ): string {
     const businessName = profile?.name || 'Client SME';
     const industry = profile?.industry || 'Small & Medium Enterprise';
@@ -904,6 +726,35 @@ async function startServer() {
       actionPlanSummary += 'No 30/60/90-day action plan tasks saved yet.\n';
     }
 
+    let continuitySummary = 'MEMBERSHIP CONTINUITY & PROGRESS HISTORY:\n';
+    if (continuity && typeof continuity === 'object') {
+      if (continuity.joiningBaseline) {
+        const b = continuity.joiningBaseline;
+        continuitySummary += `- Joining Baseline (${String(b.capturedAt || '').slice(0, 10)}): Starting Health=${b.snapshot?.healthScore ?? 'Pending'}/100 (${b.snapshot?.healthRating || 'Pending'}), Starting Cash=${fmtNum(b.snapshot?.cashInBank)}, Overdue AR=${fmtNum(b.snapshot?.overdueReceivables)}, Initial Concern="${b.primaryConcern || 'N/A'}"\n`;
+      }
+      if (Array.isArray(continuity.weeklyPulses) && continuity.weeklyPulses.length > 0) {
+        const latestWp = continuity.weeklyPulses[0];
+        continuitySummary += `- Latest Weekly Pulse (${latestWp.weekOf}): Health=${latestWp.snapshot?.healthScore ?? 'Pending'}/100, Actions Done=${latestWp.snapshot?.actionsCompleted ?? 0}/${latestWp.snapshot?.actionsTotal ?? 0}. Concerns: ${(latestWp.emergingConcerns || []).slice(0, 2).join('; ') || 'None logged'}. Next Priorities: ${(latestWp.nextWeekPriorities || []).slice(0, 3).join('; ') || 'None'}\n`;
+      }
+      if (Array.isArray(continuity.monthlyReviews) && continuity.monthlyReviews.length > 0) {
+        const latestMr = continuity.monthlyReviews[0];
+        continuitySummary += `- Latest Monthly Review (${latestMr.reviewMonth}): ${latestMr.executiveSummary || 'Saved'}. Unresolved: ${(latestMr.comparisonToBaseline?.unresolvedIssues || []).slice(0, 3).join('; ') || 'None'}\n`;
+      }
+      if (Array.isArray(continuity.quarterlyReviews) && continuity.quarterlyReviews.length > 0) {
+        const latestQr = continuity.quarterlyReviews[0];
+        continuitySummary += `- Latest Quarterly Sustainability (${latestQr.quarterLabel}): Trend=${latestQr.resilienceTrend}, Choice=${latestQr.strategicChoice}.\n`;
+      }
+      if (
+        !continuity.joiningBaseline &&
+        (!continuity.weeklyPulses || continuity.weeklyPulses.length === 0) &&
+        (!continuity.monthlyReviews || continuity.monthlyReviews.length === 0)
+      ) {
+        continuitySummary += 'No joining baseline or periodic pulse/review history recorded yet.\n';
+      }
+    } else {
+      continuitySummary += 'No continuity history saved yet.\n';
+    }
+
     return `
 You are a seasoned, welcoming yet commercially sharp SME business coach, financial analyst, and turnaround adviser.
 You are advising the owner of "${businessName}", an SME operating in the "${industry}" sector (${country}).
@@ -926,12 +777,13 @@ ${crmSummary}
 ${roiSummary}
 ${recommendationsSummary}
 ${actionPlanSummary}
+${continuitySummary}
 
 COACHING & EVIDENCE RULES:
 1. Context Fidelity: Tailor all advice strictly to "${businessName}" (${industry}, ${country}, ${currency}, ${staff}, Turnover: ${turnoverRange}). Never assume it is an IT MSP unless industry is IT & Managed Services.
 2. Evidence Discipline: Explicitly distinguish Verified Evidence, Owner-Reported Information, Working Assumptions, and Unknowns / Missing Data (Insufficient Information).
 3. Zero Fabricated Numbers: NEVER invent revenue, profit, cash, debtor, or percentage figures not supplied in the profile, financials, notes, CRM, ROI scenarios, or uploaded documents. If figures are missing, state clearly what figure is needed.
-4. Connected Integration: Connect 12-Capability Health findings, Sustainability Choice, and Top 3 Priorities directly to Revenue/Profit Opportunities, CRM priorities (retention, collections, follow-ups), ROI payback & cash headroom, and accountable 30/60/90-day actions.
+4. Connected Integration: Connect 12-Capability Health findings, Sustainability Choice, Continuity Progress, and Top 3 Priorities directly to Revenue/Profit Opportunities, CRM priorities (retention, collections, follow-ups), ROI payback & cash headroom, and accountable 30/60/90-day actions.
 5. Specialist Triggers: Note clearly whenever a Chartered Accountant, commercial lawyer, HR/employment adviser, or banker should review decisions.
 6. Anti-Repetition & Memory: NEVER re-ask for facts, numbers, team sizes, CRM accounts, or capability notes already provided in this context or earlier in the conversation—reference supplied facts directly and move straight to commercial analysis or genuinely missing gaps.
 `;
@@ -944,7 +796,7 @@ COACHING & EVIDENCE RULES:
     try {
       const uid = req.user!.uid;
       await syncUserStateFromAdminFirestore(uid);
-      return res.json({ accountUsage: buildAccountUsageSummary(uid, isStripeConfigured) });
+      return res.json({ accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email) });
     } catch (err: any) {
       console.error('Account usage read error:', err);
       const safe = toSafeApiError(err, 'Unable to load account usage summary.');
@@ -952,11 +804,20 @@ COACHING & EVIDENCE RULES:
     }
   });
 
+  app.get('/api/admin/metrics', requireAuth, async (req: AuthenticatedRequest, res) => {
+    if (!isAdminEmail(req.user?.email)) {
+      return res.status(403).json({ error: 'Forbidden: Founder/Admin access required.' });
+    }
+    return res.json({
+      adminMetrics: saasStore.buildAdminMetricsSummary(),
+    });
+  });
+
   app.post('/api/account/check-case-limit', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
       await syncUserStateFromAdminFirestore(uid);
-      const summary = buildAccountUsageSummary(uid, isStripeConfigured);
+      const summary = buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email);
 
       const clientCustomIds = Array.isArray(req.body?.customCaseIds)
         ? req.body.customCaseIds
@@ -1011,14 +872,14 @@ COACHING & EVIDENCE RULES:
       }
 
       // Purge server-side state and owned case tracking
-      const state = loadSaasState();
+      const state = saasStore.load();
       for (const cid of userState.ownedCaseIds || []) {
         if (state.caseOwners[cid] === uid) {
           delete state.caseOwners[cid];
         }
       }
       delete state.users[uid];
-      saveSaasState();
+      saasStore.save();
 
       // If Admin SDK credentials are configured, wipe Firestore subcollections + Auth record cleanly
       if (hasAdminCredentials) {
@@ -1048,7 +909,7 @@ COACHING & EVIDENCE RULES:
   // ==========================================
   app.post('/api/payment/create-checkout-session', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const { caseId, businessName, userEmail, currency, tierId } = req.body;
+      const { caseId, businessName, userEmail, tierId } = req.body;
       const uid = req.user!.uid;
       const canonicalTier = normalizeTierId(tierId);
       if (canonicalTier === 'free_trial') {
@@ -1064,7 +925,7 @@ COACHING & EVIDENCE RULES:
 
       const plan = SAAS_PLANS[canonicalTier];
       const appBaseUrl = process.env.APP_URL || req.headers.origin || `http://localhost:${PORT}`;
-      const safeCurrency = (currency || 'NZD').toLowerCase();
+      const enforcedCurrency = 'nzd';
       const amountCents = plan.priceMonthlyNzd * 100;
       const customerEmail = userEmail || req.user?.email || undefined;
       const userState = getOrInitUserState(uid, customerEmail);
@@ -1075,7 +936,7 @@ COACHING & EVIDENCE RULES:
         line_items: [
           {
             price_data: {
-              currency: safeCurrency,
+              currency: enforcedCurrency,
               recurring: { interval: 'month' },
               product_data: {
                 name: `BizPulse ${plan.planName} Monthly`,
@@ -1086,6 +947,12 @@ COACHING & EVIDENCE RULES:
             quantity: 1,
           },
         ],
+        subscription_data: {
+          metadata: {
+            userId: uid,
+            tierId: canonicalTier,
+          },
+        },
         metadata: {
           caseId: caseId || '',
           userId: uid,
@@ -1124,7 +991,7 @@ COACHING & EVIDENCE RULES:
       }
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
-      if (session.payment_status === 'paid') {
+      if (session.mode === 'subscription' && session.payment_status === 'paid') {
         if (session.metadata?.userId && session.metadata.userId !== uid) {
           return res.status(403).json({ error: 'Payment session belongs to another authenticated account.' });
         }
@@ -1145,7 +1012,7 @@ COACHING & EVIDENCE RULES:
           } catch {}
         }
         userState.updatedAt = new Date().toISOString();
-        saveSaasState();
+        saasStore.save();
         await persistUserStateToAdminFirestore(uid);
 
         const record = {
@@ -1166,7 +1033,7 @@ COACHING & EVIDENCE RULES:
           paid: true,
           record,
           tierId: canonicalTier,
-          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
         });
       }
       return res.json({ paid: false, status: session.payment_status });
@@ -1181,10 +1048,10 @@ COACHING & EVIDENCE RULES:
     try {
       const uid = req.user!.uid;
       if (!stripe || !isStripeConfigured) {
-        return res.status(503).json({ error: 'Stripe billing portal is not available in preview mode.' });
+        return res.status(503).json({ error: 'Stripe billing portal is not available until live/test Stripe keys are configured.' });
       }
       await syncUserStateFromAdminFirestore(uid);
-      const userState = getOrInitUserState(uid);
+      const userState = getOrInitUserState(uid, req.user?.email);
       if (!userState.stripeCustomerId) {
         return res.status(400).json({ error: 'No active Stripe customer profile found for this account yet.' });
       }
@@ -1205,7 +1072,7 @@ COACHING & EVIDENCE RULES:
     try {
       const uid = req.user!.uid;
       await syncUserStateFromAdminFirestore(uid);
-      const userState = getOrInitUserState(uid);
+      const userState = getOrInitUserState(uid, req.user?.email);
 
       if (stripe && isStripeConfigured && userState.stripeSubscriptionId) {
         const sub: any = await stripe.subscriptions.update(userState.stripeSubscriptionId, {
@@ -1221,12 +1088,12 @@ COACHING & EVIDENCE RULES:
       }
 
       userState.updatedAt = new Date().toISOString();
-      saveSaasState();
+      saasStore.save();
       await persistUserStateToAdminFirestore(uid);
 
       return res.json({
         canceled: true,
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
       console.error('Subscription Cancellation Error:', err);
@@ -1257,44 +1124,33 @@ COACHING & EVIDENCE RULES:
     }
 
     if (!event || !event.type) return res.status(400).json({ error: 'Invalid webhook payload' });
-    if (event.id && processedWebhookEventIds.has(event.id)) {
+
+    if (hasAdminCredentials && event.id) {
+      try {
+        const evtRef = adminDb.collection('stripeWebhookEvents').doc(String(event.id));
+        const existingEvt = await evtRef.get();
+        if (existingEvt.exists) {
+          return res.json({ received: true, idempotentDuplicate: true });
+        }
+        await evtRef.set({ type: event.type, processedAt: new Date().toISOString() });
+      } catch (err: any) {
+        console.warn('Firestore webhook idempotency notice:', err.message);
+      }
+    }
+
+    const result = saasStore.applyStripeWebhookEvent(event);
+    if (result.duplicate) {
       return res.json({ received: true, idempotentDuplicate: true });
     }
-    if (event.id) processedWebhookEventIds.add(event.id);
-
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data?.object;
-      const userId = session?.metadata?.userId;
-      if (userId && session.payment_status === 'paid') {
-        const canonicalTier = normalizeTierId(session.metadata?.tierId || 'starter_monthly');
-        const userState = getOrInitUserState(userId, session.customer_details?.email);
-        userState.subscriptionTier = canonicalTier;
-        userState.subscriptionStatus = 'active';
-        if (typeof session.customer === 'string') userState.stripeCustomerId = session.customer;
-        if (typeof session.subscription === 'string') userState.stripeSubscriptionId = session.subscription;
-        userState.updatedAt = new Date().toISOString();
-        saveSaasState();
-        await persistUserStateToAdminFirestore(userId);
-      }
-    } else if (event.type === 'customer.subscription.deleted') {
-      const sub = event.data?.object;
-      const state = loadSaasState();
-      const targetUser = Object.values(state.users).find((u) => u.stripeSubscriptionId === sub?.id);
-      if (targetUser) {
-        targetUser.subscriptionTier = 'free_trial';
-        targetUser.subscriptionStatus = 'canceled';
-        targetUser.stripeSubscriptionId = null;
-        targetUser.updatedAt = new Date().toISOString();
-        saveSaasState();
-        await persistUserStateToAdminFirestore(targetUser.uid);
-      }
+    if (result.affectedUid) {
+      await persistUserStateToAdminFirestore(result.affectedUid);
     }
 
-    return res.json({ received: true });
+    return res.json({ received: true, handled: result.handled });
   });
 
   app.get('/api/payment/status/:caseId', requireAuth, verifyCaseOwnership, (req: AuthenticatedRequest, res) => {
-    const summary = buildAccountUsageSummary(req.user!.uid, isStripeConfigured);
+    const summary = buildAccountUsageSummary(req.user!.uid, isStripeConfigured, req.user?.email);
     const isPaid = summary.subscription.tierId !== 'free_trial' && summary.subscription.status !== 'canceled';
     return res.json({
       isUnlocked: isPaid,
@@ -1333,6 +1189,7 @@ COACHING & EVIDENCE RULES:
         roiScenarios,
         recommendations,
         actionPlan,
+        continuity,
         userRole,
         topic,
       } = req.body;
@@ -1355,7 +1212,8 @@ COACHING & EVIDENCE RULES:
           roiScenarios,
           recommendations,
           actionPlan,
-          crossDocumentSynthesis
+          crossDocumentSynthesis,
+          continuity
         ) +
         `\nCHAT WITH COACH CONVERSATION PROTOCOL:
 Speaking with: ${userRole || 'Owner/Director'}. Active Focus Topic: ${topic || 'General Strategy'}.
@@ -1486,6 +1344,7 @@ Return strictly valid JSON matching the schema.`;
         crmContacts,
         roiScenarios,
         actionPlan,
+        continuity,
       } = req.body;
 
       const systemInstruction = buildDynamicSystemInstruction(
@@ -1498,7 +1357,8 @@ Return strictly valid JSON matching the schema.`;
         roiScenarios,
         null,
         actionPlan,
-        crossDocumentSynthesis
+        crossDocumentSynthesis,
+        continuity
       );
 
       const prompt = `
@@ -1798,6 +1658,7 @@ Strictly do NOT invent financial facts that were not supplied. Return strictly v
         crmContacts,
         roiScenarios,
         actionPlan,
+        continuity,
       } = req.body;
 
       const challengeInput =
@@ -1824,7 +1685,8 @@ Strictly do NOT invent financial facts that were not supplied. Return strictly v
         roiScenarios,
         currentRecommendation,
         actionPlan,
-        crossDocumentSynthesis
+        crossDocumentSynthesis,
+        continuity
       );
 
       const prompt = `
@@ -2355,6 +2217,7 @@ Return strictly valid JSON matching the schema:
         roiScenarios,
         recommendations,
         actionPlan,
+        continuity,
       } = req.body;
 
       if (!['start', 'respond', 'conclude'].includes(action)) {
@@ -2372,7 +2235,8 @@ Return strictly valid JSON matching the schema:
           roiScenarios,
           recommendations,
           actionPlan,
-          crossDocumentSynthesis
+          crossDocumentSynthesis,
+          continuity
         ) +
         `\n"CHALLENGE ME" INTERROGATION MODE RULES:
 - Role: You are stress-testing the business owner's thinking before capital, time, or team capacity is committed.
@@ -2584,11 +2448,214 @@ Return strictly valid JSON matching the schema.`;
             : [],
           concludedAt: new Date().toISOString(),
         },
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
       console.error('Challenge Me Error:', err);
       const safe = toSafeApiError(err, 'Unable to run Challenge Me coaching session.', 502);
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
+  // 8. Membership Continuity Review Generator (Weekly Pulse / Monthly Review / Quarterly Sustainability)
+  app.post('/api/continuity/generate-review', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const {
+        reviewType,
+        ownerReflection,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crossDocumentSynthesis,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan,
+        continuity,
+      } = req.body;
+
+      if (!['weekly', 'monthly', 'quarterly'].includes(reviewType)) {
+        return res.status(400).json({ error: 'Invalid reviewType. Expected "weekly", "monthly", or "quarterly".' });
+      }
+
+      const bucket: UsageBucket = reviewType === 'weekly' ? 'coach' : 'recommendations';
+      const quota = await enforceAiQuota(uid, bucket, isStripeConfigured, req.user?.email);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
+      const systemInstruction =
+        buildDynamicSystemInstruction(
+          businessProfile,
+          healthInputs,
+          financials,
+          overallHealth,
+          uploadedDocuments,
+          crmContacts,
+          roiScenarios,
+          recommendations,
+          actionPlan,
+          crossDocumentSynthesis,
+          continuity
+        ) +
+        `\nCONTINUITY REVIEW STRICT HONESTY RULES:
+- Compare ONLY against supplied Joining Baseline, previous reviews, and actual saved case data above.
+- NEVER fabricate improvements, revenue gains, cash movements, or missing figures.
+- Whenever baseline or financial figures are absent, state what is missing in "missingInfoNeeded".`;
+
+      if (reviewType === 'weekly') {
+        const response = await generateWithGemini4(
+          {
+            contents: `Generate a concise Weekly Business Pulse for "${businessProfile?.name || 'this SME'}".
+Owner Weekly Note: "${ownerReflection || 'None provided'}"
+Summarize:
+- executiveSummary: factual weekly pulse referencing cash, overdue debtors, CRM follow-ups due, and completed vs stalled actions.
+- emergingConcerns: 1–3 concrete weekly concerns grounded in supplied facts.
+- emergingOpportunities: 1–3 immediate weekly opportunities grounded in CRM/recommendations.
+- nextWeekPriorities: exactly 3 practical priorities for the coming 7 days.
+- missingInfoNeeded: specific figures still missing from this business case.`,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  executiveSummary: { type: Type.STRING },
+                  emergingConcerns: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  emergingOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  nextWeekPriorities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  missingInfoNeeded: { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: [
+                  'executiveSummary',
+                  'emergingConcerns',
+                  'emergingOpportunities',
+                  'nextWeekPriorities',
+                  'missingInfoNeeded',
+                ],
+              },
+            },
+          },
+          { uid, bucket }
+        );
+
+        const parsed = JSON.parse((response.text || '{}').trim());
+        return res.json({
+          reviewType,
+          review: parsed,
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
+        });
+      }
+
+      if (reviewType === 'monthly') {
+        const response = await generateWithGemini4(
+          {
+            contents: `Conduct a Monthly Business Review for "${businessProfile?.name || 'this SME'}".
+Owner Monthly Reflection: "${ownerReflection || 'None provided'}"
+Compare current health, financial ledger, CRM pipeline, and action outcomes against the Joining Baseline and any prior Monthly Review listed above.
+Return strictly valid JSON:
+- executiveSummary: honest progress review distinguishing verified progress from unresolved issues.
+- improvedAreas: concrete improvements observed in saved scores/cash/actions (empty array if none verified).
+- deterioratedAreas: areas that worsened or slipped (empty array if none).
+- unresolvedIssues: ongoing issues still requiring owner action.
+- revenueOpportunities: 2–4 actionable revenue/pricing/retention opportunities.
+- profitLeakageAlerts: 1–3 specific leakage risks.
+- cashFlowConcerns: 1–3 factual cash/debtor observations.
+- actionOutcomesReviewed: summary of completed or ongoing action outcomes.
+- nextThreePriorities: top 3 priorities for next month.
+- missingInfoNeeded: figures still missing to verify progress.`,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  executiveSummary: { type: Type.STRING },
+                  improvedAreas: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  deterioratedAreas: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  unresolvedIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  revenueOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  profitLeakageAlerts: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  cashFlowConcerns: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  actionOutcomesReviewed: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  nextThreePriorities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  missingInfoNeeded: { type: Type.ARRAY, items: { type: Type.STRING } },
+                },
+                required: [
+                  'executiveSummary',
+                  'improvedAreas',
+                  'deterioratedAreas',
+                  'unresolvedIssues',
+                  'revenueOpportunities',
+                  'profitLeakageAlerts',
+                  'cashFlowConcerns',
+                  'actionOutcomesReviewed',
+                  'nextThreePriorities',
+                  'missingInfoNeeded',
+                ],
+              },
+            },
+          },
+          { uid, bucket }
+        );
+
+        const parsed = JSON.parse((response.text || '{}').trim());
+        return res.json({
+          reviewType,
+          review: parsed,
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
+        });
+      }
+
+      const response = await generateWithGemini4(
+        {
+          contents: `Conduct a Quarterly Sustainability Review for "${businessProfile?.name || 'this SME'}".
+Evaluate long-term resilience trend ("Strengthening", "Mixed / Holding", "Under Strain", or "Insufficient Data"), recommended strategic choice ("Stabilise", "Improve", "Expand", "Restructure", "Reconsider", or "Pending Evidence"), owner dependency, customer concentration, long-term risks, long-term opportunities, practical adjustments, and missing information.`,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                executiveSummary: { type: Type.STRING },
+                resilienceTrend: { type: Type.STRING },
+                strategicChoice: { type: Type.STRING },
+                longTermRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                longTermOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                recommendedAdjustments: { type: Type.ARRAY, items: { type: Type.STRING } },
+                missingInfoNeeded: { type: Type.ARRAY, items: { type: Type.STRING } },
+              },
+              required: [
+                'executiveSummary',
+                'resilienceTrend',
+                'strategicChoice',
+                'longTermRisks',
+                'longTermOpportunities',
+                'recommendedAdjustments',
+                'missingInfoNeeded',
+              ],
+            },
+          },
+        },
+        { uid, bucket }
+      );
+
+      const parsed = JSON.parse((response.text || '{}').trim());
+      return res.json({
+        reviewType,
+        review: parsed,
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
+      });
+    } catch (err: any) {
+      console.error('Continuity Review Error:', err);
+      const safe = toSafeApiError(err, 'Unable to generate continuity review.', 502);
       return res.status(safe.status).json({ error: safe.message });
     }
   });

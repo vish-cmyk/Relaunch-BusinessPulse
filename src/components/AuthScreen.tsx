@@ -11,9 +11,13 @@ import {
   EyeOff,
   Check,
   Compass,
+  Users,
+  TrendingUp,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { BIZPULSE_VISION, GROWTH_ROADMAP_PILLARS } from '../data/growthRoadmap';
+import { PUBLIC_MEMBERSHIP_PLANS, MEMBERSHIP_BILLING_POLICIES } from '../data/membershipPlans';
 
 interface AuthScreenProps {
   onSuccess?: () => void;
@@ -23,7 +27,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const { login, register, resetPassword, authError, clearAuthError } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'register' | 'forgot'>('signin');
-  const [email, setEmail] = useState('vish@relaunch.co.nz');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +35,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [selectedPillarId, setSelectedPillarId] = useState<string>('all');
+  const [preferredPlanLabel, setPreferredPlanLabel] = useState<string | null>(null);
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   const authPanelRef = useRef<HTMLDivElement | null>(null);
@@ -42,7 +47,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
     setMode(newMode);
   };
 
-  const focusAuthPanel = (targetMode: 'signin' | 'register') => {
+  const focusAuthPanel = (targetMode: 'signin' | 'register', planName?: string) => {
+    if (planName) {
+      setPreferredPlanLabel(planName);
+    }
     handleSwitchMode(targetMode);
     authPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => {
@@ -148,24 +156,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-[#475569]" aria-label="Landing navigation">
             <button
               type="button"
-              onClick={() => scrollToSection('platform-today')}
+              onClick={() => scrollToSection('who-its-for')}
               className="hover:text-[#0F172A] transition whitespace-nowrap shrink-0"
             >
-              Platform Today
+              Who It&apos;s For
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('continuity-rhythm')}
+              className="hover:text-[#0F172A] transition whitespace-nowrap shrink-0"
+            >
+              Membership Continuity
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('membership-plans')}
+              className="hover:text-[#0F172A] transition whitespace-nowrap shrink-0"
+            >
+              Plans &amp; Pricing
             </button>
             <button
               type="button"
               onClick={() => scrollToSection('development-roadmap')}
               className="hover:text-[#0F172A] transition whitespace-nowrap shrink-0"
             >
-              Development Roadmap
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection('our-commitment')}
-              className="hover:text-[#0F172A] transition whitespace-nowrap shrink-0"
-            >
-              Our Commitment
+              Platform Capabilities
             </button>
           </nav>
 
@@ -175,7 +190,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               onClick={() => focusAuthPanel(mode === 'register' ? 'signin' : 'register')}
               className="px-4 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
             >
-              {mode === 'register' ? 'Sign In' : 'Create Account'}
+              {mode === 'register' ? 'Sign In' : 'Start Free Trial'}
             </button>
           </div>
         </div>
@@ -185,26 +200,29 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
       <main id="top" className="flex-1">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-            {/* Left Column: Proposition & Current Diagnostic Platform */}
+            {/* Left Column: Owner-Centric Outcomes */}
             <div className="lg:col-span-7 space-y-8">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-[#475569] font-mono uppercase tracking-widest">
                   <Compass className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span>AI-Powered Business Health, Growth &amp; Development Platform</span>
+                  <span>For Trades, Service Businesses &amp; Family SMEs (1–20 Staff)</span>
                 </div>
 
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#0F172A] leading-[1.08] max-w-2xl">
-                  {BIZPULSE_VISION.headline}
+                  Understand your business. Find hidden opportunities. Improve cash flow. Make better decisions. Keep moving forward.
                 </h1>
 
                 <p className="text-lg sm:text-xl font-bold text-[#2563EB]">
-                  {BIZPULSE_VISION.subheading}
+                  Your Business. Your Opportunities. Your Next Move.
                 </p>
 
-                <div className="space-y-4 text-sm sm:text-base text-[#475569] leading-relaxed max-w-2xl pt-1">
-                  {BIZPULSE_VISION.introParagraphs.map((para, idx) => (
-                    <p key={idx}>{para}</p>
-                  ))}
+                <div className="space-y-3 text-sm sm:text-base text-[#475569] leading-relaxed max-w-2xl pt-1">
+                  <p>
+                    Relaunch BizPulse is a practical business health, profit intelligence, and ongoing membership co-pilot built for busy owners — helping you spot cash-flow pressure, unbilled margin leakage, slow debtors, and owner bottlenecks before they turn into crises.
+                  </p>
+                  <p>
+                    Unlike generic AI chat that forgets your business every session, BizPulse remembers your saved financials, 12-capability health baseline, CRM pipeline, ROI models, and monthly progress reviews.
+                  </p>
                 </div>
               </div>
 
@@ -212,48 +230,48 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => scrollToSection('development-roadmap')}
+                  onClick={() => focusAuthPanel('register', 'Free Trial')}
                   className="inline-flex items-center gap-2 px-5 py-3 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
-                  <span>Explore Development Roadmap</span>
+                  <span>Start Free Trial</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => focusAuthPanel('signin')}
+                  onClick={() => scrollToSection('membership-plans')}
                   className="inline-flex items-center gap-2 px-5 py-3 rounded bg-white hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
-                  <span>Access Private Workspace</span>
+                  <span>Compare Plans (From NZ$0)</span>
                 </button>
               </div>
 
-              {/* Available Today Summary */}
+              {/* Available Inside Workspace Summary */}
               <div id="platform-today" className="pt-6 border-t border-[#0F172A]/10 space-y-4">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="bizpulse-label">Available Inside Your Workspace Today</span>
+                  <span className="bizpulse-label">What Members Receive Inside Their Workspace</span>
                   <span className="text-xs text-[#15803D] font-semibold">Live Today</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-white border border-[#0F172A]/12 rounded p-4 space-y-1.5">
                     <span className="text-xs font-mono font-bold text-[#2563EB]">01</span>
-                    <h2 className="text-sm font-bold text-[#0F172A]">12-Capability Health Audit</h2>
+                    <h2 className="text-sm font-bold text-[#0F172A]">12-Capability Health &amp; Leakage Scan</h2>
                     <p className="text-xs text-[#475569] leading-relaxed">
-                      Structured diagnostic across cash flow, pricing &amp; margins, customers, competition, scalability, systems, and sustainability.
+                      Diagnose cash flow, pricing, debtors, concentration, staffing, and sustainability across 16 SME profit-leakage levers.
                     </p>
                   </div>
                   <div className="bg-white border border-[#0F172A]/12 rounded p-4 space-y-1.5">
                     <span className="text-xs font-mono font-bold text-[#2563EB]">02</span>
-                    <h2 className="text-sm font-bold text-[#0F172A]">CRM, ROI &amp; Cash Calculators</h2>
+                    <h2 className="text-sm font-bold text-[#0F172A]">Connected CRM, ROI &amp; Docs</h2>
                     <p className="text-xs text-[#475569] leading-relaxed">
-                      Upload financial statements for verified fact extraction alongside connected CRM pipelines, ROI break-even scenarios, and cash flow models.
+                      Upload P&amp;L/debtor files for verified fact extraction alongside CRM follow-ups, ROI payback modeling, and cash checks.
                     </p>
                   </div>
                   <div className="bg-white border border-[#0F172A]/12 rounded p-4 space-y-1.5">
                     <span className="text-xs font-mono font-bold text-[#2563EB]">03</span>
-                    <h2 className="text-sm font-bold text-[#0F172A]">Executive Coaching &amp; Reports</h2>
+                    <h2 className="text-sm font-bold text-[#0F172A]">Weekly, Monthly &amp; Quarterly Continuity</h2>
                     <p className="text-xs text-[#475569] leading-relaxed">
-                      Practical 90-day turnarounds, 7-day sprints, Challenge Me stress-tests, AI coaching, and custom-edited PDF &amp; Word exports.
+                      Lock your joining baseline, track Weekly Business Pulses, run Monthly Reviews, Challenge Me sessions, and export Word/PDF/PPTX packs.
                     </p>
                   </div>
                 </div>
@@ -269,7 +287,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     {mode === 'signin'
                       ? 'Sign In to Your Workspace'
                       : mode === 'register'
-                      ? 'Create Your Account'
+                      ? 'Create Your Free Trial Account'
                       : 'Reset Your Password'}
                   </h2>
                 </div>
@@ -315,17 +333,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 <div className="mb-5 text-xs text-[#475569] bg-[#F8FAFC] p-3.5 rounded border border-[#0F172A]/10 leading-relaxed">
                   {mode === 'signin' && (
                     <p>
-                      Sign in to resume your saved SME health diagnostics, uploaded document reviews, and executive action plans.
+                      Sign in to resume your saved SME health diagnostics, continuity reviews, CRM follow-ups, and 30/60/90-day action plans.
                     </p>
                   )}
                   {mode === 'register' && (
                     <p>
-                      Create your private coaching account. Each business you add stays isolated inside your personal workspace vault.
+                      {preferredPlanLabel
+                        ? `Starting with Free Trial (selected interest: ${preferredPlanLabel}). Create your private account first — no card required, and you can upgrade inside Account & Billing anytime.`
+                        : 'Create your private coaching account on Free Trial (no card required). Each business stays isolated inside your personal workspace vault.'}
                     </p>
                   )}
                   {mode === 'forgot' && (
                     <p>
-                      Enter your registered email address to receive a password reset link via Firebase Authentication.
+                      Enter your registered email address to receive a password reset link.
                     </p>
                   )}
                 </div>
@@ -361,7 +381,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        placeholder="name@business.co.nz"
+                        placeholder="you@yourbusiness.co.nz"
                         className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
                       />
                     </div>
@@ -448,7 +468,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       </>
                     ) : mode === 'register' ? (
                       <>
-                        <span>Create Account &amp; Start Diagnostic</span>
+                        <span>Create Free Account &amp; Start</span>
                         <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
                       </>
                     ) : (
@@ -470,7 +490,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                         onClick={() => handleSwitchMode('register')}
                         className="text-[#2563EB] hover:text-[#1D4ED8] font-bold transition"
                       >
-                        Register here
+                        Start your Free Trial here
                       </button>
                     </p>
                   ) : (
@@ -489,14 +509,244 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
                 <div className="mt-4 pt-3 border-t border-[#0F172A]/10 flex items-center justify-center gap-1.5 text-[11px] text-[#475569]">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#15803D]" />
-                  <span>Confidential Multi-Business Isolation · Firebase Secured</span>
+                  <span>Confidential Multi-Business Isolation · Account-Owned Data</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Development Roadmap Section */}
+        {/* Who It's For + Why BizPulse vs Generic AI + What Happens Next */}
+        <section id="who-its-for" className="border-t border-[#0F172A]/10 bg-white py-14">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-6 space-y-4">
+                <span className="bizpulse-label flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>Built for Real-World Small &amp; Family Businesses</span>
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">
+                  Designed for Trades, Service Firms &amp; Family Operators (1–20 Staff)
+                </h2>
+                <p className="text-sm text-[#475569] leading-relaxed">
+                  Whether you run an electrical, plumbing, or construction trade crew, a managed IT or accounting service firm, or a family-owned B2B operator, BizPulse gives you calm, structured clarity without jargon.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
+                    <strong className="text-[#0F172A] block">Cash &amp; Debtor Strain</strong>
+                    <span className="text-[#475569]">Spot overdue invoices, overdraft pressure, and unbilled variations before payroll week hits.</span>
+                  </div>
+                  <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
+                    <strong className="text-[#0F172A] block">Owner Dependency</strong>
+                    <span className="text-[#475569]">See where quoting, key clients, or firefighting rely too heavily on one owner.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-6 bg-[#0B1324] text-white rounded p-6 sm:p-8 space-y-4">
+                <span className="text-xs font-mono uppercase tracking-wider text-[#60A5FA] block">
+                  Why BizPulse Differs from Generic ChatGPT
+                </span>
+                <h3 className="text-xl font-bold text-white">
+                  Persistent Business Memory, Deterministic Math &amp; Honest Evidence
+                </h3>
+                <ul className="space-y-2.5 text-xs sm:text-sm text-[#CBD5E1]">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#60A5FA] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Never starts from blank:</strong> Remembers your 12-Capability scores, ledger cash/AR/AP, CRM pipeline, ROI models, and prior monthly reviews.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#60A5FA] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Verified facts vs. assumptions:</strong> Never invents financial numbers — clearly marks missing figures as Insufficient Information.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-[#60A5FA] shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Challenges blind spots:</strong> Interactive &ldquo;Challenge Me&rdquo; mode tests decisions against your cash and staff capacity before you spend money.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Continuity Cadence + What Happens After Registration */}
+            <div id="continuity-rhythm" className="pt-8 border-t border-[#0F172A]/10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-7 space-y-4">
+                <span className="bizpulse-label flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>Ongoing Membership Continuity</span>
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
+                  From First Diagnostic to Measurable Month-on-Month Progress
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
+                    <span className="font-mono font-bold text-[#2563EB] block">AT JOINING</span>
+                    <strong className="text-[#0F172A] block text-sm">Lock Your Baseline</strong>
+                    <p className="text-[#475569]">Saves your starting health score, bank cash, overdue invoices, primary concern, and initial priorities.</p>
+                  </div>
+                  <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
+                    <span className="font-mono font-bold text-[#2563EB] block">WEEKLY</span>
+                    <strong className="text-[#0F172A] block text-sm">Weekly Business Pulse</strong>
+                    <p className="text-[#475569]">10-minute Monday check-in tracking completed vs. stalled actions, cash alerts, and next week&apos;s top 3 priorities.</p>
+                  </div>
+                  <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
+                    <span className="font-mono font-bold text-[#2563EB] block">MONTHLY</span>
+                    <strong className="text-[#0F172A] block text-sm">Monthly Business Review</strong>
+                    <p className="text-[#475569]">Compares current reality against both your joining baseline and last month — highlighting real gains and unresolved issues.</p>
+                  </div>
+                  <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
+                    <span className="font-mono font-bold text-[#2563EB] block">QUARTERLY</span>
+                    <strong className="text-[#0F172A] block text-sm">Sustainability Review</strong>
+                    <p className="text-[#475569]">Tracks whether resilience is Strengthening, Holding, or Under Strain and guides whether to Stabilise, Improve, or Expand.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 bg-[#F8FAFC] border border-[#0F172A]/12 rounded p-6 space-y-4">
+                <span className="bizpulse-label flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>What Happens After Registration</span>
+                </span>
+                <ol className="space-y-3 text-xs sm:text-sm text-[#0F172A]">
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded bg-[#0B1324] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                    <div>
+                      <strong className="block">Enter Your Business Profile &amp; 12 Health Checks</strong>
+                      <span className="text-xs text-[#475569]">Takes ~10 minutes on a clean workspace (plus an optional Sample Demo Business to explore).</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded bg-[#0B1324] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                    <div>
+                      <strong className="block">Generate Your Profit, Cash &amp; Sustainability Plan</strong>
+                      <span className="text-xs text-[#475569]">Upload financials if available, review your 30/60/90-day plan, and lock your Joining Baseline.</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded bg-[#0B1324] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                    <div>
+                      <strong className="block">Run Weekly Pulses, Coach Chats &amp; Monthly Reviews</strong>
+                      <span className="text-xs text-[#475569]">Stay on Free Trial or upgrade to a monthly NZD plan whenever you need higher allowances or multiple businesses.</span>
+                    </div>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pre-Registration Membership Plans & Billing Clarity */}
+        <section id="membership-plans" className="border-t border-[#0F172A]/10 bg-[#F8FAFC] py-14">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#0F172A]/10 pb-5">
+              <div className="space-y-1.5">
+                <span className="bizpulse-label block">Transparent Membership Plans (NZD)</span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">
+                  Start Free, Upgrade Only When Your Business Needs More Capacity
+                </h2>
+              </div>
+              <span className="text-xs text-[#475569] font-medium">
+                No lock-in contracts · Cancel anytime · Data remains yours
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {PUBLIC_MEMBERSHIP_PLANS.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`rounded p-6 border flex flex-col justify-between space-y-5 ${
+                    plan.id === 'business_plus_monthly'
+                      ? 'bg-[#0B1324] text-white border-[#0B1324]'
+                      : plan.highlight
+                      ? 'bg-white border-2 border-[#2563EB] text-[#0F172A]'
+                      : 'bg-white border-[#0F172A]/12 text-[#0F172A]'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider block ${
+                        plan.id === 'business_plus_monthly' ? 'text-[#60A5FA]' : 'text-[#2563EB]'
+                      }`}
+                    >
+                      {plan.badge}
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-bold">{plan.name}</h3>
+                      <div className="mt-1 flex items-baseline gap-1 font-mono tabular-nums">
+                        <span className="text-2xl font-bold">NZ${plan.priceNzd}</span>
+                        <span
+                          className={`text-xs ${
+                            plan.id === 'business_plus_monthly' ? 'text-[#CBD5E1]' : 'text-[#475569]'
+                          }`}
+                        >
+                          {plan.priceNzd === 0 ? '/ month' : '/ month'}
+                        </span>
+                      </div>
+                      <p
+                        className={`text-xs mt-1.5 leading-relaxed ${
+                          plan.id === 'business_plus_monthly' ? 'text-[#CBD5E1]' : 'text-[#475569]'
+                        }`}
+                      >
+                        {plan.audience}
+                      </p>
+                    </div>
+
+                    <ul
+                      className={`space-y-2 text-xs pt-3 border-t ${
+                        plan.id === 'business_plus_monthly'
+                          ? 'border-white/15 text-[#E2E8F0]'
+                          : 'border-[#0F172A]/10 text-[#0F172A]'
+                      }`}
+                    >
+                      {plan.features.map((feat) => (
+                        <li key={feat} className="flex items-start gap-2">
+                          <Check
+                            className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                              plan.id === 'business_plus_monthly' ? 'text-[#60A5FA]' : 'text-[#15803D]'
+                            }`}
+                          />
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => focusAuthPanel('register', plan.name)}
+                    className={`w-full py-2.5 px-4 rounded text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap ${
+                      plan.id === 'business_plus_monthly'
+                        ? 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
+                        : plan.highlight
+                        ? 'bg-[#0B1324] hover:bg-[#172554] text-white'
+                        : 'bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15'
+                    }`}
+                  >
+                    {plan.priceNzd === 0 ? 'Start Free Trial' : `Choose ${plan.name}`}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-[#0F172A]/12 rounded p-5 grid grid-cols-1 md:grid-cols-3 gap-5 text-xs text-[#475569]">
+              <div>
+                <strong className="text-[#0F172A] block mb-1">Monthly Allowance Behavior</strong>
+                <p className="leading-relaxed">{MEMBERSHIP_BILLING_POLICIES.allowancePolicy}</p>
+              </div>
+              <div>
+                <strong className="text-[#0F172A] block mb-1">Renewal &amp; Cancellation</strong>
+                <p className="leading-relaxed">{MEMBERSHIP_BILLING_POLICIES.cancellationPolicy}</p>
+              </div>
+              <div>
+                <strong className="text-[#0F172A] block mb-1">NZD Pricing &amp; GST Notice</strong>
+                <p className="leading-relaxed">
+                  {MEMBERSHIP_BILLING_POLICIES.currencyNotice} {MEMBERSHIP_BILLING_POLICIES.gstNotice}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Development Roadmap / Platform Capabilities Section */}
         <section
           id="development-roadmap"
           className="border-t border-[#0F172A]/10 bg-white py-14 lg:py-18"
@@ -504,9 +754,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#0F172A]/10 pb-5">
               <div className="space-y-1.5">
-                <span className="bizpulse-label block">Future Platform Evolution</span>
+                <span className="bizpulse-label block">Integrated SME Toolkit</span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">
-                  Our Development Roadmap
+                  Platform Capabilities &amp; Roadmap
                 </h2>
               </div>
 
@@ -621,17 +871,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => focusAuthPanel('register')}
+                  onClick={() => focusAuthPanel('register', 'Free Trial')}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
-                  <span>Start Your Diagnostic</span>
+                  <span>Start Your Free Diagnostic</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             <p className="pt-6 border-t border-white/15 text-xs italic text-[#CBD5E1]">
-              {BIZPULSE_VISION.disclaimer}
+              Commercial decision-support platform only — not formal tax, legal, valuation, or insolvency advice. Consult your Chartered Accountant or lawyer on regulated decisions.
             </p>
           </div>
         </section>
@@ -640,8 +890,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
       {/* Quiet Footer */}
       <footer className="bg-white border-t border-[#0F172A]/10 py-6 text-xs text-[#475569]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>Relaunch BizPulse © 2026 · Executive Coaching &amp; Diagnostic OS</span>
-          <span>Gain Clarity. Shape Your Future, Here and Now.</span>
+          <span>Relaunch BizPulse © 2026 · SME Business Health, Profit Intelligence &amp; Continuity</span>
+          <span>Your Business. Your Opportunities. Your Next Move.</span>
         </div>
       </footer>
     </div>

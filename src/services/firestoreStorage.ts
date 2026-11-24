@@ -115,6 +115,12 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
     roiScenarios: [],
     businessDevPlan: null,
     challengeSession: null,
+    continuity: {
+      joiningBaseline: null,
+      weeklyPulses: [],
+      monthlyReviews: [],
+      quarterlyReviews: [],
+    },
     reportBlocks: [],
     reportEditorSettings: { fontFamily: 'sans', fontSize: 'base' },
     subscriptionTier: 'free_trial',
@@ -167,6 +173,19 @@ function normalizeLoadedCase(data: CaseRecord): CaseRecord {
     roiScenarios: Array.isArray(data.roiScenarios) ? data.roiScenarios : [],
     businessDevPlan: data.businessDevPlan ?? null,
     challengeSession: data.challengeSession ?? null,
+    continuity: data.continuity
+      ? {
+          joiningBaseline: data.continuity.joiningBaseline ?? null,
+          weeklyPulses: Array.isArray(data.continuity.weeklyPulses) ? data.continuity.weeklyPulses : [],
+          monthlyReviews: Array.isArray(data.continuity.monthlyReviews) ? data.continuity.monthlyReviews : [],
+          quarterlyReviews: Array.isArray(data.continuity.quarterlyReviews) ? data.continuity.quarterlyReviews : [],
+        }
+      : {
+          joiningBaseline: null,
+          weeklyPulses: [],
+          monthlyReviews: [],
+          quarterlyReviews: [],
+        },
     reportBlocks: Array.isArray(data.reportBlocks) ? data.reportBlocks : [],
     reportEditorSettings: data.reportEditorSettings || { fontFamily: 'sans', fontSize: 'base' },
     sprintCompleted: data.sprintCompleted || { 'sprint-1': false, 'sprint-2': false, 'sprint-3': false },

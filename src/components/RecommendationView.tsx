@@ -42,6 +42,7 @@ interface RecommendationViewProps {
   onUpdateRecommendations: (rec: RecommendationOutput) => void;
   onTrackUsage?: (field: 'coachMessagesCount' | 'recommendationsCount') => void;
   onNavigateToConsole: (initialPrompt?: string) => void;
+  onOpenChallengeMe?: () => void;
 }
 
 export const RecommendationView: React.FC<RecommendationViewProps> = ({
@@ -56,6 +57,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   onUpdateRecommendations,
   onTrackUsage,
   onNavigateToConsole,
+  onOpenChallengeMe,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -538,21 +540,34 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 Generated {new Date(recommendations.generatedAt).toLocaleString()}
               </span>
 
-              <button
-                type="button"
-                onClick={() =>
-                  onNavigateToConsole(
-                    `Regarding our turnaround priority "${recommendations.initialRecommendation.substring(
-                      0,
-                      90
-                    )}...", help me prepare step-by-step execution details for ${profile.name}.`
-                  )
-                }
-                className="flex items-center space-x-1.5 px-4 py-2 rounded bg-white hover:bg-[#F8F7F4] text-[#111113] text-xs font-semibold border border-[#111113]/15 transition whitespace-nowrap"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-[#D97706]" />
-                <span>Open Full AI Coach Console</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {onOpenChallengeMe && (
+                  <button
+                    type="button"
+                    onClick={onOpenChallengeMe}
+                    className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] text-xs font-semibold border border-[#FDE68A] transition whitespace-nowrap"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>Launch Challenge Me</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    onNavigateToConsole(
+                      `Regarding our turnaround priority "${recommendations.initialRecommendation.substring(
+                        0,
+                        90
+                      )}...", help me prepare step-by-step execution details for ${profile.name}.`
+                    )
+                  }
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded bg-white hover:bg-[#F8F7F4] text-[#111113] text-xs font-semibold border border-[#111113]/15 transition whitespace-nowrap"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-[#D97706]" />
+                  <span>Open Chat with Coach</span>
+                </button>
+              </div>
             </div>
           </div>
 

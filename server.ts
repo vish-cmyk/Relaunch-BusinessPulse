@@ -299,7 +299,9 @@ async function startServer() {
     overallHealth: any,
     uploadedDocuments?: any[],
     crmContacts?: any[],
-    roiScenarios?: any[]
+    roiScenarios?: any[],
+    recommendations?: any,
+    actionPlan?: any[]
   ): string {
     const businessName = profile?.name || 'Client SME';
     const industry = profile?.industry || 'Small & Medium Enterprise';
@@ -383,6 +385,41 @@ async function startServer() {
       roiSummary += 'No custom ROI scenarios modeled yet.\n';
     }
 
+    let recommendationsSummary = 'EXISTING DIAGNOSTIC RECOMMENDATIONS & EVIDENCE AUDIT:\n';
+    if (recommendations && (recommendations.initialObservation || recommendations.initialRecommendation)) {
+      recommendationsSummary += `- Observation: ${recommendations.initialObservation || 'N/A'}\n`;
+      recommendationsSummary += `- Commercial Why: ${recommendations.commercialWhy || 'N/A'}\n`;
+      recommendationsSummary += `- Core Recommendation: ${recommendations.initialRecommendation || 'N/A'}\n`;
+      recommendationsSummary += `- Immediate Action: ${recommendations.immediateAction || 'N/A'}\n`;
+      if (Array.isArray(recommendations.sustainabilityRisks) && recommendations.sustainabilityRisks.length > 0) {
+        recommendationsSummary += `- Sustainability Risks: ${recommendations.sustainabilityRisks.slice(0, 4).join('; ')}\n`;
+      }
+      if (recommendations.knownsVsAssumptions) {
+        recommendationsSummary += `- Flagged Assumptions: ${(recommendations.knownsVsAssumptions.assumptions || []).slice(0, 4).join('; ') || 'None'}\n`;
+        recommendationsSummary += `- Missing Unknowns: ${(recommendations.knownsVsAssumptions.unknowns || []).slice(0, 4).join('; ') || 'None'}\n`;
+      }
+      if (Array.isArray(recommendations.actionItems) && recommendations.actionItems.length > 0) {
+        const done = recommendations.actionItems.filter((i: any) => i.completed).length;
+        recommendationsSummary += `- Recommendation Action Items: ${done}/${recommendations.actionItems.length} completed\n`;
+      }
+    } else {
+      recommendationsSummary += 'No diagnostic recommendation generated yet.\n';
+    }
+
+    let actionPlanSummary = '90-DAY ACTION PLAN STATUS:\n';
+    if (Array.isArray(actionPlan) && actionPlan.length > 0) {
+      const completedCount = actionPlan.filter((a) => a.completed || a.status === 'completed').length;
+      const urgentPending = actionPlan
+        .filter((a) => !a.completed && a.status !== 'completed')
+        .slice(0, 5);
+      actionPlanSummary += `- Total Planned Actions: ${actionPlan.length} (${completedCount} completed)\n`;
+      for (const act of urgentPending) {
+        actionPlanSummary += `  • [${act.priority || 'Action'}] ${act.action} (Owner: ${act.accountableRole || 'Owner'}, Timeframe: ${act.timeframe || 'TBD'})\n`;
+      }
+    } else {
+      actionPlanSummary += 'No 90-day action plan tasks saved yet.\n';
+    }
+
     return `
 You are a seasoned, welcoming yet commercially sharp SME business coach, financial analyst, and turnaround adviser.
 You are advising the owner of "${businessName}", an SME operating in the "${industry}" sector (${country}).
@@ -403,6 +440,8 @@ ${financialSummary}
 ${docsSummary}
 ${crmSummary}
 ${roiSummary}
+${recommendationsSummary}
+${actionPlanSummary}
 
 COACHING & EVIDENCE RULES:
 1. Context Fidelity: Tailor all advice strictly to "${businessName}" (${industry}, ${country}, ${currency}, ${staff}). Never assume it is an IT MSP unless industry is IT & Managed Services.
@@ -615,11 +654,12 @@ COACHING & EVIDENCE RULES:
   // COACH, DIAGNOSTIC & DOCUMENT ANALYSIS ENDPOINTS
   // ==========================================
 
-  // 1. Live AI Coach Query
+  // 1. Live Conversational AI Business Coach Query ("Chat with Coach")
   app.post('/api/coach/query', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const {
         prompt,
+        conversationHistory,
         businessProfile,
         healthInputs,
         financials,
@@ -627,6 +667,8 @@ COACHING & EVIDENCE RULES:
         uploadedDocuments,
         crmContacts,
         roiScenarios,
+        recommendations,
+        actionPlan,
         userRole,
         topic,
       } = req.body;
@@ -646,16 +688,107 @@ COACHING & EVIDENCE RULES:
           overallHealth,
           uploadedDocuments,
           crmContacts,
-          roiScenarios
+          roiScenarios,
+          recommendations,
+          actionPlan
         ) +
-        `\nSpeaking as: ${userRole || 'Owner/Director'}. Topic: ${topic || 'General Strategy'}. Format concisely using clear bullet points and direct commercial reasoning. Never invent missing financial numbers.`;
+        `\nCHAT WITH COACH CONVERSATION PROTOCOL:
+Speaking with: ${userRole || 'Owner/Director'}. Active Focus Topic: ${topic || 'General Strategy'}.
+- Engage in genuine two-way commercial coaching. If the owner disagrees with an earlier recommendation, questions an assumption, or proposes a new idea, address their reasoning directly, weigh risks/margins/cash flow/ROI, and be willing to refine or respectfully push back.
+- Ask 1–2 targeted clarifying follow-up questions when key context is missing or before locking in a major decision, rather than immediately producing a generic essay.
+- Clearly isolate any AI estimates, rules-of-thumb, or working assumptions in the "estimatesAndAssumptions" array so the owner never confuses an estimate with verified ledger data.
+- Whenever the discussion surfaces concrete next steps or client/lead follow-ups, include 1–3 structured items in "suggestedActions" (using targetType: "crm_followup" for customer/prospect outreach or collections, and "action_plan" for internal operational/financial tasks).
+Return strictly valid JSON matching the schema.`;
+
+      // Build multi-turn Gemini contents array from recent case-scoped conversationHistory
+      const contentsTurns: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+      if (Array.isArray(conversationHistory)) {
+        const recentHistory = conversationHistory
+          .filter((m: any) => m && typeof m.text === 'string' && m.text.trim().length > 0 && m.id !== 'm-0' && m.id !== 'm-reset')
+          .slice(-14);
+        for (const msg of recentHistory) {
+          const role: 'user' | 'model' = msg.sender === 'user' ? 'user' : 'model';
+          // Skip leading model turn because Gemini multi-turn chats must begin with a user turn
+          if (contentsTurns.length === 0 && role === 'model') continue;
+          const prev = contentsTurns[contentsTurns.length - 1];
+          if (prev && prev.role === role) {
+            prev.parts[0].text += `\n\n${msg.text.trim()}`;
+          } else {
+            contentsTurns.push({ role, parts: [{ text: msg.text.trim() }] });
+          }
+        }
+      }
+
+      const lastTurn = contentsTurns[contentsTurns.length - 1];
+      if (lastTurn && lastTurn.role === 'user') {
+        lastTurn.parts[0].text += `\n\n${prompt.trim()}`;
+      } else {
+        contentsTurns.push({ role: 'user', parts: [{ text: prompt.trim() }] });
+      }
 
       const response = await generateWithGemini4({
-        contents: prompt.trim(),
-        config: { systemInstruction },
+        contents: contentsTurns,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              reply: { type: Type.STRING },
+              estimatesAndAssumptions: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+              followUpQuestions: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+              suggestedActions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    title: { type: Type.STRING },
+                    ownerRole: { type: Type.STRING },
+                    priority: { type: Type.STRING },
+                    timeframe: { type: Type.STRING },
+                    targetType: { type: Type.STRING },
+                  },
+                  required: ['id', 'title', 'ownerRole', 'priority', 'timeframe', 'targetType'],
+                },
+              },
+            },
+            required: ['reply', 'estimatesAndAssumptions', 'followUpQuestions', 'suggestedActions'],
+          },
+        },
       });
 
-      return res.json({ reply: response.text || 'No response text generated.' });
+      const parsed = JSON.parse((response.text || '{}').trim());
+      const normalizePriority = (raw?: string): 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)' => {
+        if (raw && raw.includes('1')) return 'Priority 1 (Urgent)';
+        if (raw && raw.includes('2')) return 'Priority 2 (High)';
+        return 'Priority 3 (Medium)';
+      };
+
+      const suggestedActions = Array.isArray(parsed.suggestedActions)
+        ? parsed.suggestedActions.map((act: any, idx: number) => ({
+            id: act.id || `ca-${Date.now()}-${idx}`,
+            title: String(act.title || 'Follow-up task'),
+            ownerRole: String(act.ownerRole || 'Owner'),
+            priority: normalizePriority(String(act.priority || '')),
+            timeframe: String(act.timeframe || 'Within 7 days'),
+            targetType: act.targetType === 'crm_followup' ? 'crm_followup' : 'action_plan',
+            savedToPlan: false,
+          }))
+        : [];
+
+      return res.json({
+        reply: parsed.reply || 'No response text generated.',
+        estimatesAndAssumptions: Array.isArray(parsed.estimatesAndAssumptions) ? parsed.estimatesAndAssumptions : [],
+        followUpQuestions: Array.isArray(parsed.followUpQuestions) ? parsed.followUpQuestions : [],
+        suggestedActions,
+      });
     } catch (err: any) {
       console.error('Gemini Coaching Error:', err);
       return res.status(err?.statusCode || 502).json({
@@ -795,6 +928,7 @@ Strictly do NOT invent any financial figures that were not supplied. Return stri
         uploadedDocuments,
         crmContacts,
         roiScenarios,
+        actionPlan,
       } = req.body;
 
       const challengeInput = typeof challengeQuestion === 'string' && challengeQuestion.trim()
@@ -817,7 +951,9 @@ Strictly do NOT invent any financial figures that were not supplied. Return stri
         overallHealth,
         uploadedDocuments,
         crmContacts,
-        roiScenarios
+        roiScenarios,
+        currentRecommendation,
+        actionPlan
       );
 
       const prompt = `
@@ -1016,6 +1152,8 @@ Include:
         uploadedDocuments,
         crmContacts,
         roiScenarios,
+        recommendations,
+        actionPlan,
         focusArea,
       } = req.body;
 
@@ -1026,7 +1164,9 @@ Include:
         overallHealth,
         uploadedDocuments,
         crmContacts,
-        roiScenarios
+        roiScenarios,
+        recommendations,
+        actionPlan
       );
 
       const prompt = `
@@ -1096,6 +1236,250 @@ Return strictly valid JSON matching the schema:
       console.error('Business Development Generation Error:', err);
       return res.status(err?.statusCode || 502).json({
         error: err?.message || 'Unable to generate Business Development Plan.',
+      });
+    }
+  });
+
+  // 7. Interactive "Challenge Me" Socratic & Scenario Interrogation Endpoint
+  app.post('/api/coach/challenge-me', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
+    try {
+      const {
+        action,
+        focusTopic,
+        currentSession,
+        ownerResponse,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan,
+      } = req.body;
+
+      if (!['start', 'respond', 'conclude'].includes(action)) {
+        return res.status(400).json({ error: 'Invalid challenge action. Expected "start", "respond", or "conclude".' });
+      }
+
+      const systemInstruction =
+        buildDynamicSystemInstruction(
+          businessProfile,
+          healthInputs,
+          financials,
+          overallHealth,
+          uploadedDocuments,
+          crmContacts,
+          roiScenarios,
+          recommendations,
+          actionPlan
+        ) +
+        `\n"CHALLENGE ME" INTERROGATION MODE RULES:
+- Role: You are stress-testing the business owner's thinking before capital, time, or team capacity is committed.
+- Tone: Constructive, commercially intelligent, direct, and occasionally uncomfortable. Challenge the thinking, assumptions, and numbers—never criticize the person.
+- STRICTLY FORBIDDEN: Generic motivational questions ("What inspires you?"), vague platitudes, multi-question checklists (ALWAYS ask strictly ONE sharp, challenging question per round), and inventing unverified financial numbers.
+- Ground every contradiction, scenario, and implication in the specific business data above (8D Health notes/statuses, financial ledger/cash/AR, CRM pipeline/at-risk clients, ROI assumptions, and prior recommendations).`;
+
+      if (action === 'start') {
+        const startPrompt = `
+Conduct a sharp diagnostic scan of "${businessProfile?.name || 'this business'}" under the focus "${focusTopic || 'Full Business Reality Check'}".
+1. Identify 2–4 concrete contradictions (e.g., growth goals vs cash/overdraft/overdue debtors; owner dependency vs hiring capacity; unreviewed pricing vs cost inflation; CRM at-risk concentration vs pipeline expectations).
+2. Identify 2–4 questionable assumptions evident in the owner's answers, ROI scenarios, or recommendations.
+3. Identify 2–3 commercial blind spots or unexamined risks.
+4. Design Round 1: pick the single sharpest commercial tension, present a realistic, concrete business scenario testing the owner's decision, and ask ONE pointed, uncomfortable question that forces a real commercial choice or defense.
+
+Return strictly valid JSON matching the schema.`;
+
+        const response = await generateWithGemini4({
+          contents: startPrompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                contradictionsDetected: { type: Type.ARRAY, items: { type: Type.STRING } },
+                questionableAssumptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                blindSpots: { type: Type.ARRAY, items: { type: Type.STRING } },
+                firstRound: {
+                  type: Type.OBJECT,
+                  properties: {
+                    contradictionOrBlindSpot: { type: Type.STRING },
+                    scenarioContext: { type: Type.STRING },
+                    question: { type: Type.STRING },
+                  },
+                  required: ['contradictionOrBlindSpot', 'scenarioContext', 'question'],
+                },
+              },
+              required: ['contradictionsDetected', 'questionableAssumptions', 'blindSpots', 'firstRound'],
+            },
+          },
+        });
+
+        const parsed = JSON.parse((response.text || '{}').trim());
+        return res.json({
+          contradictionsDetected: Array.isArray(parsed.contradictionsDetected) ? parsed.contradictionsDetected : [],
+          questionableAssumptions: Array.isArray(parsed.questionableAssumptions) ? parsed.questionableAssumptions : [],
+          blindSpots: Array.isArray(parsed.blindSpots) ? parsed.blindSpots : [],
+          firstRound: parsed.firstRound,
+        });
+      }
+
+      if (action === 'respond') {
+        if (!ownerResponse || typeof ownerResponse !== 'string' || !ownerResponse.trim()) {
+          return res.status(400).json({ error: 'Please enter your response to the challenge question before continuing.' });
+        }
+        if (ownerResponse.length > 5000) {
+          return res.status(400).json({ error: 'Response exceeds maximum length (5,000 characters).' });
+        }
+
+        const rounds = Array.isArray(currentSession?.rounds) ? currentSession.rounds : [];
+        const roundTranscript = rounds
+          .map(
+            (r: any, idx: number) =>
+              `Round ${idx + 1} (${r.contradictionOrBlindSpot}):\nScenario: ${r.scenarioContext}\nChallenge Question: ${r.question}\nOwner Response: ${
+                idx === rounds.length - 1 && !r.ownerResponse ? ownerResponse.trim() : r.ownerResponse || '(pending)'
+              }${r.businessImplication ? `\nCoach Implication: ${r.businessImplication}` : ''}`
+          )
+          .join('\n\n---\n\n');
+
+        const respondPrompt = `
+CHALLENGE SESSION FOCUS: ${focusTopic || currentSession?.focusTopic || 'Full Business Reality Check'}
+DETECTED CONTRADICTIONS: ${(currentSession?.contradictionsDetected || []).join('; ')}
+FLAGGED ASSUMPTIONS: ${(currentSession?.questionableAssumptions || []).join('; ')}
+
+SESSION TRANSCRIPT SO FAR (including Owner's latest response on the final round):
+${roundTranscript || `Owner Response: ${ownerResponse.trim()}`}
+
+Instructions:
+1. In "businessImplication", directly analyze the commercial, cash-flow, margin, customer-concentration, or execution implications of the owner's latest response. Point out where their logic holds up AND where an unverified assumption, cash risk, or contradiction still exposes the business.
+2. Decide "shouldConclude": if ${rounds.length} >= 4 OR the core commercial tensions have now been thoroughly tested, set shouldConclude=true. Otherwise set shouldConclude=false and provide "nextRound" probing the next untested blind spot or pushing deeper on a gap exposed by their latest answer (with ONE sharp question and a realistic scenario).
+
+Return strictly valid JSON matching the schema.`;
+
+        const response = await generateWithGemini4({
+          contents: respondPrompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                businessImplication: { type: Type.STRING },
+                shouldConclude: { type: Type.BOOLEAN },
+                nextRound: {
+                  type: Type.OBJECT,
+                  properties: {
+                    contradictionOrBlindSpot: { type: Type.STRING },
+                    scenarioContext: { type: Type.STRING },
+                    question: { type: Type.STRING },
+                  },
+                  required: ['contradictionOrBlindSpot', 'scenarioContext', 'question'],
+                },
+              },
+              required: ['businessImplication', 'shouldConclude'],
+            },
+          },
+        });
+
+        const parsed = JSON.parse((response.text || '{}').trim());
+        return res.json({
+          businessImplication: parsed.businessImplication || '',
+          shouldConclude: Boolean(parsed.shouldConclude),
+          nextRound: parsed.shouldConclude ? null : parsed.nextRound || null,
+        });
+      }
+
+      // action === 'conclude'
+      const rounds = Array.isArray(currentSession?.rounds) ? currentSession.rounds : [];
+      const transcript = rounds
+        .map(
+          (r: any, idx: number) =>
+            `Round ${idx + 1} — ${r.contradictionOrBlindSpot}\nScenario: ${r.scenarioContext}\nQuestion: ${r.question}\nOwner Response: ${
+              r.ownerResponse || 'Skipped / Not answered'
+            }\nCommercial Implication: ${r.businessImplication || 'N/A'}`
+        )
+        .join('\n\n---\n\n');
+
+      const concludePrompt = `
+Synthesize the completed "Challenge Me" interrogation for "${businessProfile?.name || 'this SME'}" (${focusTopic || currentSession?.focusTopic || 'Business Reality Check'}).
+
+CONTRADICTIONS & ASSUMPTIONS:
+- Contradictions: ${(currentSession?.contradictionsDetected || []).join('; ')}
+- Questionable Assumptions: ${(currentSession?.questionableAssumptions || []).join('; ')}
+- Blind Spots: ${(currentSession?.blindSpots || []).join('; ')}
+
+CHALLENGE TRANSCRIPT:
+${transcript || 'No round responses recorded.'}
+
+Produce a decisive executive wrap-up:
+1. "keyInsights": 3–5 sharp commercial takeaways revealed by how the owner answered (separating facts from assumptions).
+2. "recommendedDecisions": 2–4 clear stop/start/reprice/defer executive decisions the owner needs to make right now.
+3. "nextActions": 3–5 practical, sequenced next actions ({ id, action, ownerRole, priority, timeframe, rationale }) ready to add directly to the 90-Day Action Plan.
+
+Return strictly valid JSON matching the schema.`;
+
+      const response = await generateWithGemini4({
+        contents: concludePrompt,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              keyInsights: { type: Type.ARRAY, items: { type: Type.STRING } },
+              recommendedDecisions: { type: Type.ARRAY, items: { type: Type.STRING } },
+              nextActions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    action: { type: Type.STRING },
+                    ownerRole: { type: Type.STRING },
+                    priority: { type: Type.STRING },
+                    timeframe: { type: Type.STRING },
+                    rationale: { type: Type.STRING },
+                  },
+                  required: ['id', 'action', 'ownerRole', 'priority', 'timeframe', 'rationale'],
+                },
+              },
+            },
+            required: ['keyInsights', 'recommendedDecisions', 'nextActions'],
+          },
+        },
+      });
+
+      const parsed = JSON.parse((response.text || '{}').trim());
+      const normalizePriority = (raw?: string): 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)' => {
+        if (raw && raw.includes('1')) return 'Priority 1 (Urgent)';
+        if (raw && raw.includes('2')) return 'Priority 2 (High)';
+        return 'Priority 3 (Medium)';
+      };
+
+      return res.json({
+        conclusion: {
+          keyInsights: Array.isArray(parsed.keyInsights) ? parsed.keyInsights : [],
+          recommendedDecisions: Array.isArray(parsed.recommendedDecisions) ? parsed.recommendedDecisions : [],
+          nextActions: Array.isArray(parsed.nextActions)
+            ? parsed.nextActions.map((a: any, idx: number) => ({
+                id: a.id || `cna-${Date.now()}-${idx}`,
+                action: String(a.action || ''),
+                ownerRole: String(a.ownerRole || 'Owner'),
+                priority: normalizePriority(String(a.priority || '')),
+                timeframe: String(a.timeframe || 'Within 7 days'),
+                rationale: String(a.rationale || ''),
+                addedToPlan: false,
+              }))
+            : [],
+          concludedAt: new Date().toISOString(),
+        },
+      });
+    } catch (err: any) {
+      console.error('Challenge Me Error:', err);
+      return res.status(err?.statusCode || 502).json({
+        error: err?.message || 'Unable to run Challenge Me coaching session.',
       });
     }
   });

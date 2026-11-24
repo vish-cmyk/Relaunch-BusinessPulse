@@ -13,6 +13,7 @@ import { Roadmap90Day } from './components/Roadmap90Day';
 import { WeeklyDashboardView } from './components/WeeklyDashboardView';
 import { SevenDaySprint } from './components/SevenDaySprint';
 import { AICoachConsole } from './components/AICoachConsole';
+import { ChallengeMeView } from './components/ChallengeMeView';
 import { ReportExportModal } from './components/ReportExportModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AuthScreen } from './components/AuthScreen';
@@ -655,6 +656,7 @@ function BizPulseWorkspace() {
             recommendations={activeCase.recommendations}
             onUpdateRecommendations={handleUpdateRecommendations}
             onTrackUsage={handleTrackUsage}
+            onOpenChallengeMe={() => setActiveTab('challengeme')}
             onNavigateToConsole={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -737,12 +739,28 @@ function BizPulseWorkspace() {
           />
         )}
 
+        {activeTab === 'challengeme' && (
+          <ChallengeMeView
+            key={`challenge-${activeCase.id}`}
+            caseRecord={activeCase}
+            onUpdateCase={(updated) => {
+              persistCase(updated);
+            }}
+            onTrackUsage={handleTrackUsage}
+            onOpenCoachWithPrompt={(prompt) => {
+              setCoachInitialPrompt(prompt);
+              setActiveTab('aicoach');
+            }}
+          />
+        )}
+
         {activeTab === 'aicoach' && (
           <AICoachConsole
             key={`coach-${activeCase.id}`}
             caseRecord={activeCase}
             initialPrompt={coachInitialPrompt}
             onTrackUsage={handleTrackUsage}
+            onOpenChallengeMe={() => setActiveTab('challengeme')}
             onUpdateCase={(updated) => {
               persistCase(updated);
             }}

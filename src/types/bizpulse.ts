@@ -163,6 +163,16 @@ export interface UploadedDocument {
   extractedPreview?: string;
 }
 
+export interface CoachSuggestedAction {
+  id: string;
+  title: string;
+  ownerRole: string;
+  priority: 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)';
+  timeframe: string;
+  targetType: 'action_plan' | 'crm_followup';
+  savedToPlan?: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'coach';
@@ -171,6 +181,9 @@ export interface ChatMessage {
   metadata?: {
     topic?: string;
     role?: string;
+    estimatesAndAssumptions?: string[];
+    followUpQuestions?: string[];
+    suggestedActions?: CoachSuggestedAction[];
   };
 }
 
@@ -354,6 +367,47 @@ export interface BusinessDevPlan {
   generatedAt: string;
 }
 
+export interface ChallengeRound {
+  id: string;
+  roundNumber: number;
+  contradictionOrBlindSpot: string;
+  scenarioContext: string;
+  question: string;
+  ownerResponse?: string;
+  businessImplication?: string;
+  respondedAt?: string;
+}
+
+export interface ChallengeNextAction {
+  id: string;
+  action: string;
+  ownerRole: string;
+  priority: 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)';
+  timeframe: string;
+  rationale: string;
+  addedToPlan?: boolean;
+}
+
+export interface ChallengeConclusion {
+  keyInsights: string[];
+  recommendedDecisions: string[];
+  nextActions: ChallengeNextAction[];
+  concludedAt: string;
+}
+
+export interface ChallengeMeSession {
+  id: string;
+  focusTopic: string;
+  status: 'active' | 'concluded';
+  contradictionsDetected: string[];
+  questionableAssumptions: string[];
+  blindSpots: string[];
+  rounds: ChallengeRound[];
+  conclusion?: ChallengeConclusion | null;
+  startedAt: string;
+  updatedAt: string;
+}
+
 export interface CaseRecord {
   id: string;
   profile: BusinessProfile;
@@ -369,6 +423,7 @@ export interface CaseRecord {
   crmContacts?: CrmRecord[];
   roiScenarios?: RoiScenario[];
   businessDevPlan?: BusinessDevPlan | null;
+  challengeSession?: ChallengeMeSession | null;
   reportBlocks?: ReportCustomBlock[];
   reportEditorSettings?: ReportEditorSettings;
   subscriptionTier?: SubscriptionTierId;

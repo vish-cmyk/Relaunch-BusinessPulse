@@ -77,6 +77,7 @@ export function createBlankCase(profileOverrides?: Partial<BusinessProfile>): Ca
     crmContacts: [],
     roiScenarios: [],
     businessDevPlan: null,
+    challengeSession: null,
     subscriptionTier: 'free_trial',
     usageStats: { recommendationsCount: 0, coachMessagesCount: 0, documentsAnalyzedCount: 0 },
     isUnlocked: false,

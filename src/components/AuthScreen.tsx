@@ -173,7 +173,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <button
               type="button"
               onClick={() => focusAuthPanel(mode === 'register' ? 'signin' : 'register')}
-              className="px-4 py-2 rounded bg-[#111113] hover:bg-[#27272A] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+              className="px-4 py-2 rounded bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
             >
               {mode === 'register' ? 'Sign In' : 'Create Account'}
             </button>
@@ -197,7 +197,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   {BIZPULSE_VISION.headline}
                 </h1>
 
-                <p className="text-lg sm:text-xl font-semibold text-[#B45309]">
+                <p className="text-lg sm:text-xl font-bold text-[#d97706]">
                   {BIZPULSE_VISION.subheading}
                 </p>
 
@@ -262,9 +262,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
             {/* Right Column: Private Workspace Auth Card */}
             <div ref={authPanelRef} className="lg:col-span-5 w-full">
-              <div className="bg-white border border-[#111113]/12 py-7 px-6 sm:px-8 rounded">
+              <div className="bg-white border border-[#111113]/12 py-7 px-6 sm:px-8 rounded text-[17px]">
                 <div className="mb-5">
-                  <span className="bizpulse-label block mb-1">Private Business Vault</span>
+                  <span className="font-mono uppercase tracking-[0.14em] block mb-1 text-[#d97706] font-bold text-left text-[12px]">Private Business Vault</span>
                   <h2 className="text-lg font-bold text-[#111113]">
                     {mode === 'signin'
                       ? 'Sign In to Your Workspace'
@@ -548,14 +548,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 visiblePillars.length > 1 ? 'md:grid-cols-2' : 'md:grid-cols-1'
               } gap-6`}
             >
-              {visiblePillars.map((pillar) => (
+              {visiblePillars.map((pillar, idx) => (
                 <article
                   key={pillar.id}
                   className="bg-[#F8F7F4] border border-[#111113]/12 rounded p-6 sm:p-8 flex flex-col justify-between space-y-6"
                 >
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-2 text-xs text-[#52525B]">
-                      <span className="font-mono font-bold text-[#D97706] tracking-wider">
+                    <div
+                      className={`flex items-center justify-between gap-2 text-xs ${
+                        idx === 2 ? 'text-[#d97706]' : 'text-[#52525B]'
+                      }`}
+                    >
+                      <span className="font-mono font-bold text-[#d97706] tracking-wider">
                         {pillar.number}.
                       </span>
                       <span>Planned Release</span>
@@ -565,7 +569,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       <h3 className="text-xl font-bold text-[#111113]">
                         {pillar.number}. {pillar.title}
                       </h3>
-                      <p className="text-sm font-semibold text-[#B45309] mt-1">
+                      <p className="text-sm font-semibold text-[#d97706] mt-1">
                         {pillar.tagline}
                       </p>
                       <p className="text-sm text-[#52525B] mt-3 leading-relaxed">
@@ -596,7 +600,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
         {/* Our Commitment & Simple Ambition */}
         <section id="our-commitment" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="bizpulse-hero-gradient text-white rounded p-8 sm:p-10 lg:p-12 border border-[#111113]/15 space-y-8">
+          <div className="bizpulse-hero-gradient text-[#d97706] rounded p-8 sm:p-10 lg:p-12 border border-[#111113]/15 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-7 space-y-4">
                 <span className="text-xs font-mono uppercase tracking-widest text-[#FBBF24] block">
@@ -613,7 +617,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               </div>
 
               <div className="lg:col-span-5 bg-white/5 border border-white/15 rounded p-6 space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#FBBF24] block">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#d97706] block">
                   {BIZPULSE_VISION.ambitionLead}
                 </span>
                 <p className="text-sm sm:text-base font-medium text-white leading-relaxed">

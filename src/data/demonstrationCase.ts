@@ -465,6 +465,7 @@ export const DEMO_MSP_CASE: CaseRecord = {
     },
   ],
   businessDevPlan: null,
+  challengeSession: null,
   isUnlocked: true,
   paymentStatus: 'paid',
   updatedAt: '2026-10-14T14:30:00Z',

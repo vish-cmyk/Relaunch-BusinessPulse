@@ -9,9 +9,24 @@ import {
   RotateCcw,
   UserCheck,
   Loader2,
+  AlertTriangle,
+  HelpCircle,
+  Plus,
+  CheckCircle2,
+  ShieldAlert,
+  Users,
+  BookmarkPlus,
 } from 'lucide-react';
 import { SCRIPT_PRESETS } from '../data/coachingBriefing';
-import { ScriptPreset, CaseRecord, BusinessProfile, ChatMessage } from '../types/bizpulse';
+import {
+  ScriptPreset,
+  CaseRecord,
+  BusinessProfile,
+  ChatMessage,
+  CoachSuggestedAction,
+  TurnaroundAction,
+  CrmRecord,
+} from '../types/bizpulse';
 import { getAuthHeaders } from '../services/firebase';
 
 interface AICoachConsoleProps {
@@ -19,31 +34,45 @@ interface AICoachConsoleProps {
   onUpdateCase?: (updated: CaseRecord) => void;
   onTrackUsage?: (field: 'coachMessagesCount') => void;
   initialPrompt?: string;
+  onOpenChallengeMe?: () => void;
 }
+
+const TOPIC_OPTIONS = [
+  'Strategy & Growth',
+  'Cash Flow & Collections',
+  'Pricing & Margins',
+  'Client Retention',
+  'CRM & Pipeline',
+  'ROI & Investments',
+  'Team & Owner Capacity',
+];
 
 export const AICoachConsole: React.FC<AICoachConsoleProps> = ({
   caseRecord,
   onUpdateCase,
   onTrackUsage,
   initialPrompt,
+  onOpenChallengeMe,
 }) => {
   const profile = caseRecord.profile;
 
   const getInitialWelcomeText = (p: BusinessProfile) => {
     if (p.isDemonstrationCase) {
-      return `Kia ora Vish and Managing Partner. I am your direct, commercially minded executive business coach. I have reviewed your baseline numbers: NZ$1.28M revenue, NZ$100k operating profit, NZ$38k cash, NZ$52k overdraft drawn, and NZ$58k in >60-day overdue accounts.
+      return `Kia ora Vish and Managing Partner. I am your ongoing AI Business Coach for Apex Managed Services Ltd. I have loaded your 8D Health scores, baseline financials (NZ$1.28M revenue, NZ$38k cash, NZ$52k overdraft drawn, NZ$58k >60-day overdue debtors), CRM pipeline, and ROI models.
 
-Ask any tough commercial question below, challenge priorities, or use the quick communication templates to prepare overdue account notices and client outreach.`;
+Ask questions, disagree with any recommendation, compare options, or turn our discussion directly into Action Plan and CRM follow-up tasks.`;
     }
-    return `Welcome to your Executive Coaching Console for ${p.name || 'your business'}.
-Context loaded: ${p.industry} (${p.country}, Currency: ${p.currency}) | Uploaded Documents: ${
-      caseRecord.uploadedDocuments?.length || 0
-    }.
+    return `Welcome to Chat with Coach for ${p.name || 'your business'}.
+Context active: ${p.industry} (${p.country}, Currency: ${p.currency}) | Health: ${
+      caseRecord.overallHealth?.overallScore ?? 'Pending'
+    }/100 | CRM: ${caseRecord.crmContacts?.length || 0} record(s) | ROI Scenarios: ${
+      caseRecord.roiScenarios?.length || 0
+    } | Docs: ${caseRecord.uploadedDocuments?.length || 0}.
 
 Primary Objective: "${p.primaryObjective || 'Not entered yet'}"
 Primary Concern: "${p.primaryConcern || 'Not entered yet'}"
 
-Ask about cash flow, pricing adjustments, customer negotiations, staff workload, or document findings.`;
+Ask about cash flow, profitability, growth options, client priorities, or challenge any recommendation below.`;
   };
 
   const buildInitialMessages = (record: CaseRecord): ChatMessage[] => {
@@ -62,7 +91,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => buildInitialMessages(caseRecord));
   const [inputPrompt, setInputPrompt] = useState<string>(initialPrompt || '');
-  const [selectedTopic, setSelectedTopic] = useState<string>('Cash Flow & Collections');
+  const [selectedTopic, setSelectedTopic] = useState<string>('Strategy & Growth');
 
   const defaultRole = profile.isDemonstrationCase
     ? 'Managing Director (Vish)'
@@ -70,6 +99,8 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
   const [userRole, setUserRole] = useState<string>(defaultRole);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [copiedScriptId, setCopiedScriptId] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [savedMessageIds, setSavedMessageIds] = useState<Record<string, boolean>>({});
 
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState<boolean>(false);
@@ -84,13 +115,26 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
     );
     setGeneratedScript(null);
     setSelectedPreset(null);
+    setSavedMessageIds({});
   }, [caseRecord.id]);
+
+  // Keep local messages synchronized if Firestore updates conversations on the active case
+  useEffect(() => {
+    if (caseRecord.conversations && caseRecord.conversations.length > 0) {
+      setMessages(caseRecord.conversations);
+    }
+  }, [caseRecord.conversations]);
 
   useEffect(() => {
     if (initialPrompt) {
       setInputPrompt(initialPrompt);
     }
   }, [initialPrompt]);
+
+  const showTempNotice = (msg: string) => {
+    setActionNotice(msg);
+    setTimeout(() => setActionNotice(null), 4000);
+  };
 
   const roleOptions = profile.isDemonstrationCase
     ? ['Managing Director (Vish)', 'Finance/Operations (Partner)', 'Senior Systems Engineer']
@@ -110,6 +154,10 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
       sender: 'user',
       text: textToSend,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      metadata: {
+        topic: selectedTopic,
+        role: userRole,
+      },
     };
 
     const nextMessages = [...messages, userMsg];
@@ -128,6 +176,11 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
         body: JSON.stringify({
           caseId: caseRecord.id,
           prompt: textToSend,
+          conversationHistory: messages.slice(-14).map((m) => ({
+            id: m.id,
+            sender: m.sender,
+            text: m.text,
+          })),
           topic: selectedTopic,
           userRole,
           businessProfile: caseRecord.profile,
@@ -137,6 +190,8 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
           uploadedDocuments: caseRecord.uploadedDocuments || [],
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
+          recommendations: caseRecord.recommendations,
+          actionPlan: caseRecord.actionPlan || [],
         }),
       });
 
@@ -151,6 +206,18 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
         sender: 'coach',
         text: data.reply || 'No response generated.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        metadata: {
+          topic: selectedTopic,
+          estimatesAndAssumptions: Array.isArray(data.estimatesAndAssumptions)
+            ? data.estimatesAndAssumptions
+            : [],
+          followUpQuestions: Array.isArray(data.followUpQuestions)
+            ? data.followUpQuestions
+            : [],
+          suggestedActions: Array.isArray(data.suggestedActions)
+            ? data.suggestedActions
+            : [],
+        },
       };
 
       const finalMessages = [...nextMessages, coachMsg];
@@ -166,13 +233,131 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'coach',
-        text: `Unable to reach Executive Coach: ${err.message || 'Please retry shortly.'}`,
+        text: `Unable to reach Chat with Coach: ${err.message || 'Please retry shortly.'}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConvertSuggestedAction = (messageId: string, act: CoachSuggestedAction) => {
+    if (act.savedToPlan) return;
+    const nowIso = new Date().toISOString();
+
+    const updatedConversations = messages.map((m) => {
+      if (m.id !== messageId || !m.metadata?.suggestedActions) return m;
+      return {
+        ...m,
+        metadata: {
+          ...m.metadata,
+          suggestedActions: m.metadata.suggestedActions.map((sa) =>
+            sa.id === act.id ? { ...sa, savedToPlan: true } : sa
+          ),
+        },
+      };
+    });
+
+    if (act.targetType === 'crm_followup') {
+      const followUpDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+      const newCrmFollowUp: CrmRecord = {
+        id: `crm-coach-${Date.now()}`,
+        companyOrName: act.title.slice(0, 80),
+        contactPerson: act.ownerRole || 'Owner Follow-up',
+        email: '',
+        phone: '',
+        recordType: 'Lead',
+        tier: 'Prospect',
+        salesStage: 'Contacted',
+        status: 'Follow-Up Due',
+        opportunityValue: 0,
+        monthlyValue: 0,
+        nextFollowUpDate: followUpDate,
+        leadSource: `Chat with Coach (${selectedTopic})`,
+        notes: `Agreed in Chat with Coach (${act.timeframe}): ${act.title}`,
+        interactions: [
+          {
+            id: `int-${Date.now()}`,
+            date: nowIso.slice(0, 10),
+            type: 'Note',
+            summary: `Created follow-up task from Chat with Coach: ${act.title}`,
+          },
+        ],
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+
+      setMessages(updatedConversations);
+      onUpdateCase?.({
+        ...caseRecord,
+        crmContacts: [newCrmFollowUp, ...(caseRecord.crmContacts || [])],
+        conversations: updatedConversations,
+        updatedAt: nowIso,
+      });
+      showTempNotice(`Added CRM follow-up task ("${act.title.slice(0, 48)}...") due ${followUpDate}.`);
+      return;
+    }
+
+    const newAction: TurnaroundAction = {
+      id: `act-coach-${Date.now()}`,
+      horizon: act.priority.includes('Urgent')
+        ? 'Horizon 1 (First 7 Days)'
+        : act.priority.includes('High')
+        ? 'Horizon 2 (Days 8–30)'
+        : 'Horizon 3 (Days 31–90)',
+      priority: act.priority,
+      businessIssue: `Agreed in Chat with Coach (${selectedTopic})`,
+      action: act.title,
+      accountableRole: act.ownerRole || 'Owner',
+      timeframe: act.timeframe || 'Within 7 days',
+      requiredInformationOrResources: ['Agreed in Chat with Coach session'],
+      measurableSuccessIndicator: `Completed within ${act.timeframe || 'target window'}`,
+      dependencyOrRisk: 'Verify working assumptions before committing cash.',
+      status: 'pending',
+      completed: false,
+    };
+
+    setMessages(updatedConversations);
+    onUpdateCase?.({
+      ...caseRecord,
+      actionPlan: [newAction, ...(caseRecord.actionPlan || [])],
+      conversations: updatedConversations,
+      updatedAt: nowIso,
+    });
+    showTempNotice(`Added "${act.title.slice(0, 48)}..." to your 90-Day Action Plan.`);
+  };
+
+  const handleSaveReplyAsAction = (msg: ChatMessage) => {
+    if (savedMessageIds[msg.id]) return;
+    const summaryLine =
+      msg.text
+        .split('\n')
+        .map((line) => line.replace(/^[-*•\d.]+\s*/, '').trim())
+        .find((line) => line.length > 15) || msg.text.slice(0, 120);
+
+    const newAction: TurnaroundAction = {
+      id: `act-msg-${Date.now()}`,
+      horizon: 'Horizon 1 (First 7 Days)',
+      priority: 'Priority 2 (High)',
+      businessIssue: `Coach Discussion (${msg.metadata?.topic || selectedTopic})`,
+      action: summaryLine.slice(0, 180),
+      accountableRole: userRole,
+      timeframe: 'Within 7 days',
+      requiredInformationOrResources: ['Notes from Chat with Coach thread'],
+      measurableSuccessIndicator: 'Action reviewed and confirmed with coach metrics',
+      dependencyOrRisk: 'Confirm any flagged AI assumptions first.',
+      status: 'pending',
+      completed: false,
+    };
+
+    setSavedMessageIds((prev) => ({ ...prev, [msg.id]: true }));
+    onUpdateCase?.({
+      ...caseRecord,
+      actionPlan: [newAction, ...(caseRecord.actionPlan || [])],
+      updatedAt: new Date().toISOString(),
+    });
+    showTempNotice('Saved coaching insight to your 90-Day Action Plan.');
   };
 
   const handleGeneratePresetScript = async (preset: ScriptPreset) => {
@@ -218,6 +403,12 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
     setTimeout(() => setCopiedScriptId(null), 2000);
   };
 
+  const quickConversationStarters = [
+    `I disagree with part of the current recommendation — let's test an alternative approach for ${profile.name}.`,
+    `Which 2 CRM or cash-flow actions give the fastest payback with least risk right now?`,
+    `Walk me through the biggest unverified assumptions in my plan before I spend cash.`,
+  ];
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Charcoal Hero Header */}
@@ -227,36 +418,61 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#D97706] text-white flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
-                Live Executive Coach
+                Chat with Coach
               </span>
               <span className="text-[#D4D4D8] text-xs font-medium">
-                Evidence-Based SME Advisory
+                Ongoing Context-Aware Business Advisory
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Executive Coaching Console ({profile.name})
+              Chat with Coach ({profile.name})
             </h2>
             <p className="text-sm text-[#D4D4D8] max-w-3xl leading-relaxed">
-              Grounded strictly in {profile.name} ({profile.industry}, {profile.country}) — including your 8 health scores, {caseRecord.crmContacts?.length || 0} CRM record{(caseRecord.crmContacts?.length || 0) === 1 ? '' : 's'}, {caseRecord.roiScenarios?.length || 0} ROI scenario{(caseRecord.roiScenarios?.length || 0) === 1 ? '' : 's'}, and {caseRecord.uploadedDocuments?.length || 0} uploaded document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
+              Multi-turn advisory grounded in {profile.name} ({profile.industry}, {profile.country}) — using your 8D Health scores, {caseRecord.recommendations ? 'saved diagnostic recommendations, ' : ''}{caseRecord.crmContacts?.length || 0} CRM record{(caseRecord.crmContacts?.length || 0) === 1 ? '' : 's'}, {caseRecord.roiScenarios?.length || 0} ROI scenario{(caseRecord.roiScenarios?.length || 0) === 1 ? '' : 's'}, and {caseRecord.uploadedDocuments?.length || 0} document{(caseRecord.uploadedDocuments?.length || 0) === 1 ? '' : 's'}.
             </p>
           </div>
 
-          <div className="flex items-center space-x-2.5 bg-white/5 px-4 py-2.5 rounded border border-white/15 shrink-0">
-            <span className="text-xs text-[#D4D4D8] font-medium whitespace-nowrap">Role:</span>
-            <select
-              value={userRole}
-              onChange={(e) => setUserRole(e.target.value)}
-              className="bg-[#18181B] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#D97706] max-w-[220px]"
-            >
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end gap-2 shrink-0">
+            <div className="flex items-center space-x-2.5 bg-white/5 px-3.5 py-2 rounded border border-white/15">
+              <span className="text-xs text-[#D4D4D8] font-medium whitespace-nowrap">Role:</span>
+              <select
+                value={userRole}
+                onChange={(e) => setUserRole(e.target.value)}
+                className="bg-[#18181B] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#D97706] max-w-[220px]"
+              >
+                {roleOptions.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {onOpenChallengeMe && (
+              <button
+                type="button"
+                onClick={onOpenChallengeMe}
+                className="flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-[#FBBF24]" />
+                <span>Switch to Challenge Me</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {actionNotice && (
+        <div className="p-3.5 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold rounded flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{actionNotice}</span>
+          </div>
+          <button type="button" onClick={() => setActionNotice(null)} className="hover:underline">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Quick Script Presets Bar */}
       <div className="bg-white border border-[#111113]/12 rounded p-5">
@@ -353,18 +569,12 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
       )}
 
       {/* Main Chat Container */}
-      <div className="bg-white border border-[#111113]/12 rounded overflow-hidden flex flex-col h-[620px]">
+      <div className="bg-white border border-[#111113]/12 rounded overflow-hidden flex flex-col min-h-[640px] max-h-[780px]">
         <div className="bg-[#F8F7F4] px-6 py-3 border-b border-[#111113]/10 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[#52525B] font-semibold">Topic:</span>
             <div className="flex flex-wrap gap-1">
-              {[
-                'Cash Flow & Collections',
-                'Pricing & Margins',
-                'Client Retention',
-                'Team & Owner Capacity',
-                'Documents & Numbers',
-              ].map((topic) => (
+              {TOPIC_OPTIONS.map((topic) => (
                 <button
                   key={topic}
                   type="button"
@@ -410,9 +620,14 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
         </div>
 
         {/* Message History */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#FCFCFC]">
+        <div className="flex-1 p-6 overflow-y-auto space-y-5 bg-[#FCFCFC]">
           {messages.map((msg) => {
             const isCoach = msg.sender === 'coach';
+            const estimates = msg.metadata?.estimatesAndAssumptions || [];
+            const followUps = msg.metadata?.followUpQuestions || [];
+            const suggestedActions = msg.metadata?.suggestedActions || [];
+            const isInitialGreeting = msg.id === 'm-0' || msg.id === 'm-reset' || msg.id.startsWith('err-');
+
             return (
               <div
                 key={msg.id}
@@ -425,19 +640,139 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
                 )}
 
                 <div
-                  className={`max-w-2xl rounded p-4 text-xs sm:text-sm leading-relaxed ${
+                  className={`max-w-3xl rounded p-4 text-xs sm:text-sm leading-relaxed space-y-3 ${
                     isCoach
                       ? 'bg-white border border-[#111113]/12 text-[#111113]'
                       : 'bg-[#FFFBEB] border border-[#FDE68A] text-[#111113] font-medium'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1.5 text-[10px] text-[#52525B]">
+                  <div className="flex items-center justify-between gap-4 text-[10px] text-[#52525B]">
                     <span className="font-bold uppercase tracking-wider">
-                      {isCoach ? 'Executive Coach' : userRole}
+                      {isCoach ? 'AI Business Coach' : msg.metadata?.role || userRole}
+                      {msg.metadata?.topic ? ` · ${msg.metadata.topic}` : ''}
                     </span>
                     <span className="font-mono tabular-nums">{msg.timestamp}</span>
                   </div>
+
                   <div className="whitespace-pre-wrap">{msg.text}</div>
+
+                  {/* AI-Generated Estimates & Working Assumptions Callout */}
+                  {isCoach && estimates.length > 0 && (
+                    <div className="p-3 rounded bg-[#FFFBEB] border border-[#FDE68A] text-xs space-y-1.5">
+                      <div className="flex items-center gap-1.5 font-bold text-[#B45309] uppercase tracking-wider text-[10px]">
+                        <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+                        <span>AI Estimates &amp; Working Assumptions (Verify Against Actual Records)</span>
+                      </div>
+                      <ul className="space-y-1 text-[#111113]">
+                        {estimates.map((est, i) => (
+                          <li key={i} className="leading-relaxed">• {est}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Clickable Coach Follow-Up Questions */}
+                  {isCoach && followUps.length > 0 && (
+                    <div className="pt-1 space-y-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#52525B] flex items-center gap-1">
+                        <HelpCircle className="w-3 h-3 text-[#D97706]" />
+                        Coach Follow-Up Questions (Click to Answer):
+                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        {followUps.map((q, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setInputPrompt(`In response to "${q}": `)}
+                            className="text-left text-xs px-3 py-2 rounded bg-[#F8F7F4] hover:bg-[#FFFBEB] border border-[#111113]/12 hover:border-[#D97706] text-[#111113] transition"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Convertible Suggested Actions / CRM Follow-Ups */}
+                  {isCoach && suggestedActions.length > 0 && (
+                    <div className="pt-2 border-t border-[#111113]/10 space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#111113] block">
+                        Convert Discussion to Tracked Action or CRM Follow-Up:
+                      </span>
+                      <div className="space-y-2">
+                        {suggestedActions.map((act) => (
+                          <div
+                            key={act.id}
+                            className="p-2.5 rounded bg-[#F8F7F4] border border-[#111113]/12 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                          >
+                            <div className="space-y-0.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-white border border-[#111113]/12 text-[#B45309]">
+                                  {act.targetType === 'crm_followup' ? 'CRM Follow-Up' : act.priority}
+                                </span>
+                                <span className="text-[11px] text-[#52525B] font-medium">
+                                  {act.ownerRole} · {act.timeframe}
+                                </span>
+                              </div>
+                              <p className="font-semibold text-[#111113]">{act.title}</p>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={Boolean(act.savedToPlan)}
+                              onClick={() => handleConvertSuggestedAction(msg.id, act)}
+                              className={`px-3 py-1.5 rounded text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 transition ${
+                                act.savedToPlan
+                                  ? 'bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0]'
+                                  : 'bg-[#111113] hover:bg-[#27272A] text-white'
+                              }`}
+                            >
+                              {act.savedToPlan ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Saved</span>
+                                </>
+                              ) : act.targetType === 'crm_followup' ? (
+                                <>
+                                  <Users className="w-3.5 h-3.5 text-[#FBBF24]" />
+                                  <span>Add CRM Follow-Up</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3.5 h-3.5 text-[#FBBF24]" />
+                                  <span>Add to Action Plan</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick Save Insight button for any substantive coach reply */}
+                  {isCoach && !isInitialGreeting && (
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="button"
+                        disabled={Boolean(savedMessageIds[msg.id])}
+                        onClick={() => handleSaveReplyAsAction(msg)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#52525B] hover:text-[#111113] disabled:text-[#15803D] transition"
+                      >
+                        {savedMessageIds[msg.id] ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Saved to Action Plan</span>
+                          </>
+                        ) : (
+                          <>
+                            <BookmarkPlus className="w-3.5 h-3.5 text-[#D97706]" />
+                            <span>Save Insight as Action Task</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {!isCoach && (
@@ -449,6 +784,26 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
             );
           })}
 
+          {messages.length <= 1 && !isLoading && (
+            <div className="pt-2 space-y-2">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#52525B] block">
+                Starter Coaching Prompts for {profile.name}:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {quickConversationStarters.map((starter, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendMessage(starter)}
+                    className="text-left text-xs px-3 py-2 rounded bg-white hover:bg-[#FFFBEB] border border-[#111113]/15 hover:border-[#D97706] text-[#111113] transition"
+                  >
+                    {starter}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isLoading && (
             <div className="flex gap-3 justify-start">
               <div className="w-8 h-8 rounded bg-[#111113] flex items-center justify-center shrink-0 text-white">
@@ -456,7 +811,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
               </div>
               <div className="bg-white border border-[#111113]/12 rounded p-4 text-xs text-[#52525B] flex items-center space-x-2">
                 <Loader2 className="w-4 h-4 text-[#D97706] animate-spin" />
-                <span>Analyzing commercial context...</span>
+                <span>Reviewing {profile.name}’s business context &amp; conversation history...</span>
               </div>
             </div>
           )}
@@ -475,7 +830,7 @@ Ask about cash flow, pricing adjustments, customer negotiations, staff workload,
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder={`Ask about ${profile.name}'s cash flow, pricing, customer trade-offs, or uploaded documents...`}
+              placeholder={`Ask ${profile.name}'s coach, challenge a recommendation, or test a growth/ROI decision...`}
               disabled={isLoading}
               className="flex-1 bg-[#FCFCFC] border border-[#111113]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#111113] placeholder-[#71717A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#D97706] focus:border-[#D97706] disabled:opacity-50"
             />

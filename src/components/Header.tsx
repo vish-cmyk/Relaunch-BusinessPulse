@@ -15,6 +15,7 @@ import {
   Users,
   Crown,
   Compass,
+  ShieldAlert,
 } from 'lucide-react';
 import { BusinessProfile, OverallHealthAssessment, SubscriptionTier } from '../types/bizpulse';
 
@@ -56,7 +57,8 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'options', label: 'ROI & Options', icon: BarChart3 },
     { id: 'roadmap', label: 'Action Plan', icon: Calendar },
     { id: 'dashboard', label: 'Scoreboard', icon: TrendingUp },
-    { id: 'aicoach', label: 'AI Coach', icon: Bot },
+    { id: 'challengeme', label: 'Challenge Me', icon: ShieldAlert },
+    { id: 'aicoach', label: 'Chat with Coach', icon: Bot },
     { id: 'growthroadmap', label: 'Growth Roadmap', icon: Compass },
   ];
 

@@ -9,7 +9,10 @@ import JSZip from 'jszip';
 import { DEMO_MSP_CASE } from '../src/data/demonstrationCase';
 import { PUBLIC_MEMBERSHIP_PLANS } from '../src/data/membershipPlans';
 import { createPristineBlankCase } from '../src/services/firestoreStorage';
-import { calculateOverallHealth } from '../src/services/healthScoring';
+import {
+  buildSessionDimensionTrajectory,
+  calculateOverallHealth,
+} from '../src/services/healthScoring';
 import {
   buildMonthlyReviewEntry,
   buildQuarterlyReviewEntry,
@@ -377,4 +380,39 @@ test('5. PDF, Word (.docx), and PowerPoint (.pptx) exports generate valid non-em
   assert.ok(pptxBuffer.byteLength > 3000);
   const pptxZip = await JSZip.loadAsync(pptxBuffer);
   assert.ok(pptxZip.file('ppt/slides/slide1.xml'));
+});
+
+test('6. Dimension trajectory builder selects last 3 saved sessions in chronological order with null-safe unrated gaps', () => {
+  const s1 = createPristineBlankCase({ name: 'Session One Oldest' });
+  s1.updatedAt = '2026-08-01T10:00:00.000Z';
+  s1.healthInputs.money.status = 'at_risk';
+
+  const s2 = createPristineBlankCase({ name: 'Session Two' });
+  s2.updatedAt = '2026-09-01T10:00:00.000Z';
+  s2.healthInputs.money.status = 'needs_attention';
+  s2.healthInputs.pricingMargins.status = 'healthy';
+
+  const s3 = createPristineBlankCase({ name: 'Session Three' });
+  s3.updatedAt = '2026-10-01T10:00:00.000Z';
+  s3.healthInputs.money.status = 'healthy';
+  s3.healthInputs.pricingMargins.status = 'not_sure';
+
+  const s4 = createPristineBlankCase({ name: 'Session Four Latest' });
+  s4.updatedAt = '2026-11-01T10:00:00.000Z';
+  s4.healthInputs.money.status = 'healthy';
+  s4.healthInputs.operations.status = 'at_risk';
+
+  // Pass 4 unsorted sessions; should pick s2, s3, s4 ordered chronologically
+  const points = buildSessionDimensionTrajectory([s3, s1, s4, s2], s4.id, 3);
+  assert.equal(points.length, 3);
+  assert.equal(points[0].sessionId, s2.id);
+  assert.equal(points[1].sessionId, s3.id);
+  assert.equal(points[2].sessionId, s4.id);
+
+  assert.equal(points[0].money, 55);
+  assert.equal(points[1].money, 100);
+  assert.equal(points[1].pricingMargins, null); // not_sure preserved as null gap
+  assert.equal(points[2].operations, 15);
+  assert.equal(points[2].isActive, true);
+  assert.equal(points[0].isActive, false);
 });

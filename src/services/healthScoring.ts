@@ -6,6 +6,7 @@ import {
   DimensionScoreDetail,
   FinancialData,
   TopPriorityItem,
+  CaseRecord,
 } from '../types/bizpulse';
 
 export const HEALTH_DIMENSION_ORDER: HealthDimensionKey[] = [
@@ -428,4 +429,73 @@ export function calculateOverallHealth(
       'Scoring model (12 Capabilities): Confirmed ratings score Healthy = 100, Needs Attention = 55, At Risk = 15. "Not Sure / No Data" is excluded from confirmed scoring and tracked via Data Visibility % so missing evidence does not distort performance. Non-averaging safeguard: Critical Money/Operations risk (or 3+ At Risk) caps overall rating at At Risk (max 44/100).',
     isProvisional: unansweredCount > 0 || unsureCount > 0,
   };
+}
+
+export type SessionDimensionTrajectoryPoint = {
+  sessionId: string;
+  sessionLabel: string;
+  fullSessionName: string;
+  updatedAt: string;
+  updatedAtLabel: string;
+  isActive: boolean;
+  isDemo: boolean;
+  overallScore: number | null;
+  statuses: Record<HealthDimensionKey, HealthStatus>;
+} & Record<HealthDimensionKey, number | null>;
+
+/**
+ * Builds chronological trajectory data across the most recent N saved business sessions
+ * (default 3) for the Recharts dimension line chart. Missing/not-sure dimensions stay `null`
+ * so gaps are never misrepresented as 0.
+ */
+export function buildSessionDimensionTrajectory(
+  savedSessions: CaseRecord[],
+  activeCaseId?: string,
+  maxSessions = 3
+): SessionDimensionTrajectoryPoint[] {
+  const valid = (savedSessions || []).filter((c) => Boolean(c && c.id && c.profile));
+  const sortedNewestFirst = [...valid].sort((a, b) => {
+    const timeA = new Date(a.updatedAt || a.profile.updatedAt || 0).getTime();
+    const timeB = new Date(b.updatedAt || b.profile.updatedAt || 0).getTime();
+    return timeB - timeA;
+  });
+
+  const latestChronological = sortedNewestFirst.slice(0, Math.max(1, maxSessions)).reverse();
+
+  return latestChronological.map((session, idx) => {
+    const rawName = (session.profile?.name || `Session ${idx + 1}`).trim();
+    const shortName = rawName.length > 18 ? `${rawName.slice(0, 17)}…` : rawName;
+    const rawDate = session.updatedAt || session.profile?.updatedAt || new Date().toISOString();
+    const parsedDate = new Date(rawDate);
+    const dateLabel = Number.isNaN(parsedDate.getTime())
+      ? `S${idx + 1}`
+      : parsedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+    const statuses = {} as Record<HealthDimensionKey, HealthStatus>;
+    const dimScores = {} as Record<HealthDimensionKey, number | null>;
+
+    for (const key of HEALTH_DIMENSION_ORDER) {
+      const status = session.healthInputs?.[key]?.status || 'unanswered';
+      statuses[key] = status;
+      dimScores[key] = CONFIRMED_SCORE_MAP[status] ?? null;
+    }
+
+    const overallScore =
+      session.overallHealth?.overallScore !== undefined
+        ? session.overallHealth.overallScore
+        : calculateOverallHealth(session.healthInputs, session.financials).overallScore;
+
+    return {
+      sessionId: session.id,
+      sessionLabel: `${shortName} (${dateLabel})`,
+      fullSessionName: rawName,
+      updatedAt: rawDate,
+      updatedAtLabel: dateLabel,
+      isActive: Boolean(activeCaseId && session.id === activeCaseId),
+      isDemo: Boolean(session.profile?.isDemonstrationCase),
+      overallScore,
+      statuses,
+      ...dimScores,
+    };
+  });
 }

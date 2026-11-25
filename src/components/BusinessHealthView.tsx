@@ -14,7 +14,18 @@ import {
   BarChart2,
   Compass,
   Target,
+  TrendingUp,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from 'recharts';
 import {
   HealthDimensionKey,
   HealthDimensionInput,
@@ -22,12 +33,16 @@ import {
   OverallHealthAssessment,
   BusinessProfile,
   DimensionScoreDetail,
+  CaseRecord,
 } from '../types/bizpulse';
+import { buildSessionDimensionTrajectory } from '../services/healthScoring';
 
 interface BusinessHealthViewProps {
   profile: BusinessProfile;
   healthInputs: Record<HealthDimensionKey, HealthDimensionInput>;
   overallHealth: OverallHealthAssessment | null;
+  savedSessions?: CaseRecord[];
+  activeCaseId?: string;
   onUpdateInput: (key: HealthDimensionKey, updated: HealthDimensionInput) => void;
   onRecalculateOverall: () => void;
   onProceedToRecommendations: () => void;
@@ -61,6 +76,45 @@ const SHORT_LABELS: Record<HealthDimensionKey, string> = {
   scalability: 'Scale',
   technology: 'Digital/AI',
   sustainability: 'Sustain.',
+};
+
+const DIMENSION_COLORS: Record<HealthDimensionKey, string> = {
+  money: '#2563EB',
+  pricingMargins: '#D97706',
+  operations: '#0F766E',
+  customers: '#7C3AED',
+  ownerDependency: '#DC2626',
+  sales: '#0284C7',
+  direction: '#0F172A',
+  people: '#15803D',
+  competition: '#B45309',
+  scalability: '#4F46E5',
+  technology: '#0891B2',
+  sustainability: '#059669',
+};
+
+type TrajectoryPresetId = 'core' | 'growth' | 'people' | 'all';
+
+const TRAJECTORY_PRESETS: Record<
+  TrajectoryPresetId,
+  { label: string; keys: HealthDimensionKey[] }
+> = {
+  core: {
+    label: 'Core Financial & Ops',
+    keys: ['money', 'pricingMargins', 'operations', 'customers', 'ownerDependency'],
+  },
+  growth: {
+    label: 'Commercial & Digital',
+    keys: ['direction', 'sales', 'competition', 'scalability', 'technology'],
+  },
+  people: {
+    label: 'People & Sustainability',
+    keys: ['people', 'ownerDependency', 'sustainability', 'money'],
+  },
+  all: {
+    label: 'All 12 Dimensions',
+    keys: DIMENSION_ORDER,
+  },
 };
 
 function getAdaptiveGuidancePrompt(key: HealthDimensionKey, profile: BusinessProfile): string {
@@ -104,11 +158,72 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
   profile,
   healthInputs,
   overallHealth,
+  savedSessions,
+  activeCaseId,
   onUpdateInput,
   onRecalculateOverall,
   onProceedToRecommendations,
 }) => {
   const [expandedDimension, setExpandedDimension] = useState<HealthDimensionKey | null>('money');
+  const [trajectoryPreset, setTrajectoryPreset] = useState<TrajectoryPresetId>('core');
+  const [visibleDimensions, setVisibleDimensions] = useState<HealthDimensionKey[]>(
+    TRAJECTORY_PRESETS.core.keys
+  );
+
+  const handleSelectPreset = (presetId: TrajectoryPresetId) => {
+    setTrajectoryPreset(presetId);
+    setVisibleDimensions(TRAJECTORY_PRESETS[presetId].keys);
+  };
+
+  const handleToggleDimensionLine = (key: HealthDimensionKey) => {
+    setVisibleDimensions((prev) => {
+      if (prev.includes(key)) {
+        return prev.length > 1 ? prev.filter((k) => k !== key) : prev;
+      }
+      return [...prev, key];
+    });
+  };
+
+  const resolvedSessions: CaseRecord[] = React.useMemo(() => {
+    const fallbackCase: CaseRecord = {
+      id: activeCaseId || profile.caseId || 'active-case',
+      profile,
+      healthInputs,
+      overallHealth,
+      financials: null,
+      recommendations: null,
+      conversations: [],
+      actionPlan: [],
+      dashboardMetrics: [],
+      updatedAt: profile.updatedAt || new Date().toISOString(),
+    };
+
+    if (!savedSessions || savedSessions.length === 0) {
+      return [fallbackCase];
+    }
+
+    const targetId = activeCaseId || profile.caseId;
+    const merged = savedSessions.map((session) =>
+      session.id === targetId
+        ? {
+            ...session,
+            profile,
+            healthInputs,
+            overallHealth: overallHealth ?? session.overallHealth,
+          }
+        : session
+    );
+
+    if (targetId && !merged.some((s) => s.id === targetId)) {
+      merged.unshift(fallbackCase);
+    }
+    return merged;
+  }, [savedSessions, activeCaseId, profile, healthInputs, overallHealth]);
+
+  const trajectoryData = React.useMemo(
+    () => buildSessionDimensionTrajectory(resolvedSessions, activeCaseId || profile.caseId, 3),
+    [resolvedSessions, activeCaseId, profile.caseId]
+  );
 
   const handleStatusChange = (key: HealthDimensionKey, status: HealthStatus) => {
     const current = healthInputs[key];
@@ -548,6 +663,182 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                 })}
               </div>
             </div>
+          </div>
+
+          {/* Recharts Line Chart: Dimension Score Trajectory Over Last 3 Saved Sessions */}
+          <div className="bg-[#F8FAFC] rounded border border-[#0F172A]/10 p-5 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                  Health Dimension Trajectory (Last 3 Saved Sessions)
+                </span>
+                <p className="text-[11px] text-[#475569] mt-0.5 tabular-nums">
+                  Plotting {trajectoryData.length} of {resolvedSessions.length} saved business session
+                  {resolvedSessions.length === 1 ? '' : 's'} · Confirmed scale 0–100 (Not Sure omitted)
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded border border-[#0F172A]/10">
+                {(Object.keys(TRAJECTORY_PRESETS) as TrajectoryPresetId[]).map((presetId) => {
+                  const isActive = trajectoryPreset === presetId;
+                  return (
+                    <button
+                      key={presetId}
+                      type="button"
+                      onClick={() => handleSelectPreset(presetId)}
+                      className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
+                        isActive
+                          ? 'bg-[#0F172A] text-white'
+                          : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
+                      }`}
+                    >
+                      {TRAJECTORY_PRESETS[presetId].label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Interactive Dimension Series Selector */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {DIMENSION_ORDER.map((key) => {
+                const selected = visibleDimensions.includes(key);
+                const color = DIMENSION_COLORS[key];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleToggleDimensionLine(key)}
+                    aria-pressed={selected}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold border transition ${
+                      selected
+                        ? 'bg-white text-[#0F172A] border-[#0F172A]/25 shadow-2xs'
+                        : 'bg-transparent text-[#64748B] border-[#0F172A]/10 hover:text-[#0F172A]'
+                    }`}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-xs shrink-0"
+                      style={{ backgroundColor: selected ? color : '#CBD5E1' }}
+                    />
+                    <span>{SHORT_LABELS[key]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="w-full h-[300px] bg-white rounded border border-[#0F172A]/10 p-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={trajectoryData}
+                  margin={{ top: 14, right: 22, left: -8, bottom: 8 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(15, 23, 42, 0.08)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="sessionLabel"
+                    tick={{ fill: '#334155', fontSize: 11, fontWeight: 600 }}
+                    axisLine={{ stroke: 'rgba(15, 23, 42, 0.16)' }}
+                    tickLine={false}
+                    padding={{ left: 24, right: 24 }}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    ticks={[0, 15, 45, 55, 72, 100]}
+                    tick={{ fill: '#475569', fontSize: 11 }}
+                    axisLine={{ stroke: 'rgba(15, 23, 42, 0.16)' }}
+                    tickLine={false}
+                  />
+                  <ReferenceLine
+                    y={72}
+                    stroke="#15803D"
+                    strokeDasharray="4 4"
+                    strokeOpacity={0.55}
+                  />
+                  <ReferenceLine
+                    y={45}
+                    stroke="#DC2626"
+                    strokeDasharray="4 4"
+                    strokeOpacity={0.45}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+                      const pt = payload[0]?.payload;
+                      return (
+                        <div className="bg-[#0F172A] text-white rounded border border-white/15 p-3 shadow-lg text-xs space-y-2 max-w-xs">
+                          <div className="border-b border-white/15 pb-1.5">
+                            <div className="font-bold text-white truncate">
+                              {pt?.fullSessionName}
+                              {pt?.isActive ? ' (Active)' : ''}
+                              {pt?.isDemo ? ' · Sample Demo' : ''}
+                            </div>
+                            <div className="text-[11px] text-[#94A3B8] font-mono tabular-nums">
+                              Updated {pt?.updatedAtLabel} · Overall:{' '}
+                              {pt?.overallScore !== null && pt?.overallScore !== undefined
+                                ? `${pt.overallScore}/100`
+                                : 'Pending'}
+                            </div>
+                          </div>
+                          <div className="space-y-1 tabular-nums">
+                            {visibleDimensions.map((dimKey) => {
+                              const val = pt?.[dimKey];
+                              const st: HealthStatus = pt?.statuses?.[dimKey] || 'unanswered';
+                              return (
+                                <div
+                                  key={dimKey}
+                                  className="flex items-center justify-between gap-4 text-[11px]"
+                                >
+                                  <span className="flex items-center gap-1.5 text-[#E2E8F0]">
+                                    <span
+                                      className="w-2 h-2 rounded-xs shrink-0"
+                                      style={{ backgroundColor: DIMENSION_COLORS[dimKey] }}
+                                    />
+                                    {SHORT_LABELS[dimKey]}
+                                  </span>
+                                  <span className="font-mono font-bold text-white">
+                                    {val !== null && val !== undefined
+                                      ? `${val}/100`
+                                      : st === 'not_sure'
+                                      ? 'Not Sure'
+                                      : 'Unrated'}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                  {visibleDimensions.map((dimKey) => (
+                    <Line
+                      key={dimKey}
+                      type="monotone"
+                      dataKey={dimKey}
+                      name={SHORT_LABELS[dimKey]}
+                      stroke={DIMENSION_COLORS[dimKey]}
+                      strokeWidth={2.25}
+                      dot={{ r: 4.5, strokeWidth: 1.5, fill: '#FFFFFF' }}
+                      activeDot={{ r: 6.5 }}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {trajectoryData.length < 2 && (
+              <p className="text-[11px] text-[#475569]">
+                Currently showing 1 saved session. Create or save additional business sessions from
+                the Business Session bar above to compare dimension trends over up to 3 saved
+                sessions.
+              </p>
+            )}
           </div>
 
           {/* Critical Risks, Strengths & Missing Evidence */}

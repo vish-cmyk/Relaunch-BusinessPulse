@@ -850,6 +850,8 @@ function BizPulseWorkspace() {
             profile={activeCase.profile}
             healthInputs={activeCase.healthInputs}
             overallHealth={activeCase.overallHealth}
+            savedSessions={cases}
+            activeCaseId={activeCase.id}
             onUpdateInput={handleUpdateHealthInput}
             onRecalculateOverall={handleRecalculateOverall}
             onProceedToRecommendations={() => setActiveTab('recommendations')}

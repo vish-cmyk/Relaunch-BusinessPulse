@@ -121,6 +121,7 @@ export function createPristineBlankCase(profileOverrides?: Partial<BusinessProfi
       monthlyReviews: [],
       quarterlyReviews: [],
     },
+    kpiTracker: null,
     reportBlocks: [],
     reportEditorSettings: { fontFamily: 'sans', fontSize: 'base' },
     subscriptionTier: 'free_trial',
@@ -186,6 +187,17 @@ function normalizeLoadedCase(data: CaseRecord): CaseRecord {
           monthlyReviews: [],
           quarterlyReviews: [],
         },
+    kpiTracker: data.kpiTracker
+      ? {
+          selectedPreset: data.kpiTracker.selectedPreset || 'general_sme',
+          selectedKpiIds: Array.isArray(data.kpiTracker.selectedKpiIds) ? data.kpiTracker.selectedKpiIds : [],
+          kpis: Array.isArray(data.kpiTracker.kpis) ? data.kpiTracker.kpis : [],
+          recommendedAdditionalKpis: Array.isArray(data.kpiTracker.recommendedAdditionalKpis)
+            ? data.kpiTracker.recommendedAdditionalKpis
+            : [],
+          lastAiReviewedAt: data.kpiTracker.lastAiReviewedAt ?? null,
+        }
+      : null,
     reportBlocks: Array.isArray(data.reportBlocks) ? data.reportBlocks : [],
     reportEditorSettings: data.reportEditorSettings || { fontFamily: 'sans', fontSize: 'base' },
     sprintCompleted: data.sprintCompleted || { 'sprint-1': false, 'sprint-2': false, 'sprint-3': false },

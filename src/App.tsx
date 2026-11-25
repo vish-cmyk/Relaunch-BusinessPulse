@@ -11,7 +11,7 @@ import { CashFlowWorkbench } from './components/CashFlowWorkbench';
 import { ClientMatrixCalculator } from './components/ClientMatrixCalculator';
 import { OptionsEvaluationMatrix, PendingRoiDraft } from './components/OptionsEvaluationMatrix';
 import { Roadmap90Day } from './components/Roadmap90Day';
-import { WeeklyDashboardView } from './components/WeeklyDashboardView';
+import { WeeklyDashboardView, ContinuitySubTab } from './components/WeeklyDashboardView';
 import { SevenDaySprint } from './components/SevenDaySprint';
 import { AICoachConsole } from './components/AICoachConsole';
 import { ChallengeMeView } from './components/ChallengeMeView';
@@ -37,6 +37,7 @@ import {
   CrossDocumentSynthesis,
   ProfitOpportunityItem,
   MembershipContinuity,
+  KpiTrackerState,
 } from './types/bizpulse';
 import {
   subscribeUserCases,
@@ -62,6 +63,7 @@ function BizPulseWorkspace() {
   const [accountUsage, setAccountUsage] = useState<AccountUsageSummary | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>('essentials');
+  const [dashboardInitialSubTab, setDashboardInitialSubTab] = useState<ContinuitySubTab>('scoreboard');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
   const [coachInitialPrompt, setCoachInitialPrompt] = useState<string | undefined>(undefined);
@@ -522,6 +524,15 @@ function BizPulseWorkspace() {
     });
   };
 
+  const handleUpdateKpiTracker = (kpiTracker: KpiTrackerState) => {
+    if (!activeCase) return;
+    persistCase({
+      ...activeCase,
+      kpiTracker,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   const handleUpdateFinancials = (fin: FinancialData) => {
     if (!activeCase) return;
     const newOverallHealth = calculateOverallHealth(activeCase.healthInputs, fin);
@@ -958,6 +969,10 @@ function BizPulseWorkspace() {
             caseRecord={activeCase}
             onUpdateActionPlan={handleUpdateActionPlan}
             onToggleSprintItem={handleToggleSprintItem}
+            onOpenKpiTracker={() => {
+              setDashboardInitialSubTab('kpis');
+              setActiveTab('dashboard');
+            }}
           />
         )}
 
@@ -965,7 +980,9 @@ function BizPulseWorkspace() {
           <WeeklyDashboardView
             key={`dash-${activeCase.id}`}
             caseRecord={activeCase}
+            initialSubTab={dashboardInitialSubTab}
             onUpdateContinuity={handleUpdateContinuity}
+            onUpdateKpiTracker={handleUpdateKpiTracker}
             onAccountUsageUpdate={setAccountUsage}
           />
         )}

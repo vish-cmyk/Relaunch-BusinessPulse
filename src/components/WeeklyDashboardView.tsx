@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   Info,
@@ -12,11 +12,13 @@ import {
   CheckCircle2,
   ArrowUpRight,
   ArrowDownRight,
+  Gauge,
 } from 'lucide-react';
 import { WEEKLY_DASHBOARD_KPIS } from '../data/coachingBriefing';
 import {
   AccountUsageSummary,
   CaseRecord,
+  KpiTrackerState,
   MembershipContinuity,
   WeeklyDashboardKPI,
 } from '../types/bizpulse';
@@ -28,21 +30,32 @@ import {
   createJoiningBaseline,
 } from '../services/continuityEngine';
 import { getAuthHeaders } from '../services/firebase';
+import { KpiTrackerView } from './KpiTrackerView';
+
+export type ContinuitySubTab = 'scoreboard' | 'kpis' | 'baseline' | 'weekly' | 'monthly' | 'quarterly';
 
 interface WeeklyDashboardViewProps {
   caseRecord?: CaseRecord;
+  initialSubTab?: ContinuitySubTab;
   onUpdateContinuity?: (continuity: MembershipContinuity) => void;
+  onUpdateKpiTracker?: (tracker: KpiTrackerState) => void;
   onAccountUsageUpdate?: (usage: AccountUsageSummary) => void;
 }
 
-type ContinuitySubTab = 'scoreboard' | 'baseline' | 'weekly' | 'monthly' | 'quarterly';
-
 export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
   caseRecord,
+  initialSubTab,
   onUpdateContinuity,
+  onUpdateKpiTracker,
   onAccountUsageUpdate,
 }) => {
-  const [subTab, setSubTab] = useState<ContinuitySubTab>('scoreboard');
+  const [subTab, setSubTab] = useState<ContinuitySubTab>(initialSubTab || 'scoreboard');
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
   const [weeklyNote, setWeeklyNote] = useState('');
   const [monthlyReflection, setMonthlyReflection] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState<null | 'weekly' | 'monthly' | 'quarterly'>(null);
@@ -459,6 +472,13 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
           {(
             [
               { id: 'scoreboard', label: 'Monday Scoreboard', icon: Calendar },
+              {
+                id: 'kpis',
+                label: caseRecord?.kpiTracker?.kpis?.length
+                  ? `KPI & Performance Tracker (${caseRecord.kpiTracker.kpis.length})`
+                  : 'KPI & Performance Tracker',
+                icon: Gauge,
+              },
               { id: 'baseline', label: 'Joining Baseline', icon: BookmarkCheck },
               {
                 id: 'weekly',
@@ -708,6 +728,15 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* SUB-TAB 1B: KPI & PERFORMANCE TRACKER */}
+      {subTab === 'kpis' && caseRecord && (
+        <KpiTrackerView
+          caseRecord={caseRecord}
+          onUpdateKpiTracker={onUpdateKpiTracker}
+          onAccountUsageUpdate={onAccountUsageUpdate}
+        />
       )}
 
       {/* SUB-TAB 2: AT JOINING BASELINE */}

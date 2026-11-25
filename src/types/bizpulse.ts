@@ -665,6 +665,78 @@ export interface MembershipContinuity {
   quarterlyReviews: QuarterlySustainabilityReview[];
 }
 
+export type KpiCategoryId =
+  | 'revenue_sales'
+  | 'profitability'
+  | 'cash_flow'
+  | 'customers'
+  | 'operational_efficiency'
+  | 'growth_sustainability';
+
+export type KpiTrendStatus = 'Improving' | 'Declining' | 'Stable' | 'Insufficient Data';
+
+export type KpiBusinessTypePreset =
+  | 'trades_contractors'
+  | 'it_msp'
+  | 'professional_services'
+  | 'retail'
+  | 'general_sme';
+
+export type KpiUnitType = 'currency' | 'percent' | 'number' | 'days' | 'hours' | 'score';
+
+export type KpiDirection = 'higher_is_better' | 'lower_is_better';
+
+export interface KpiHistoryPoint {
+  periodLabel: string;
+  recordedAt: string;
+  actualValue: number | null;
+  targetValue: number | null;
+  comment?: string;
+  inputs?: Record<string, number | null>;
+}
+
+export interface TrackedKpiRecord {
+  id: string;
+  catalogKey?: string;
+  name: string;
+  category: KpiCategoryId;
+  categoryLabel: string;
+  explanation: string;
+  unit: KpiUnitType;
+  direction: KpiDirection;
+  formulaType: string;
+  formulaDescription: string;
+  inputValues: Record<string, number | null>;
+  baselineValue: number | null;
+  targetValue: number | null;
+  previousValue: number | null;
+  latestActualValue: number | null;
+  aiInterpretation: string;
+  recommendedAction: string;
+  nextReviewDate: string;
+  ownerComment: string;
+  isAutoSyncedFromCase?: boolean;
+  isCustom?: boolean;
+  history: KpiHistoryPoint[];
+  updatedAt: string;
+}
+
+export interface KpiRecommendedSuggestion {
+  catalogKey: string;
+  name: string;
+  category: KpiCategoryId;
+  categoryLabel: string;
+  clearBusinessReason: string;
+}
+
+export interface KpiTrackerState {
+  selectedPreset: KpiBusinessTypePreset;
+  selectedKpiIds: string[];
+  kpis: TrackedKpiRecord[];
+  recommendedAdditionalKpis: KpiRecommendedSuggestion[];
+  lastAiReviewedAt?: string | null;
+}
+
 export interface CaseRecord {
   id: string;
   profile: BusinessProfile;
@@ -683,6 +755,7 @@ export interface CaseRecord {
   businessDevPlan?: BusinessDevPlan | null;
   challengeSession?: ChallengeMeSession | null;
   continuity?: MembershipContinuity | null;
+  kpiTracker?: KpiTrackerState | null;
   reportBlocks?: ReportCustomBlock[];
   reportEditorSettings?: ReportEditorSettings;
   subscriptionTier?: SubscriptionTierId;

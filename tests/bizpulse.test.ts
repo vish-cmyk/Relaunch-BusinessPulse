@@ -29,6 +29,24 @@ import {
   normalizeTierId,
   resolveEffectivePlan,
 } from '../server/billingStore';
+import {
+  KPI_BUSINESS_TYPE_PRESETS,
+  KPI_CATALOG,
+  KPI_CATEGORIES,
+} from '../src/data/kpiCatalog';
+import {
+  calcCustomerRetentionPct,
+  calcDebtorDays,
+  calcGrossProfitMarginPct,
+  calcNetProfitMarginPct,
+  calcRevenueGrowthPct,
+  calcStaffUtilisationPct,
+  computeKpiTrend,
+  computeKpiVariance,
+  createCustomTrackedKpi,
+  initializeKpiTrackerForCase,
+  syncKpiTrackerWithCaseData,
+} from '../src/services/kpiEngine';
 import { CaseRecord } from '../src/types/bizpulse';
 
 function buildElectricalTradesCase(): CaseRecord {
@@ -415,4 +433,66 @@ test('6. Dimension trajectory builder selects last 3 saved sessions in chronolog
   assert.equal(points[2].operations, 15);
   assert.equal(points[2].isActive, true);
   assert.equal(points[0].isActive, false);
+});
+
+test('7. KPI & Performance Tracker calculates formulas accurately, handles missing data honestly, and supports all 5 business-type presets + custom KPIs', () => {
+  // Catalog completeness: 6 categories & 30 named KPIs
+  assert.equal(KPI_CATEGORIES.length, 6);
+  assert.equal(KPI_CATALOG.length, 30);
+  assert.equal(KPI_BUSINESS_TYPE_PRESETS.length, 5);
+
+  // Exact deterministic formulas
+  assert.equal(calcRevenueGrowthPct(120000, 100000), 20);
+  assert.equal(calcRevenueGrowthPct(120000, 0), null); // zero denominator -> Insufficient Data
+
+  assert.equal(calcGrossProfitMarginPct(1450000, 960000), 33.79);
+  assert.equal(calcNetProfitMarginPct(100000, 1450000), 6.9);
+  assert.equal(calcStaffUtilisationPct(128, 160), 80);
+  assert.equal(calcCustomerRetentionPct(95, 10, 100), 85);
+  assert.equal(calcDebtorDays(138000, 1450000), 35);
+
+  // Variance & Trend polarity checks (higher_is_better vs lower_is_better)
+  const marginVar = computeKpiVariance(33.79, 45, 'higher_is_better', 'percent', 'NZD');
+  assert.ok(marginVar && !marginVar.isFavorable && marginVar.delta < 0);
+
+  const debtorVarBetter = computeKpiVariance(18, 21, 'lower_is_better', 'days', 'NZD');
+  assert.ok(debtorVarBetter && debtorVarBetter.isFavorable);
+
+  assert.equal(computeKpiTrend(42000, 55000, 'lower_is_better', 'currency'), 'Improving');
+  assert.equal(computeKpiTrend(62000, 42000, 'lower_is_better', 'currency'), 'Declining');
+  assert.equal(computeKpiTrend(80, 80.2, 'higher_is_better', 'percent'), 'Stable');
+  assert.equal(computeKpiTrend(80, null, 'higher_is_better', 'percent'), 'Insufficient Data');
+
+  // Business-type preset selection without forcing all 30 KPIs
+  const tradesCase = buildElectricalTradesCase();
+  const tradesTracker = initializeKpiTrackerForCase(tradesCase);
+  assert.equal(tradesTracker.selectedPreset, 'trades_contractors');
+  assert.ok(tradesTracker.kpis.length >= 8 && tradesTracker.kpis.length <= 12);
+
+  // Sync updates deterministic KPI figures when financials change
+  tradesCase.financials!.cashInBank = 95000;
+  const synced = syncKpiTrackerWithCaseData(tradesTracker, tradesCase);
+  const cashKpi = synced.kpis.find((k) => k.catalogKey === 'available_cash');
+  assert.equal(cashKpi?.latestActualValue, 95000);
+  assert.equal(cashKpi?.previousValue, 52000);
+
+  // MSP preset detection
+  const mspTracker = initializeKpiTrackerForCase(DEMO_MSP_CASE);
+  assert.equal(mspTracker.selectedPreset, 'it_msp');
+
+  // Custom KPI creation
+  const customKpi = createCustomTrackedKpi({
+    name: 'First-Time Fix Rate',
+    categoryId: 'operational_efficiency',
+    explanation: 'Percentage of callouts resolved on first visit.',
+    unit: 'percent',
+    direction: 'higher_is_better',
+    baselineValue: 74,
+    targetValue: 88,
+    latestActualValue: 81,
+    nextReviewDate: '2026-12-15',
+    ownerComment: 'Van stock checklist rolled out.',
+  });
+  assert.equal(customKpi.isCustom, true);
+  assert.equal(computeKpiTrend(customKpi.latestActualValue, customKpi.previousValue, customKpi.direction, customKpi.unit), 'Improving');
 });

@@ -9,6 +9,7 @@ import {
   Check,
   Edit3,
   X,
+  Gauge,
 } from 'lucide-react';
 import { PRIORITISED_TURNAROUND_PLAN } from '../data/coachingBriefing';
 import { TurnaroundAction, CaseRecord } from '../types/bizpulse';
@@ -18,6 +19,7 @@ interface Roadmap90DayProps {
   caseRecord: CaseRecord;
   onUpdateActionPlan?: (updatedPlan: TurnaroundAction[]) => void;
   onToggleSprintItem?: (sprintKey: string) => void;
+  onOpenKpiTracker?: () => void;
 }
 
 function normalizeHorizonBucket(horizon: string): '30' | '60' | '90' {
@@ -30,6 +32,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
   caseRecord,
   onUpdateActionPlan,
   onToggleSprintItem,
+  onOpenKpiTracker,
 }) => {
   const isDemo = caseRecord.profile.isDemonstrationCase;
   const [subView, setSubView] = useState<'roadmap' | 'sprint'>('roadmap');
@@ -228,6 +231,16 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {onOpenKpiTracker && (
+            <button
+              type="button"
+              onClick={onOpenKpiTracker}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE] text-xs font-semibold transition"
+            >
+              <Gauge className="w-3.5 h-3.5" />
+              <span>Measure Outcomes: KPI Tracker</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleImportFromDiagnostics}

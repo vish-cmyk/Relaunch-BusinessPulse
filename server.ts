@@ -2660,6 +2660,142 @@ Evaluate long-term resilience trend ("Strengthening", "Mixed / Holding", "Under 
     }
   });
 
+  // 9. KPI & Performance Tracker AI Interpretation & Selective Recommendations
+  app.post('/api/kpi/interpret', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const {
+        kpis,
+        selectedPreset,
+        availableCatalogSummary,
+        businessProfile,
+        healthInputs,
+        financials,
+        overallHealth,
+        uploadedDocuments,
+        crossDocumentSynthesis,
+        crmContacts,
+        roiScenarios,
+        recommendations,
+        actionPlan,
+        continuity,
+      } = req.body;
+
+      if (!Array.isArray(kpis) || kpis.length === 0) {
+        return res.status(400).json({ error: 'At least one tracked KPI must be supplied for AI interpretation.' });
+      }
+
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured, req.user?.email);
+      if (!quota.allowed) {
+        return res.status(quota.statusCode || 429).json({
+          error: quota.error,
+          code: quota.code,
+          accountUsage: quota.accountUsage,
+        });
+      }
+
+      const systemInstruction =
+        buildDynamicSystemInstruction(
+          businessProfile,
+          healthInputs,
+          financials,
+          overallHealth,
+          uploadedDocuments,
+          crmContacts,
+          roiScenarios,
+          recommendations,
+          actionPlan,
+          crossDocumentSynthesis,
+          continuity
+        ) +
+        `\nKPI & PERFORMANCE TRACKER RULES:
+- Interpret ONLY the actual computed KPI figures supplied below (baseline, target, previous, latest actual, variance, trend, owner comments).
+- NEVER invent numbers or fabricate improvements. When a KPI shows null / Insufficient Data, state clearly which raw input or accounting figure is missing and what the owner should collect next.
+- Tailor corrective actions specifically to "${businessProfile?.name || 'this SME'}" (${businessProfile?.industry || 'SME'}, preset: ${selectedPreset || 'general_sme'}).
+- For "recommendedAdditionalKpis", return 0 to 2 catalogKeys ONLY if there is a clear commercial blind spot or risk in the business case that is NOT already covered by the tracked KPIs. Return an empty array [] if current tracked KPIs already cover the core risks.`;
+
+      const kpiDigest = kpis.slice(0, 30).map((k: any) => ({
+        id: String(k.id || ''),
+        catalogKey: k.catalogKey ? String(k.catalogKey) : null,
+        name: String(k.name || ''),
+        category: String(k.categoryLabel || k.category || ''),
+        unit: String(k.unit || 'number'),
+        direction: String(k.direction || 'higher_is_better'),
+        baselineValue: k.baselineValue ?? null,
+        targetValue: k.targetValue ?? null,
+        previousValue: k.previousValue ?? null,
+        latestActualValue: k.latestActualValue ?? null,
+        trend: String(k.trend || 'Insufficient Data'),
+        ownerComment: k.ownerComment ? String(k.ownerComment) : '',
+      }));
+
+      const response = await generateWithGemini4(
+        {
+          contents: `Review these ${kpiDigest.length} tracked KPIs for "${businessProfile?.name || 'this SME'}" (preset: ${selectedPreset || 'general_sme'}).
+Tracked KPIs JSON:
+${JSON.stringify(kpiDigest, null, 2)}
+
+Untracked Catalog Options (you may selectively recommend 0-2 ONLY when strongly justified by case risks/blind spots):
+${JSON.stringify(Array.isArray(availableCatalogSummary) ? availableCatalogSummary.slice(0, 30) : [], null, 2)}
+
+Return strictly valid JSON with:
+- kpiUpdates: an array containing one entry per tracked KPI id with:
+  - id: exact KPI id supplied above
+  - aiInterpretation: 1-2 crisp, commercially honest sentences interpreting actual vs target, previous period trend, and business risk/opportunity (or stating missing inputs if Insufficient Data).
+  - recommendedAction: 1 specific practical corrective or protective next action grounded in this SME's operations/cash/CRM.
+- recommendedAdditionalKpis: 0-2 objects { catalogKey, clearBusinessReason } ONLY where warranted by a clear risk or blind spot in the case data.`,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                kpiUpdates: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      aiInterpretation: { type: Type.STRING },
+                      recommendedAction: { type: Type.STRING },
+                    },
+                    required: ['id', 'aiInterpretation', 'recommendedAction'],
+                  },
+                },
+                recommendedAdditionalKpis: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      catalogKey: { type: Type.STRING },
+                      clearBusinessReason: { type: Type.STRING },
+                    },
+                    required: ['catalogKey', 'clearBusinessReason'],
+                  },
+                },
+              },
+              required: ['kpiUpdates', 'recommendedAdditionalKpis'],
+            },
+          },
+        },
+        { uid, bucket: 'coach' }
+      );
+
+      const parsed = JSON.parse((response.text || '{}').trim());
+      return res.json({
+        kpiUpdates: Array.isArray(parsed.kpiUpdates) ? parsed.kpiUpdates : [],
+        recommendedAdditionalKpis: Array.isArray(parsed.recommendedAdditionalKpis)
+          ? parsed.recommendedAdditionalKpis.slice(0, 2)
+          : [],
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
+      });
+    } catch (err: any) {
+      console.error('KPI Interpretation Error:', err);
+      const safe = toSafeApiError(err, 'Unable to interpret KPIs with AI coach.', 502);
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
   app.get('/api/health', (_req, res) => {
     res.status(200).json({ ok: true });
   });

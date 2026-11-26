@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { REPORTED_FINANCIALS } from '../data/coachingBriefing';
 import { CaseRecord, FinancialData } from '../types/bizpulse';
+import { InfoTooltip } from './InfoTooltip';
 
 interface CashFlowWorkbenchProps {
   caseRecord?: CaseRecord;
@@ -30,35 +31,62 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   const isDemo = profile?.isDemonstrationCase ?? false;
   const currency = profile?.currency || 'NZD';
 
-  // Working capital 6 fields
-  const [cash, setCash] = useState<number>(() => {
-    if (caseRecord?.financials?.cashInBank != null) return caseRecord.financials.cashInBank;
-    return isDemo ? REPORTED_FINANCIALS.cashInBank : 0;
-  });
-  const [overdraftUsed, setOverdraftUsed] = useState<number>(() => {
-    if (caseRecord?.financials?.creditFacilityUsed != null)
-      return caseRecord.financials.creditFacilityUsed;
-    return isDemo ? REPORTED_FINANCIALS.overdraftUsed : 0;
-  });
-  const [overdraftLimit, setOverdraftLimit] = useState<number>(() => {
-    if (caseRecord?.financials?.creditFacilityLimit != null)
-      return caseRecord.financials.creditFacilityLimit;
-    return isDemo ? REPORTED_FINANCIALS.overdraftLimit : 0;
-  });
-  const [payables, setPayables] = useState<number>(() => {
-    if (caseRecord?.financials?.accountsPayable != null) return caseRecord.financials.accountsPayable;
-    return isDemo ? REPORTED_FINANCIALS.supplierPayables : 0;
-  });
-  const [totalAR, setTotalAR] = useState<number>(() => {
-    if (caseRecord?.financials?.accountsReceivable != null)
-      return caseRecord.financials.accountsReceivable;
-    return isDemo ? REPORTED_FINANCIALS.accountsReceivable : 0;
-  });
-  const [overdue60, setOverdue60] = useState<number>(() => {
-    if (caseRecord?.financials?.overdueReceivables != null)
-      return caseRecord.financials.overdueReceivables;
-    return isDemo ? REPORTED_FINANCIALS.overdue60Days : 0;
-  });
+  const parseNullable = (raw: string): number | null => {
+    if (raw.trim() === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // Working capital 6 fields (string drafts prevent forced zero-snapping mid-keystroke)
+  const [cashInput, setCashInput] = useState<string>(() =>
+    caseRecord?.financials?.cashInBank != null
+      ? String(caseRecord.financials.cashInBank)
+      : isDemo
+      ? String(REPORTED_FINANCIALS.cashInBank)
+      : ''
+  );
+  const [overdraftUsedInput, setOverdraftUsedInput] = useState<string>(() =>
+    caseRecord?.financials?.creditFacilityUsed != null
+      ? String(caseRecord.financials.creditFacilityUsed)
+      : isDemo
+      ? String(REPORTED_FINANCIALS.overdraftUsed)
+      : ''
+  );
+  const [overdraftLimitInput, setOverdraftLimitInput] = useState<string>(() =>
+    caseRecord?.financials?.creditFacilityLimit != null
+      ? String(caseRecord.financials.creditFacilityLimit)
+      : isDemo
+      ? String(REPORTED_FINANCIALS.overdraftLimit)
+      : ''
+  );
+  const [payablesInput, setPayablesInput] = useState<string>(() =>
+    caseRecord?.financials?.accountsPayable != null
+      ? String(caseRecord.financials.accountsPayable)
+      : isDemo
+      ? String(REPORTED_FINANCIALS.supplierPayables)
+      : ''
+  );
+  const [totalARInput, setTotalARInput] = useState<string>(() =>
+    caseRecord?.financials?.accountsReceivable != null
+      ? String(caseRecord.financials.accountsReceivable)
+      : isDemo
+      ? String(REPORTED_FINANCIALS.accountsReceivable)
+      : ''
+  );
+  const [overdue60Input, setOverdue60Input] = useState<string>(() =>
+    caseRecord?.financials?.overdueReceivables != null
+      ? String(caseRecord.financials.overdueReceivables)
+      : isDemo
+      ? String(REPORTED_FINANCIALS.overdue60Days)
+      : ''
+  );
+
+  const cash = Math.max(0, parseNullable(cashInput) ?? 0);
+  const overdraftUsed = Math.max(0, parseNullable(overdraftUsedInput) ?? 0);
+  const overdraftLimit = Math.max(0, parseNullable(overdraftLimitInput) ?? 0);
+  const payables = Math.max(0, parseNullable(payablesInput) ?? 0);
+  const totalAR = Math.max(0, parseNullable(totalARInput) ?? 0);
+  const overdue60 = Math.max(0, parseNullable(overdue60Input) ?? 0);
 
   // P&L 4 fields
   const [annualRevenue, setAnnualRevenue] = useState<string>(() =>
@@ -143,12 +171,12 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   useEffect(() => {
     const f = caseRecord?.financials;
     if (f) {
-      setCash(f.cashInBank ?? 0);
-      setOverdraftUsed(f.creditFacilityUsed ?? 0);
-      setOverdraftLimit(f.creditFacilityLimit ?? 0);
-      setPayables(f.accountsPayable ?? 0);
-      setTotalAR(f.accountsReceivable ?? 0);
-      setOverdue60(f.overdueReceivables ?? 0);
+      setCashInput(f.cashInBank != null ? String(f.cashInBank) : '');
+      setOverdraftUsedInput(f.creditFacilityUsed != null ? String(f.creditFacilityUsed) : '');
+      setOverdraftLimitInput(f.creditFacilityLimit != null ? String(f.creditFacilityLimit) : '');
+      setPayablesInput(f.accountsPayable != null ? String(f.accountsPayable) : '');
+      setTotalARInput(f.accountsReceivable != null ? String(f.accountsReceivable) : '');
+      setOverdue60Input(f.overdueReceivables != null ? String(f.overdueReceivables) : '');
       setAnnualRevenue(f.annualRevenue != null ? String(f.annualRevenue) : '');
       setDirectCosts(f.directCosts != null ? String(f.directCosts) : '');
       setOperatingExpenses(f.operatingExpenses != null ? String(f.operatingExpenses) : '');
@@ -161,12 +189,12 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
       setPricingReviewYears(f.pricingReviewLastYears != null ? String(f.pricingReviewLastYears) : '');
       setIsEditingBaseline(false);
     } else if (isDemo) {
-      setCash(REPORTED_FINANCIALS.cashInBank);
-      setOverdraftUsed(REPORTED_FINANCIALS.overdraftUsed);
-      setOverdraftLimit(REPORTED_FINANCIALS.overdraftLimit);
-      setPayables(REPORTED_FINANCIALS.supplierPayables);
-      setTotalAR(REPORTED_FINANCIALS.accountsReceivable);
-      setOverdue60(REPORTED_FINANCIALS.overdue60Days);
+      setCashInput(String(REPORTED_FINANCIALS.cashInBank));
+      setOverdraftUsedInput(String(REPORTED_FINANCIALS.overdraftUsed));
+      setOverdraftLimitInput(String(REPORTED_FINANCIALS.overdraftLimit));
+      setPayablesInput(String(REPORTED_FINANCIALS.supplierPayables));
+      setTotalARInput(String(REPORTED_FINANCIALS.accountsReceivable));
+      setOverdue60Input(String(REPORTED_FINANCIALS.overdue60Days));
       setAnnualRevenue(String(REPORTED_FINANCIALS.revenue));
       setDirectCosts(String(REPORTED_FINANCIALS.directCosts));
       setOperatingExpenses(String(REPORTED_FINANCIALS.operatingExpenses));
@@ -179,12 +207,12 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
       setPricingReviewYears('3');
       setIsEditingBaseline(false);
     } else {
-      setCash(0);
-      setOverdraftUsed(0);
-      setOverdraftLimit(0);
-      setPayables(0);
-      setTotalAR(0);
-      setOverdue60(0);
+      setCashInput('');
+      setOverdraftUsedInput('');
+      setOverdraftLimitInput('');
+      setPayablesInput('');
+      setTotalARInput('');
+      setOverdue60Input('');
       setAnnualRevenue('');
       setDirectCosts('');
       setOperatingExpenses('');
@@ -219,12 +247,6 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   const currentNetLiquidity = cash - payables;
   const simulatedNetLiquidity = simulatedCash - payables;
 
-  const parseNullable = (raw: string): number | null => {
-    if (raw.trim() === '') return null;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : null;
-  };
-
   const handleSaveCustomBaseline = () => {
     setIsEditingBaseline(false);
     setBaselineSavedAlert(true);
@@ -253,12 +275,12 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   };
 
   const handleClearCustomBaseline = () => {
-    setCash(0);
-    setOverdraftUsed(0);
-    setOverdraftLimit(0);
-    setPayables(0);
-    setTotalAR(0);
-    setOverdue60(0);
+    setCashInput('');
+    setOverdraftUsedInput('');
+    setOverdraftLimitInput('');
+    setPayablesInput('');
+    setTotalARInput('');
+    setOverdue60Input('');
     setAnnualRevenue('');
     setDirectCosts('');
     setOperatingExpenses('');
@@ -272,12 +294,12 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   };
 
   const handleResetToDemo = () => {
-    setCash(REPORTED_FINANCIALS.cashInBank);
-    setOverdraftUsed(REPORTED_FINANCIALS.overdraftUsed);
-    setOverdraftLimit(REPORTED_FINANCIALS.overdraftLimit);
-    setPayables(REPORTED_FINANCIALS.supplierPayables);
-    setTotalAR(REPORTED_FINANCIALS.accountsReceivable);
-    setOverdue60(REPORTED_FINANCIALS.overdue60Days);
+    setCashInput(String(REPORTED_FINANCIALS.cashInBank));
+    setOverdraftUsedInput(String(REPORTED_FINANCIALS.overdraftUsed));
+    setOverdraftLimitInput(String(REPORTED_FINANCIALS.overdraftLimit));
+    setPayablesInput(String(REPORTED_FINANCIALS.supplierPayables));
+    setTotalARInput(String(REPORTED_FINANCIALS.accountsReceivable));
+    setOverdue60Input(String(REPORTED_FINANCIALS.overdue60Days));
     setAnnualRevenue(String(REPORTED_FINANCIALS.revenue));
     setDirectCosts(String(REPORTED_FINANCIALS.directCosts));
     setOperatingExpenses(String(REPORTED_FINANCIALS.operatingExpenses));
@@ -332,8 +354,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
           <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
             <div className="bg-white/10 border border-white/15 rounded p-4 min-w-[230px] text-center">
-              <span className="text-[11px] font-mono text-[#60A5FA] uppercase tracking-wider font-bold block">
-                Remaining Facility Headroom
+              <span className="text-[11px] font-mono text-[#60A5FA] uppercase tracking-wider font-bold inline-flex items-center justify-center gap-1.5">
+                <span>Remaining Facility Headroom</span>
+                <InfoTooltip
+                  title="Remaining Facility Headroom"
+                  whatItMeans="Total bank overdraft or credit limit minus the amount currently drawn."
+                  whyItMatters="Shows your remaining emergency cash buffer before bank facilities max out and supplier/payroll payments bounce."
+                  actionOrCalculation="Calculated as Credit Facility Limit − Credit Drawn. Keep at least 1 month of fixed overheads in combined cash + headroom."
+                  align="right"
+                />
               </span>
               <div className="text-3xl font-bold text-white mt-1 font-mono tabular-nums">
                 {currency} {(overdraftLimit - overdraftUsed).toLocaleString()}
@@ -367,7 +396,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 </span>
               </h3>
               <p className="text-xs text-[#475569]">
-                Enter verified figures from your accounting system or bank balance. Leave P&amp;L/terms fields blank if unknown — BizPulse never invents missing numbers.
+                Enter verified figures from your accounting system or bank balance. Tap or hover any <span className="font-semibold text-[#1D4ED8]">?</span> icon for plain-English explanations.
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -408,73 +437,123 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Available Cash in Bank ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Available Cash in Bank ({currency})</span>
+                  <InfoTooltip
+                    title="Available Cash in Bank"
+                    whatItMeans="Cleared funds currently sitting in your everyday business operating accounts (excluding overdraft)."
+                    whyItMatters="Cash pays wages, GST/tax, and suppliers this week—paper profit cannot."
+                    actionOrCalculation="Check your live online banking balance today and enter the cleared total."
+                  />
                 </label>
                 <input
                   type="number"
-                  value={cash}
-                  onChange={(e) => setCash(Number(e.target.value) || 0)}
+                  min="0"
+                  placeholder="0"
+                  value={cashInput}
+                  onChange={(e) => setCashInput(e.target.value)}
                   className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
 
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Overdraft / Credit Drawn ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Overdraft / Credit Drawn ({currency})</span>
+                  <InfoTooltip
+                    title="Overdraft / Credit Drawn"
+                    whatItMeans="The amount currently borrowed on your business overdraft or short-term working capital facility."
+                    whyItMatters="Persistent overdraft borrowing usually signals unpaid invoices or unbilled work consuming working capital."
+                    actionOrCalculation="Enter the current negative/drawn balance on your overdraft or revolving credit account."
+                  />
                 </label>
                 <input
                   type="number"
-                  value={overdraftUsed}
-                  onChange={(e) => setOverdraftUsed(Number(e.target.value) || 0)}
+                  min="0"
+                  placeholder="0"
+                  value={overdraftUsedInput}
+                  onChange={(e) => setOverdraftUsedInput(e.target.value)}
                   className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
 
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Total Credit Facility Limit ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Total Credit Facility Limit ({currency})</span>
+                  <InfoTooltip
+                    title="Total Credit Facility Limit"
+                    whatItMeans="The maximum borrowing limit approved by your bank on your overdraft or line of credit."
+                    whyItMatters="Remaining headroom (Limit minus Drawn) defines how much sudden cash shock your business can absorb."
+                    actionOrCalculation="Enter the total approved facility cap (not just what is drawn)."
+                    align="right"
+                  />
                 </label>
                 <input
                   type="number"
-                  value={overdraftLimit}
-                  onChange={(e) => setOverdraftLimit(Number(e.target.value) || 0)}
+                  min="0"
+                  placeholder="0"
+                  value={overdraftLimitInput}
+                  onChange={(e) => setOverdraftLimitInput(e.target.value)}
                   className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
 
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Outstanding Payables ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Outstanding Payables ({currency})</span>
+                  <InfoTooltip
+                    title="Outstanding Payables"
+                    whatItMeans="Total unpaid bills you owe to suppliers, subcontractors, GST/PAYE, and short-term creditors."
+                    whyItMatters="Comparing Cash minus Payables reveals immediate net liquidity pressure."
+                    actionOrCalculation="Pull your Aged Payables summary from Xero, MYOB, or QuickBooks."
+                  />
                 </label>
                 <input
                   type="number"
-                  value={payables}
-                  onChange={(e) => setPayables(Number(e.target.value) || 0)}
+                  min="0"
+                  placeholder="0"
+                  value={payablesInput}
+                  onChange={(e) => setPayablesInput(e.target.value)}
                   className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
 
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Total Unpaid Customer Invoices ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Total Unpaid Customer Invoices ({currency})</span>
+                  <InfoTooltip
+                    title="Total Unpaid Customer Invoices (Accounts Receivable)"
+                    whatItMeans="Total dollar value of invoices already issued to customers that have not yet been paid."
+                    whyItMatters="Every dollar sitting in receivables is cash funding your customers instead of your own bank account."
+                    actionOrCalculation="Check your Aged Receivables total in your accounting software."
+                  />
                 </label>
                 <input
                   type="number"
-                  value={totalAR}
-                  onChange={(e) => setTotalAR(Number(e.target.value) || 0)}
+                  min="0"
+                  placeholder="0"
+                  value={totalARInput}
+                  onChange={(e) => setTotalARInput(e.target.value)}
                   className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
 
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Invoices Overdue &gt;60 Days ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Invoices Overdue &gt;60 Days ({currency})</span>
+                  <InfoTooltip
+                    title="Invoices Overdue >60 Days"
+                    whatItMeans="Subset of unpaid customer invoices that are more than 60 days past their invoice or due date."
+                    whyItMatters="Debt older than 60 days carries escalating write-off risk and triggers an At Risk cash flow alert when >=30% of receivables."
+                    actionOrCalculation="Filter your Aged Receivables report to 60+ and 90+ days columns and enter the combined total."
+                    align="right"
+                  />
                 </label>
                 <input
                   type="number"
-                  value={overdue60}
-                  onChange={(e) => setOverdue60(Number(e.target.value) || 0)}
+                  min="0"
+                  placeholder="0"
+                  value={overdue60Input}
+                  onChange={(e) => setOverdue60Input(e.target.value)}
                   className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
                 />
               </div>
@@ -488,8 +567,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Annual Revenue ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Annual Revenue ({currency})</span>
+                  <InfoTooltip
+                    title="Annual Revenue (Sales)"
+                    whatItMeans="Total sales invoiced over the last 12 months (excluding GST/VAT)."
+                    whyItMatters="Establishes business scale and serves as the denominator for Gross Margin %, Opex %, and Debtor Days."
+                    actionOrCalculation="Use your trailing 12-month Profit & Loss total income figure."
+                  />
                 </label>
                 <input
                   type="number"
@@ -500,8 +585,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Direct Costs / COGS ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Direct Costs / COGS ({currency})</span>
+                  <InfoTooltip
+                    title="Direct Costs / Cost of Goods Sold"
+                    whatItMeans="Materials, subcontractors, direct project labour, and licences incurred directly to deliver customer jobs."
+                    whyItMatters="Revenue minus Direct Costs determines Gross Margin—the true cash contribution paying your overheads."
+                    actionOrCalculation="Take Cost of Sales / Direct Costs from your 12-month P&L."
+                  />
                 </label>
                 <input
                   type="number"
@@ -512,8 +603,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Operating Expenses ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Operating Expenses ({currency})</span>
+                  <InfoTooltip
+                    title="Operating Expenses (Overheads)"
+                    whatItMeans="Fixed and administrative overheads (rent, admin salaries, vehicles, insurance, software, marketing)."
+                    whyItMatters="Shows your monthly fixed burn rate that Gross Profit must cover before the business makes a dollar."
+                    actionOrCalculation="Enter total Operating Expenses / Overheads from your 12-month P&L."
+                  />
                 </label>
                 <input
                   type="number"
@@ -524,8 +621,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">
-                  Operating Profit / EBITDA ({currency})
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Operating Profit / EBITDA ({currency})</span>
+                  <InfoTooltip
+                    title="Operating Profit / EBITDA"
+                    whatItMeans="Net profit earned from core operations before tax and interest (or after owner drawings if paid as salary)."
+                    whyItMatters="Tests whether pricing and capacity actually leave commercial surplus after all overheads."
+                    actionOrCalculation="Enter Net Operating Profit from your trailing 12-month P&L."
+                    align="right"
+                  />
                 </label>
                 <input
                   type="number"
@@ -545,7 +649,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">Active Customers (#)</label>
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Active Customers (#)</span>
+                  <InfoTooltip
+                    title="Active Customers"
+                    whatItMeans="Number of distinct clients or accounts who bought from you or held an active contract in the last 12 months."
+                    whyItMatters="Too few active customers magnifies churn risk and reduces pricing power."
+                    actionOrCalculation="Count active recurring or repeat invoicing accounts in your CRM/accounting system."
+                  />
+                </label>
                 <input
                   type="number"
                   placeholder="e.g. 48"
@@ -555,7 +667,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">Top 5 Revenue Share (%)</label>
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Top 5 Revenue Share (%)</span>
+                  <InfoTooltip
+                    title="Top 5 Customer Revenue Share (%)"
+                    whatItMeans="Percentage of total annual revenue generated by your 5 largest customers combined."
+                    whyItMatters="Above 35–40% means losing even one or two anchor clients can immediately erase operating profit."
+                    actionOrCalculation="Formula: (Revenue from Top 5 Customers ÷ Total Annual Revenue) × 100."
+                  />
+                </label>
                 <input
                   type="number"
                   placeholder="0–100%"
@@ -565,7 +685,16 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">Top 12 Revenue Share (%)</label>
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Top 12 Revenue Share (%)</span>
+                  <InfoTooltip
+                    title="Top 12 Customer Revenue Share (%)"
+                    whatItMeans="Percentage of annual revenue coming from your top 12 accounts."
+                    whyItMatters="Shows whether recurring revenue is diversified or concentrated in a handful of relationships."
+                    actionOrCalculation="Formula: (Revenue from Top 12 Customers ÷ Total Annual Revenue) × 100."
+                    align="right"
+                  />
+                </label>
                 <input
                   type="number"
                   placeholder="0–100%"
@@ -575,7 +704,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">Standard Payment Terms (Days)</label>
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Standard Payment Terms (Days)</span>
+                  <InfoTooltip
+                    title="Standard Payment Terms (Days)"
+                    whatItMeans="Number of days stated on your customer invoices before payment is due (e.g., 7, 14, or 20th of following month)."
+                    whyItMatters="Baseline benchmark used to spot whether customers are paying on time or stretching you."
+                    actionOrCalculation="Enter the standard credit days printed on your quotes and invoices."
+                  />
+                </label>
                 <input
                   type="number"
                   placeholder="e.g. 20"
@@ -585,7 +722,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">Actual Payment Delay (Days)</label>
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Actual Payment Delay (Days)</span>
+                  <InfoTooltip
+                    title="Actual Average Payment Delay (Debtor Days)"
+                    whatItMeans="Average number of days it actually takes customers to pay an invoice from issue date."
+                    whyItMatters="Every day beyond your standard terms forces you to finance client work on your overdraft."
+                    actionOrCalculation="Formula: (Accounts Receivable ÷ Annual Revenue) × 365, or check Debtor Days in your accounting report."
+                  />
+                </label>
                 <input
                   type="number"
                   placeholder="e.g. 45"
@@ -595,9 +740,19 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 />
               </div>
               <div>
-                <label className="text-[#475569] font-semibold block mb-1">Years Since Last Price Review</label>
+                <label className="text-[#475569] font-semibold flex items-center gap-1.5 mb-1">
+                  <span>Years Since Last Price Review</span>
+                  <InfoTooltip
+                    title="Years Since Last Price Review"
+                    whatItMeans="How long it has been since you systematically increased hourly rates, retainers, or product markups."
+                    whyItMatters="Going 2+ years without a price review lets wage, fuel, and supplier inflation silently erode gross margin."
+                    actionOrCalculation="Enter years since your last across-the-board rate/price update (e.g., 0.5, 1, 3)."
+                    align="right"
+                  />
+                </label>
                 <input
                   type="number"
+                  step="0.5"
                   placeholder="e.g. 2"
                   value={pricingReviewYears}
                   onChange={(e) => setPricingReviewYears(e.target.value)}
@@ -620,8 +775,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
         <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569]">
-              Available Cash
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1.5">
+              <span>Available Cash</span>
+              <InfoTooltip
+                title="Available Cash & Net Liquidity"
+                whatItMeans="Cleared bank cash compared directly against short-term bills/payables currently owed."
+                whyItMatters="Negative net liquidity means payables exceed cash on hand, creating immediate cash squeeze."
+                actionOrCalculation="Net Immediate Liquidity = Cash in Bank − Outstanding Payables."
+              />
             </span>
             <div className="p-1.5 rounded bg-[#ECFDF5] text-[#15803D]">
               <DollarSign className="w-4 h-4" />
@@ -645,8 +806,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
         <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569]">
-              Credit Facility Drawn
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1.5">
+              <span>Credit Facility Drawn</span>
+              <InfoTooltip
+                title="Credit Facility Utilisation"
+                whatItMeans="Percentage of your approved overdraft or credit facility currently consumed."
+                whyItMatters="Once utilisation exceeds 65–70%, one delayed client invoice or tax bill can freeze payroll."
+                actionOrCalculation="Formula: (Credit Drawn ÷ Credit Limit) × 100."
+              />
             </span>
             <div className="p-1.5 rounded bg-[#FFFBEB] text-[#B45309]">
               <AlertTriangle className="w-4 h-4" />
@@ -673,8 +840,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
         <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569]">
-              Unpaid Invoices
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1.5">
+              <span>Unpaid Invoices</span>
+              <InfoTooltip
+                title="Unpaid Customer Invoices & Delinquency"
+                whatItMeans="Total receivables awaiting payment and the share that is over 60 days past due."
+                whyItMatters="Overdue invoices are interest-free loans you are giving slow payers while paying bank overdraft interest."
+                actionOrCalculation="Delinquent % = (Overdue >60d ÷ Total Unpaid Invoices) × 100. Chase >60d accounts weekly."
+              />
             </span>
             <div className="p-1.5 rounded bg-[#EFF6FF] text-[#2563EB]">
               <Clock className="w-4 h-4" />
@@ -697,8 +870,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
         <div className="bg-white border border-[#0F172A]/12 rounded p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569]">
-              Est. Interest Cost
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1.5">
+              <span>Est. Interest Cost</span>
+              <InfoTooltip
+                title="Estimated Annual Overdraft Interest"
+                whatItMeans="Annualized financing cost at ~12.8% p.a. on your currently drawn overdraft balance."
+                whyItMatters="Directly reduces net profit—collecting overdue invoices immediately saves this cash leak."
+                actionOrCalculation="Formula: Credit Drawn × 12.8%. Check your exact bank facility rate on your statement."
+                align="right"
+              />
             </span>
             <div className="p-1.5 rounded bg-[#FFFBEB] text-[#B45309]">
               <Coins className="w-4 h-4" />
@@ -721,8 +901,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
       {(numRev != null || customerCount !== '' || standardTermsDays !== '' || pricingReviewYears !== '') && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
           <div className="bg-white border border-[#0F172A]/12 rounded p-4">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] block">
-              Revenue &amp; Gross Margin
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] flex items-center gap-1.5">
+              <span>Revenue &amp; Gross Margin</span>
+              <InfoTooltip
+                title="Gross Margin %"
+                whatItMeans="Percentage of each sales dollar left after direct job materials, subcontractors, and delivery labour."
+                whyItMatters="If Gross Margin is too thin, selling more volume only creates busy work without extra profit."
+                actionOrCalculation="Formula: ((Annual Revenue − Direct Costs) ÷ Annual Revenue) × 100."
+              />
             </span>
             <div className="text-lg font-bold font-mono text-[#0F172A] mt-1">
               {numRev != null ? `${currency} ${numRev.toLocaleString()}` : 'Not supplied'}
@@ -733,8 +919,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
           </div>
 
           <div className="bg-white border border-[#0F172A]/12 rounded p-4">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] block">
-              Operating Margin
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] flex items-center gap-1.5">
+              <span>Operating Margin</span>
+              <InfoTooltip
+                title="Operating Profit Margin %"
+                whatItMeans="Share of annual revenue kept as operating profit after both direct job costs and fixed overheads."
+                whyItMatters="Healthy SME service businesses generally target 12–20%+ after fair owner compensation."
+                actionOrCalculation="Formula: (Operating Profit ÷ Annual Revenue) × 100."
+              />
             </span>
             <div className="text-lg font-bold font-mono text-[#0F172A] mt-1">
               {numProfit != null ? `${currency} ${numProfit.toLocaleString()}` : 'Not supplied'}
@@ -745,8 +937,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
           </div>
 
           <div className="bg-white border border-[#0F172A]/12 rounded p-4">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] block">
-              Debtor Terms vs Actual
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] flex items-center gap-1.5">
+              <span>Debtor Terms vs Actual</span>
+              <InfoTooltip
+                title="Debtor Terms vs Actual Payment Delay"
+                whatItMeans="Compares the payment terms promised on your invoices (e.g., 20 days) against how many days clients actually take to pay."
+                whyItMatters="A wide gap proves you are unintentionally acting as a free bank for slow-paying clients."
+                actionOrCalculation="Tighten automated reminders at +3/+7 days overdue and enforce stop-credit rules."
+              />
             </span>
             <div className="text-lg font-bold font-mono text-[#0F172A] mt-1">
               {actualDelayDays || '—'}d vs {standardTermsDays || '—'}d
@@ -757,8 +955,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
           </div>
 
           <div className="bg-white border border-[#0F172A]/12 rounded p-4">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] block">
-              Customer Concentration
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] flex items-center gap-1.5">
+              <span>Customer Concentration</span>
+              <InfoTooltip
+                title="Customer Revenue Concentration"
+                whatItMeans="Shows how dependent your revenue is on your top 5 and top 12 accounts."
+                whyItMatters="High concentration (>35–40% in Top 5) exposes cash flow to sudden contract cancellation or price squeezing."
+                actionOrCalculation="Lock top accounts into multi-year agreements while building mid-tier pipeline in CRM."
+                align="right"
+              />
             </span>
             <div className="text-lg font-bold font-mono text-[#0F172A] mt-1">
               {top5Conc ? `Top 5: ${top5Conc}%` : customerCount ? `${customerCount} Clients` : 'Not supplied'}
@@ -786,8 +991,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
           </div>
 
           <div className="flex items-center space-x-3 bg-[#F8FAFC] px-4 py-2 rounded border border-[#0F172A]/15">
-            <span className="text-xs font-semibold text-[#0F172A]">
-              Upfront Materials/Hardware Policy:
+            <span className="text-xs font-semibold text-[#0F172A] inline-flex items-center gap-1.5">
+              <span>Upfront Materials/Hardware Policy:</span>
+              <InfoTooltip
+                title="Upfront Materials & Hardware Policy"
+                whatItMeans="Requires customers to pay 100% of third-party hardware, software, or materials upfront before ordering."
+                whyItMatters="Stops you funding supplier bills out of your overdraft while waiting 45–60 days for customer payment."
+                actionOrCalculation="Toggle ENFORCED to see monthly working capital float retained."
+                align="right"
+              />
             </span>
             <button
               type="button"
@@ -807,8 +1019,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
           <div className="space-y-6">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-[#0F172A]">
-                  Overdue Receivables Collection Rate
+                <label className="text-sm font-semibold text-[#0F172A] inline-flex items-center gap-1.5">
+                  <span>Overdue Receivables Collection Rate</span>
+                  <InfoTooltip
+                    title="Overdue Receivables Collection Rate"
+                    whatItMeans="Share of your >60-day overdue invoices successfully collected into your bank account."
+                    whyItMatters="Collected cash reduces overdraft borrowing dollar-for-dollar before adding to cash reserves."
+                    actionOrCalculation="Slide to model recovering 25%–100% of overdue >60d receivables."
+                  />
                 </label>
                 <span className="text-sm font-bold text-[#1D4ED8] font-mono tabular-nums bg-[#EFF6FF] px-2.5 py-0.5 rounded border border-[#BFDBFE]">
                   {recoveredPercent}% ({currency} {recoveredAmount.toLocaleString()})
@@ -827,8 +1045,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-[#0F172A]">
-                  Monthly Supplies / Materials Outlay Protected
+                <label className="text-sm font-semibold text-[#0F172A] inline-flex items-center gap-1.5">
+                  <span>Monthly Supplies / Materials Outlay Protected</span>
+                  <InfoTooltip
+                    title="Monthly Materials / Hardware Float Protected"
+                    whatItMeans="Estimated monthly spend on client hardware, parts, or third-party licences billed upfront instead of in arrears."
+                    whyItMatters="Retains this cash inside your account instead of financing client purchases."
+                    actionOrCalculation="Set close to your typical monthly parts/hardware pass-through spend."
+                  />
                 </label>
                 <span className="text-sm font-bold text-[#0F172A] font-mono tabular-nums bg-[#F8FAFC] px-2.5 py-0.5 rounded border border-[#0F172A]/15">
                   {currency} {monthlyHardwareVolume.toLocaleString()} / mo
@@ -859,8 +1083,13 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="p-3 rounded bg-white border border-[#0F172A]/10">
-                <span className="text-[#475569] block text-[11px] font-semibold">
-                  Projected Overdraft
+                <span className="text-[#475569] text-[11px] font-semibold inline-flex items-center gap-1">
+                  <span>Projected Overdraft</span>
+                  <InfoTooltip
+                    title="Projected Overdraft Balance"
+                    whatItMeans="Estimated overdraft drawn after applying collected overdue debt."
+                    actionOrCalculation="Formula: max(0, Current Overdraft Drawn − Collected Overdue Amount)."
+                  />
                 </span>
                 <span
                   className={`text-lg font-bold font-mono mt-0.5 block ${
@@ -872,8 +1101,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               </div>
 
               <div className="p-3 rounded bg-white border border-[#0F172A]/10">
-                <span className="text-[#475569] block text-[11px] font-semibold">
-                  Facility Headroom
+                <span className="text-[#475569] text-[11px] font-semibold inline-flex items-center gap-1">
+                  <span>Facility Headroom</span>
+                  <InfoTooltip
+                    title="Projected Facility Headroom"
+                    whatItMeans="Remaining borrowing safety margin after overdue debt collection."
+                    actionOrCalculation="Formula: Credit Limit − Projected Overdraft."
+                    align="right"
+                  />
                 </span>
                 <span className="text-lg font-bold font-mono text-[#15803D] mt-0.5 block">
                   {currency} {simulatedHeadroom.toLocaleString()}
@@ -881,8 +1116,13 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               </div>
 
               <div className="p-3 rounded bg-white border border-[#0F172A]/10">
-                <span className="text-[#475569] block text-[11px] font-semibold">
-                  Annual Interest Saved
+                <span className="text-[#475569] text-[11px] font-semibold inline-flex items-center gap-1">
+                  <span>Annual Interest Saved</span>
+                  <InfoTooltip
+                    title="Annual Interest Saved"
+                    whatItMeans="Recurring yearly bank interest avoided by paying down the overdraft."
+                    actionOrCalculation="Formula: (Current Overdraft − Projected Overdraft) × 12.8%."
+                  />
                 </span>
                 <span className="text-lg font-bold font-mono text-[#15803D] mt-0.5 block">
                   +{currency} {Math.round(annualInterestSaved).toLocaleString()}/yr
@@ -890,8 +1130,13 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               </div>
 
               <div className="p-3 rounded bg-white border border-[#0F172A]/10">
-                <span className="text-[#475569] block text-[11px] font-semibold">
-                  Monthly Float Retained
+                <span className="text-[#475569] text-[11px] font-semibold inline-flex items-center gap-1">
+                  <span>Monthly Float Retained</span>
+                  <InfoTooltip
+                    title="Monthly Working Capital Float Retained"
+                    whatItMeans="Cash kept in your bank account each month by collecting deposits upfront on materials/hardware."
+                    align="right"
+                  />
                 </span>
                 <span className="text-lg font-bold font-mono text-[#15803D] mt-0.5 block">
                   +{currency} {hardwareFloatUnlocked.toLocaleString()}/mo
@@ -900,7 +1145,14 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
             </div>
 
             <div className="p-3 rounded bg-white border border-[#0F172A]/10 text-xs flex items-center justify-between">
-              <span className="text-[#475569] font-medium">Simulated Net Immediate Liquidity:</span>
+              <span className="text-[#475569] font-medium inline-flex items-center gap-1.5">
+                <span>Simulated Net Immediate Liquidity:</span>
+                <InfoTooltip
+                  title="Simulated Net Immediate Liquidity"
+                  whatItMeans="Projected cash in bank (after paying off overdraft) minus outstanding supplier payables."
+                  whyItMatters="Moving this number from negative to positive removes acute short-term solvency strain."
+                />
+              </span>
               <span
                 className={`font-mono font-bold text-sm ${
                   simulatedNetLiquidity >= 0 ? 'text-[#15803D]' : 'text-[#B45309]'

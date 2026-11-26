@@ -14,12 +14,15 @@ import {
 import { PRIORITISED_TURNAROUND_PLAN } from '../data/coachingBriefing';
 import { TurnaroundAction, CaseRecord } from '../types/bizpulse';
 import { SevenDaySprint } from './SevenDaySprint';
+import { InfoTooltip } from './InfoTooltip';
+import { mergeDiagnosticsIntoActionPlan } from '../services/actionPlanEngine';
 
 interface Roadmap90DayProps {
   caseRecord: CaseRecord;
   onUpdateActionPlan?: (updatedPlan: TurnaroundAction[]) => void;
   onToggleSprintItem?: (sprintKey: string) => void;
   onOpenKpiTracker?: () => void;
+  onSwitchTab?: (tab: string) => void;
 }
 
 function normalizeHorizonBucket(horizon: string): '30' | '60' | '90' {
@@ -33,6 +36,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
   onUpdateActionPlan,
   onToggleSprintItem,
   onOpenKpiTracker,
+  onSwitchTab,
 }) => {
   const isDemo = caseRecord.profile.isDemonstrationCase;
   const [subView, setSubView] = useState<'roadmap' | 'sprint'>('roadmap');
@@ -40,15 +44,18 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [importNotice, setImportNotice] = useState<string | null>(null);
 
-  // New custom task state
+  // New custom task state covering all 8 required fields
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskIssue, setNewTaskIssue] = useState('');
+  const [newTaskRationale, setNewTaskRationale] = useState('');
+  const [newTaskSuccessKpi, setNewTaskSuccessKpi] = useState('');
   const [newTaskOwner, setNewTaskOwner] = useState('Business Owner');
   const [newTaskHorizon, setNewTaskHorizon] = useState<TurnaroundAction['horizon']>('30 Days (Quick Wins & Control)');
   const [newTaskPriority, setNewTaskPriority] = useState<TurnaroundAction['priority']>('Priority 1 (Urgent)');
   const [newTaskCostEffort, setNewTaskCostEffort] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
 
-  // Derive isolated per-case action plan
+  // Derive isolated per-case action plan using non-destructive diagnostic engine fallback
   const tasks: TurnaroundAction[] = useMemo(() => {
     if (caseRecord.actionPlan && caseRecord.actionPlan.length > 0) {
       return caseRecord.actionPlan;
@@ -56,31 +63,8 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
     if (isDemo) {
       return PRIORITISED_TURNAROUND_PLAN;
     }
-    if (caseRecord.recommendations?.actionItems?.length) {
-      return caseRecord.recommendations.actionItems.map((item, idx) => ({
-        id: item.id || `custom-act-${idx + 1}`,
-        horizon:
-          item.timeframe.toLowerCase().includes('48') ||
-          item.timeframe.toLowerCase().includes('7') ||
-          item.timeframe.toLowerCase().includes('30')
-            ? '30 Days (Quick Wins & Control)'
-            : item.timeframe.toLowerCase().includes('60')
-            ? '60 Days (Systems & Margin Fixes)'
-            : '90 Days (Sustainable Growth)',
-        priority: item.priority,
-        action: item.action,
-        accountableRole: item.ownerRole,
-        timeframe: item.timeframe,
-        requiredInformationOrResources: ['Owner review & internal records'],
-        measurableSuccessIndicator: item.expectedImpact,
-        intendedImprovement: item.expectedImpact,
-        dependencyOrRisk: 'Requires consistent weekly review cadence',
-        decisionStatus: 'pending_review',
-        completed: item.completed,
-      }));
-    }
-    return [];
-  }, [caseRecord.actionPlan, caseRecord.recommendations, isDemo]);
+    return mergeDiagnosticsIntoActionPlan(caseRecord);
+  }, [caseRecord, isDemo]);
 
   const updateTask = (id: string, patch: Partial<TurnaroundAction>) => {
     const updated = tasks.map((t) => (t.id === id ? { ...t, ...patch } : t));
@@ -95,67 +79,17 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
   };
 
   const handleImportFromDiagnostics = () => {
-    const existingActions = new Set(tasks.map((t) => t.action.trim().toLowerCase()));
-    const toAdd: TurnaroundAction[] = [];
+    const baseRecord: CaseRecord = { ...caseRecord, actionPlan: tasks };
+    const merged = mergeDiagnosticsIntoActionPlan(baseRecord);
+    const addedCount = merged.length - tasks.length;
 
-    if (caseRecord.recommendations?.actionItems?.length) {
-      caseRecord.recommendations.actionItems.forEach((item, idx) => {
-        if (!existingActions.has(item.action.trim().toLowerCase())) {
-          existingActions.add(item.action.trim().toLowerCase());
-          toAdd.push({
-            id: item.id || `rec-act-${Date.now()}-${idx}`,
-            horizon:
-              item.timeframe.toLowerCase().includes('48') ||
-              item.timeframe.toLowerCase().includes('7') ||
-              item.timeframe.toLowerCase().includes('30')
-                ? '30 Days (Quick Wins & Control)'
-                : item.timeframe.toLowerCase().includes('60')
-                ? '60 Days (Systems & Margin Fixes)'
-                : '90 Days (Sustainable Growth)',
-            priority: item.priority,
-            action: item.action,
-            accountableRole: item.ownerRole,
-            timeframe: item.timeframe,
-            requiredInformationOrResources: ['Coaching & diagnostic baseline'],
-            measurableSuccessIndicator: item.expectedImpact,
-            intendedImprovement: item.expectedImpact,
-            dependencyOrRisk: 'Requires weekly Monday review check-in',
-            decisionStatus: 'pending_review',
-            completed: Boolean(item.completed),
-          });
-        }
-      });
-    }
-
-    if (caseRecord.overallHealth?.topThreePriorities?.length) {
-      caseRecord.overallHealth.topThreePriorities.forEach((p) => {
-        const title = `Address Priority #${p.rank}: ${p.title}`;
-        if (!existingActions.has(title.toLowerCase())) {
-          existingActions.add(title.toLowerCase());
-          toAdd.push({
-            id: `prio-${p.key}-${Date.now()}`,
-            horizon: p.rank === 1 ? '30 Days (Quick Wins & Control)' : p.rank === 2 ? '60 Days (Systems & Margin Fixes)' : '90 Days (Sustainable Growth)',
-            priority: p.rank === 1 ? 'Priority 1 (Urgent)' : 'Priority 2 (High)',
-            businessIssue: p.title,
-            action: title,
-            accountableRole: 'Business Owner',
-            timeframe: p.rank === 1 ? 'Days 1–30' : p.rank === 2 ? 'Days 31–60' : 'Days 61–90',
-            requiredInformationOrResources: ['Business Health Capability notes'],
-            measurableSuccessIndicator: p.recommendedFocus,
-            intendedImprovement: p.recommendedFocus,
-            dependencyOrRisk: p.rationale,
-            decisionStatus: 'pending_review',
-            completed: false,
-          });
-        }
-      });
-    }
-
-    if (toAdd.length === 0) {
-      setImportNotice('All current Top 3 Priorities and Recommendation actions are already in your plan.');
+    if (addedCount <= 0) {
+      setImportNotice(
+        'All current Top 3 Priorities and Coaching Recommendation actions are already in your Action Plan.'
+      );
     } else {
-      onUpdateActionPlan?.([...tasks, ...toAdd]);
-      setImportNotice(`Imported ${toAdd.length} action item(s) without overwriting existing work.`);
+      onUpdateActionPlan?.(merged);
+      setImportNotice(`Imported ${addedCount} action item(s) without overwriting existing work.`);
     }
     setTimeout(() => setImportNotice(null), 4000);
   };
@@ -163,29 +97,40 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
+    const defaultTf = newTaskHorizon.includes('30 Days')
+      ? 'Days 1–30'
+      : newTaskHorizon.includes('60 Days')
+      ? 'Days 31–60'
+      : 'Days 61–90';
     const newAction: TurnaroundAction = {
       id: `task-${Date.now()}`,
       horizon: newTaskHorizon,
       priority: newTaskPriority,
+      businessIssue: newTaskIssue.trim() || 'Owner-identified business priority',
+      rationale:
+        newTaskRationale.trim() ||
+        'Protects cash flow, margin, or operational resilience.',
       action: newTaskTitle.trim(),
       accountableRole: newTaskOwner.trim() || 'Business Owner',
-      timeframe:
-        newTaskHorizon.includes('30 Days')
-          ? 'Days 1–30'
-          : newTaskHorizon.includes('60 Days')
-          ? 'Days 31–60'
-          : 'Days 61–90',
+      timeframe: newTaskDueDate ? `${defaultTf} (Due ${newTaskDueDate})` : defaultTf,
       targetCompletionDate: newTaskDueDate || undefined,
       estimatedCostEffort: newTaskCostEffort.trim() || undefined,
       requiredInformationOrResources: ['Business records / owner oversight'],
-      measurableSuccessIndicator: 'Action verified complete at Monday review',
-      intendedImprovement: 'Measurable cash, margin, or operational relief',
+      measurableSuccessIndicator:
+        newTaskSuccessKpi.trim() || 'Action verified complete at Monday review',
+      intendedImprovement:
+        newTaskSuccessKpi.trim() || 'Measurable cash, margin, or operational relief',
       dependencyOrRisk: 'Avoid deferring behind daily operational fires',
       decisionStatus: 'accepted',
+      status: 'pending',
       completed: false,
+      sourceTag: 'Owner Added',
     };
     onUpdateActionPlan?.([...tasks, newAction]);
     setNewTaskTitle('');
+    setNewTaskIssue('');
+    setNewTaskRationale('');
+    setNewTaskSuccessKpi('');
     setNewTaskCostEffort('');
     setNewTaskDueDate('');
   };
@@ -351,76 +296,146 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
             </div>
           </div>
 
-          {/* Add Custom Action Item Bar */}
+          {/* Add Custom Action Item Bar (All Key Accountability Fields) */}
           <form
             onSubmit={handleAddTask}
-            className="bg-white border border-[#0F172A]/12 rounded p-4 shadow-xs flex flex-wrap items-center gap-2.5 text-xs"
+            className="bg-white border border-[#0F172A]/12 rounded p-4 sm:p-5 shadow-xs space-y-3 text-xs"
           >
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder={`Add accountable action for ${caseRecord.profile.name}...`}
-              className="flex-1 min-w-[200px] bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3.5 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
-            />
-            <input
-              type="text"
-              value={newTaskOwner}
-              onChange={(e) => setNewTaskOwner(e.target.value)}
-              placeholder="Owner"
-              className="w-32 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
-            />
-            <input
-              type="text"
-              value={newTaskCostEffort}
-              onChange={(e) => setNewTaskCostEffort(e.target.value)}
-              placeholder="Est. Cost / Effort"
-              className="w-36 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
-            />
-            <input
-              type="date"
-              value={newTaskDueDate}
-              onChange={(e) => setNewTaskDueDate(e.target.value)}
-              className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
-              title="Target completion date"
-            />
-            <select
-              value={newTaskHorizon}
-              onChange={(e) => setNewTaskHorizon(e.target.value as TurnaroundAction['horizon'])}
-              className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
-            >
-              <option value="30 Days (Quick Wins & Control)">30 Days</option>
-              <option value="60 Days (Systems & Margin Fixes)">60 Days</option>
-              <option value="90 Days (Sustainable Growth)">90 Days</option>
-            </select>
-            <select
-              value={newTaskPriority}
-              onChange={(e) => setNewTaskPriority(e.target.value as TurnaroundAction['priority'])}
-              className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
-            >
-              <option value="Priority 1 (Urgent)">Urgent</option>
-              <option value="Priority 2 (High)">High</option>
-              <option value="Priority 3 (Medium)">Medium</option>
-            </select>
-            <button
-              type="submit"
-              disabled={!newTaskTitle.trim()}
-              className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-semibold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
-              <span>Add Action</span>
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono font-bold uppercase tracking-wider text-[11px] text-[#0F172A]">
+                Add Custom Action Item
+              </span>
+              <span className="text-[11px] text-[#475569]">
+                Capture issue, recommended action, why it matters, owner, timeframe, and success measure.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <input
+                type="text"
+                value={newTaskIssue}
+                onChange={(e) => setNewTaskIssue(e.target.value)}
+                placeholder="1. Identified Issue / Opportunity (e.g., 60+ day debtors)"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              />
+              <input
+                type="text"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder={`2. Recommended Action for ${caseRecord.profile.name}...`}
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-semibold focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
+              />
+              <input
+                type="text"
+                value={newTaskSuccessKpi}
+                onChange={(e) => setNewTaskSuccessKpi(e.target.value)}
+                placeholder="3. Success Measure / KPI (e.g., Recover $25k in 14 days)"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <input
+                type="text"
+                value={newTaskRationale}
+                onChange={(e) => setNewTaskRationale(e.target.value)}
+                placeholder="Reason for action (commercial why)..."
+                className="flex-1 min-w-[200px] bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              />
+              <input
+                type="text"
+                value={newTaskOwner}
+                onChange={(e) => setNewTaskOwner(e.target.value)}
+                placeholder="Responsible Person"
+                className="w-36 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              />
+              <input
+                type="text"
+                value={newTaskCostEffort}
+                onChange={(e) => setNewTaskCostEffort(e.target.value)}
+                placeholder="Est. Cost / Effort"
+                className="w-32 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              />
+              <input
+                type="date"
+                value={newTaskDueDate}
+                onChange={(e) => setNewTaskDueDate(e.target.value)}
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                title="Target completion date"
+              />
+              <select
+                value={newTaskHorizon}
+                onChange={(e) => setNewTaskHorizon(e.target.value as TurnaroundAction['horizon'])}
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
+              >
+                <option value="30 Days (Quick Wins & Control)">30 Days</option>
+                <option value="60 Days (Systems & Margin Fixes)">60 Days</option>
+                <option value="90 Days (Sustainable Growth)">90 Days</option>
+              </select>
+              <select
+                value={newTaskPriority}
+                onChange={(e) => setNewTaskPriority(e.target.value as TurnaroundAction['priority'])}
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
+              >
+                <option value="Priority 1 (Urgent)">Priority 1 (Urgent)</option>
+                <option value="Priority 2 (High)">Priority 2 (High)</option>
+                <option value="Priority 3 (Medium)">Priority 3 (Medium)</option>
+              </select>
+              <button
+                type="submit"
+                disabled={!newTaskTitle.trim()}
+                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-semibold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <span>Add Action</span>
+              </button>
+            </div>
           </form>
 
           {/* Task List */}
           {filteredTasks.length === 0 ? (
-            <div className="bg-white border border-[#0F172A]/12 rounded p-10 text-center space-y-2">
+            <div className="bg-white border border-[#0F172A]/12 rounded p-8 sm:p-10 text-center space-y-4">
               <p className="text-sm font-bold text-[#0F172A]">
-                No turnaround actions added for {caseRecord.profile.name} yet.
+                No action items populated for {caseRecord.profile.name} yet.
               </p>
-              <p className="text-xs text-[#475569] max-w-md mx-auto">
-                Click &ldquo;Import Priorities &amp; Recommendations&rdquo; above or add your own accountable task.
+              <p className="text-xs text-[#475569] max-w-xl mx-auto leading-relaxed">
+                Your 30/60/90-Day Action Plan automatically builds from your Top 3 Business Health Priorities and AI Coaching Plan, or you can import them with one click or add a custom item above.
               </p>
+              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleImportFromDiagnostics}
+                  className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <span>Import Priorities &amp; Recommendations</span>
+                </button>
+                {onSwitchTab && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onSwitchTab('essentials')}
+                      className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A]"
+                    >
+                      1. Business Essentials &rarr;
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSwitchTab('health')}
+                      className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A]"
+                    >
+                      2. 12-Capability Health &rarr;
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSwitchTab('recommendations')}
+                      className="px-3.5 py-2 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#BFDBFE] text-xs font-semibold text-[#1D4ED8]"
+                    >
+                      3. Generate Coaching Plan &rarr;
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -431,9 +446,9 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                     key={task.id}
                     className={`p-5 sm:p-6 rounded border transition-all ${
                       dec === 'rejected'
-                        ? 'bg-[#F8FAFC] border-[#CBD5E1] opacity-60'
+                        ? 'bg-[#F8FAFC] border-[#CBD5E1] opacity-65'
                         : task.completed
-                        ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-85'
+                        ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-90'
                         : 'bg-white border-[#0F172A]/12 hover:border-[#2563EB] shadow-xs'
                     }`}
                   >
@@ -451,7 +466,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                             <Circle className="w-5 h-5 text-[#94A3B8] hover:text-[#2563EB]" />
                           )}
                         </button>
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA] font-mono">
                               {task.horizon}
@@ -460,7 +475,9 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                               className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
                                 task.priority.includes('Urgent')
                                   ? 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
-                                  : 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                                  : task.priority.includes('High')
+                                  ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                                  : 'bg-[#F8FAFC] text-[#334155] border-[#CBD5E1]'
                               }`}
                             >
                               {task.priority}
@@ -469,21 +486,38 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                               <UserCheck className="w-3 h-3 text-[#2563EB]" />
                               {task.accountableRole}
                             </span>
+                            {task.sourceTag && (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
+                                Source: {task.sourceTag}
+                              </span>
+                            )}
                             {task.estimatedCostEffort && (
                               <span className="text-[11px] px-2 py-0.5 rounded bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] font-medium">
                                 Effort/Cost: {task.estimatedCostEffort}
                               </span>
                             )}
                           </div>
-                          <h3
-                            className={`text-base font-bold mt-2 ${
-                              task.completed || dec === 'rejected'
-                                ? 'line-through text-[#475569]'
-                                : 'text-[#0F172A]'
-                            }`}
-                          >
-                            {task.action}
-                          </h3>
+
+                          {/* Editable Field 3: Recommended Action */}
+                          <div>
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-0.5">
+                              <span>Recommended Action</span>
+                              <InfoTooltip
+                                title="Recommended Action"
+                                whatItMeans="The concrete, verifiable step to execute (editable if you want to refine the wording)."
+                              />
+                            </label>
+                            <input
+                              type="text"
+                              value={task.action}
+                              onChange={(e) => updateTask(task.id, { action: e.target.value })}
+                              className={`w-full bg-transparent border border-transparent hover:border-[#0F172A]/15 focus:bg-white focus:border-[#2563EB] rounded px-2 py-1 text-sm sm:text-base font-bold focus:outline-none ${
+                                task.completed || dec === 'rejected'
+                                  ? 'line-through text-[#475569]'
+                                  : 'text-[#0F172A]'
+                              }`}
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -528,11 +562,160 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                       </div>
                     </div>
 
-                    {/* Editable Accountability Fields */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-4 pt-4 border-t border-[#0F172A]/10 text-xs">
+                    {/* Row 1: Priority, Identified Issue/Opportunity, Responsible Person, Horizon, Timeframe */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[#0F172A]/10 text-xs">
                       <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] block mb-1">
-                          Execution Status
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-1">
+                          <span>1. Priority &amp; Horizon</span>
+                          <InfoTooltip
+                            title="Priority & Execution Window"
+                            whatItMeans="Urgency rank and whether this belongs in Days 1–30 (quick wins), 31–60 (systems), or 61–90 (growth)."
+                          />
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <select
+                            value={task.priority}
+                            onChange={(e) =>
+                              updateTask(task.id, {
+                                priority: e.target.value as TurnaroundAction['priority'],
+                              })
+                            }
+                            className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2 py-1.5 text-[11px] font-semibold text-[#0F172A]"
+                          >
+                            <option value="Priority 1 (Urgent)">P1 Urgent</option>
+                            <option value="Priority 2 (High)">P2 High</option>
+                            <option value="Priority 3 (Medium)">P3 Medium</option>
+                          </select>
+                          <select
+                            value={task.horizon}
+                            onChange={(e) =>
+                              updateTask(task.id, {
+                                horizon: e.target.value as TurnaroundAction['horizon'],
+                              })
+                            }
+                            className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2 py-1.5 text-[11px] font-semibold text-[#0F172A]"
+                          >
+                            <option value="30 Days (Quick Wins & Control)">30 Days</option>
+                            <option value="60 Days (Systems & Margin Fixes)">60 Days</option>
+                            <option value="90 Days (Sustainable Growth)">90 Days</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-1">
+                          <span>2. Identified Issue / Opportunity</span>
+                          <InfoTooltip
+                            title="Identified Issue or Opportunity"
+                            whatItMeans="The underlying business problem, cash leak, or commercial opportunity this action addresses."
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          value={task.businessIssue || ''}
+                          onChange={(e) => updateTask(task.id, { businessIssue: e.target.value })}
+                          placeholder="Underlying issue or opportunity..."
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-1">
+                          <span>5. Suggested Timeframe</span>
+                          <InfoTooltip
+                            title="Suggested Timeframe"
+                            whatItMeans="Target completion window or calendar deadline for accountability."
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          value={task.targetCompletionDate || task.timeframe || ''}
+                          onChange={(e) =>
+                            updateTask(task.id, {
+                              timeframe: e.target.value,
+                              targetCompletionDate: e.target.value,
+                            })
+                          }
+                          placeholder="e.g., Next 7 days or YYYY-MM-DD"
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-1">
+                          <span>6. Responsible Person</span>
+                          <InfoTooltip
+                            title="Responsible Person"
+                            whatItMeans="Single accountable owner responsible for seeing this action through to completion."
+                            align="right"
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          value={task.accountableRole || ''}
+                          onChange={(e) => updateTask(task.id, { accountableRole: e.target.value })}
+                          placeholder="Owner / Role"
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] font-semibold text-[#0F172A]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 2: Reason for Action, Success Measure / KPI, Progress Status & Outcome */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#0F172A]/10 text-xs">
+                      <div className="lg:col-span-2">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-1">
+                          <span>4. Reason for Action (Commercial Rationale)</span>
+                          <InfoTooltip
+                            title="Reason for Action"
+                            whatItMeans="Why doing this action now protects cash flow, lifts gross margin, or removes bottleneck risk."
+                          />
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={task.rationale ?? task.dependencyOrRisk ?? ''}
+                          onChange={(e) => updateTask(task.id, { rationale: e.target.value })}
+                          placeholder="Explain why this action matters commercially..."
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] inline-flex items-center gap-1 mb-1">
+                          <span>7. Success Measure / KPI</span>
+                          <InfoTooltip
+                            title="Success Measure / KPI"
+                            whatItMeans="Measurable result confirming the action worked (and optional KPI scoreboard link)."
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          value={task.measurableSuccessIndicator || ''}
+                          onChange={(e) =>
+                            updateTask(task.id, {
+                              measurableSuccessIndicator: e.target.value,
+                              intendedImprovement: e.target.value,
+                            })
+                          }
+                          placeholder="Measurable KPI / success indicator"
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A] mb-1.5"
+                        />
+                        <input
+                          type="text"
+                          value={task.metricLink || ''}
+                          onChange={(e) => updateTask(task.id, { metricLink: e.target.value })}
+                          placeholder="Linked KPI (e.g., Debtor Days, GM%)"
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1 text-[10px] text-[#475569]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#15803D] inline-flex items-center gap-1 mb-1">
+                          <span>8. Progress Status &amp; Outcome</span>
+                          <InfoTooltip
+                            title="Progress Status & Actual Outcome"
+                            whatItMeans="Current execution stage and actual cash/margin result achieved."
+                            align="right"
+                          />
                         </label>
                         <select
                           value={task.status || (task.completed ? 'completed' : 'pending')}
@@ -543,67 +726,26 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                               completed: nextStatus === 'completed',
                             });
                           }}
-                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] font-semibold text-[#0F172A]"
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] font-semibold text-[#0F172A] mb-1.5"
                         >
                           <option value="pending">Pending</option>
                           <option value="in_progress">In Progress</option>
                           <option value="completed">Completed</option>
                         </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] block mb-1">
-                          Linked Scoreboard Metric
-                        </label>
-                        <input
-                          type="text"
-                          value={task.metricLink || ''}
-                          onChange={(e) => updateTask(task.id, { metricLink: e.target.value })}
-                          placeholder="e.g., Aged Debtors, Cash, GM%"
-                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] block mb-1">
-                          Target Date / Timeframe
-                        </label>
-                        <input
-                          type="text"
-                          value={task.targetCompletionDate || task.timeframe || ''}
-                          onChange={(e) => updateTask(task.id, { targetCompletionDate: e.target.value })}
-                          placeholder="YYYY-MM-DD or timeframe"
-                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#475569] block mb-1">
-                          Intended Improvement
-                        </label>
-                        <input
-                          type="text"
-                          value={task.intendedImprovement || task.measurableSuccessIndicator || ''}
-                          onChange={(e) => updateTask(task.id, { intendedImprovement: e.target.value })}
-                          placeholder="Expected measurable impact"
-                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#15803D] block mb-1">
-                          Actual Result Logged
-                        </label>
                         <input
                           type="text"
                           value={task.actualResult || ''}
                           onChange={(e) => updateTask(task.id, { actualResult: e.target.value })}
-                          placeholder="Record cash collected, margin gained, or status..."
-                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1.5 text-[11px] text-[#0F172A]"
+                          placeholder="Record cash collected or result..."
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1 text-[10px] text-[#0F172A]"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 pt-3 border-t border-[#0F172A]/10 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-[#0F172A]/10 text-xs">
                       <div className="p-3 bg-[#F8FAFC] rounded border border-[#0F172A]/10">
                         <span className="font-bold text-[#475569] uppercase tracking-wider block mb-1 text-[10px]">
-                          Resources Needed
+                          Resources / Information Needed
                         </span>
                         <ul className="text-[#0F172A] list-disc list-inside space-y-0.5 text-[11px]">
                           {task.requiredInformationOrResources.map((res, i) => (
@@ -611,17 +753,9 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                           ))}
                         </ul>
                       </div>
-                      <div className="p-3 bg-[#ECFDF5] rounded border border-[#A7F3D0]">
-                        <span className="font-bold text-[#15803D] uppercase tracking-wider block mb-1 text-[10px]">
-                          Success Indicator
-                        </span>
-                        <p className="text-[#0F172A] leading-relaxed text-[11px]">
-                          {task.measurableSuccessIndicator}
-                        </p>
-                      </div>
                       <div className="p-3 bg-[#FEF2F2] rounded border border-[#FECACA]">
                         <span className="font-bold text-[#B91C1C] uppercase tracking-wider block mb-1 text-[10px]">
-                          Dependency / Risk
+                          Dependency / Execution Risk
                         </span>
                         <p className="text-[#0F172A] leading-relaxed text-[11px]">
                           {task.dependencyOrRisk}

@@ -17,6 +17,7 @@ import {
   PlusCircle,
   Calculator,
   Filter,
+  Download,
 } from 'lucide-react';
 import {
   BusinessProfile,
@@ -35,8 +36,13 @@ import {
   OpportunityHorizon,
   AccountUsageSummary,
   MembershipContinuity,
+  CaseRecord,
 } from '../types/bizpulse';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
+import {
+  generateCoachingPlanPdfBytes,
+  generateCoachingPlanDocxUint8Array,
+} from '../services/reportGenerator';
 
 interface RecommendationViewProps {
   profile: BusinessProfile;
@@ -88,40 +94,99 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   const [challengePrompt, setChallengePrompt] = useState('');
   const [isChallenging, setIsChallenging] = useState(false);
   const [challengeError, setChallengeError] = useState<string | null>(null);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const buildExportCaseRecord = (): CaseRecord => ({
+    id: profile.caseId || 'active-case',
+    profile,
+    healthInputs,
+    overallHealth,
+    financials,
+    uploadedDocuments,
+    crossDocumentSynthesis,
+    crmContacts,
+    roiScenarios,
+    actionPlan,
+    continuity,
+    recommendations,
+    conversations: [],
+    dashboardMetrics: [],
+    updatedAt: new Date().toISOString(),
+  });
+
+  const triggerBlobDownload = (bytes: Uint8Array, filename: string, mimeType: string) => {
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+    const blob = new Blob([buffer], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleExportCoachingPdf = () => {
+    try {
+      setIsExporting(true);
+      const safeName = (profile.name || 'business').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const bytes = generateCoachingPlanPdfBytes(buildExportCaseRecord());
+      triggerBlobDownload(bytes, `${safeName}_coaching_actions_plan.pdf`, 'application/pdf');
+      setExportStatus('Coaching & Actions Plan PDF downloaded.');
+      setTimeout(() => setExportStatus(null), 3500);
+    } catch (err: any) {
+      console.error('Coaching PDF export failed:', err);
+      setError(`Unable to generate Coaching Plan PDF: ${err?.message || 'Unexpected error'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCoachingDocx = async () => {
+    try {
+      setIsExporting(true);
+      const safeName = (profile.name || 'business').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const bytes = await generateCoachingPlanDocxUint8Array(buildExportCaseRecord());
+      triggerBlobDownload(
+        bytes,
+        `${safeName}_coaching_actions_plan.docx`,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      );
+      setExportStatus('Coaching & Actions Plan Word (.docx) downloaded.');
+      setTimeout(() => setExportStatus(null), 3500);
+    } catch (err: any) {
+      console.error('Coaching DOCX export failed:', err);
+      setError(`Unable to generate Coaching Plan Word document: ${err?.message || 'Unexpected error'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleGenerateRecommendation = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/generate-recommendation', {
+      const { data } = await apiFetchWithAuth('/api/coach/generate-recommendation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: profile.caseId,
           businessProfile: profile,
           healthInputs,
           financials,
           overallHealth,
-          uploadedDocuments,
+          uploadedDocuments: sanitizeDocumentsForAiPayload(uploadedDocuments),
           crossDocumentSynthesis,
           crmContacts,
           roiScenarios,
           actionPlan,
           continuity,
-        }),
+        },
       });
 
-      const data = await response.json().catch(() => ({}));
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Server returned an error generating recommendation.');
-      }
 
       if (data.recommendation) {
         const merged: RecommendationOutput = {
@@ -130,9 +195,12 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
         };
         onUpdateRecommendations(merged);
         onTrackUsage?.('recommendationsCount');
+      } else {
+        throw new Error('The AI engine returned an empty coaching plan. Please click Retry.');
       }
     } catch (err: any) {
-      console.error(err);
+      console.error('Coaching generation failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setError(err.message || 'Error communicating with AI coaching engine.');
     } finally {
       setIsLoading(false);
@@ -150,22 +218,16 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
     });
   };
 
-  const handleSubmitChallenge = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeChallengeSubmit = async () => {
     if (!recommendations || !challengePrompt.trim() || isChallenging) return;
 
     setIsChallenging(true);
     setChallengeError(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/challenge-recommendation', {
+      const { data } = await apiFetchWithAuth('/api/coach/challenge-recommendation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: profile.caseId,
           challengeQuestion: challengePrompt.trim(),
           businessProfile: profile,
@@ -173,21 +235,16 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           financials,
           overallHealth,
           currentRecommendation: recommendations,
-          uploadedDocuments,
+          uploadedDocuments: sanitizeDocumentsForAiPayload(uploadedDocuments),
           crossDocumentSynthesis,
           crmContacts,
           roiScenarios,
           actionPlan,
           continuity,
-        }),
+        },
       });
 
-      const data = await response.json().catch(() => ({}));
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to process follow-up question.');
-      }
 
       const newEntry: RecommendationChallenge = {
         id: data.challengeEntry?.id || `chal-${Date.now()}`,
@@ -204,11 +261,17 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
       setChallengePrompt('');
       onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
-      console.error(err);
+      console.error('Challenge recommendation error:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setChallengeError(err.message || 'Failed to challenge recommendation.');
     } finally {
       setIsChallenging(false);
     }
+  };
+
+  const handleSubmitChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeChallengeSubmit();
   };
 
   const completedActions = recommendations?.actionItems?.filter((a) => a.completed).length ?? 0;
@@ -242,7 +305,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
               onClick={handleGenerateRecommendation}
@@ -258,19 +321,61 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                   : 'Generate Coaching Plan'}
               </span>
             </button>
+
+            {(recommendations || actionPlan.length > 0) && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleExportCoachingPdf}
+                  disabled={isExporting}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-semibold text-xs border border-white/20 transition whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <span>Coaching PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportCoachingDocx}
+                  disabled={isExporting}
+                  className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-semibold text-xs border border-white/20 transition whitespace-nowrap"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <span>Word (.docx)</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {error && (
-          <div className="mt-4 p-3.5 bg-[#B91C1C]/20 border border-[#FCA5A5]/40 text-white text-xs rounded flex items-center justify-between">
-            <span>{error}</span>
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              className="text-[#CBD5E1] hover:text-white font-semibold"
-            >
+        {exportStatus && (
+          <div className="mt-4 p-3 bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold rounded flex items-center justify-between">
+            <span>{exportStatus}</span>
+            <button type="button" onClick={() => setExportStatus(null)} className="hover:underline">
               Dismiss
             </button>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 p-3.5 bg-[#B91C1C]/20 border border-[#FCA5A5]/40 text-white text-xs rounded flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleGenerateRecommendation}
+                disabled={isLoading}
+                className="px-3 py-1 rounded bg-white text-[#B91C1C] font-bold hover:bg-[#FEF2F2] transition"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="text-[#CBD5E1] hover:text-white font-semibold"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -826,6 +931,24 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               </span>
 
               <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportCoachingPdf}
+                  disabled={isExporting}
+                  className="flex items-center space-x-1.5 px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>Download Coaching PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportCoachingDocx}
+                  disabled={isExporting}
+                  className="flex items-center space-x-1.5 px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>Download Word (.docx)</span>
+                </button>
                 {onOpenChallengeMe && (
                   <button
                     type="button"
@@ -894,8 +1017,25 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             )}
 
             {challengeError && (
-              <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded">
-                {challengeError}
+              <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs rounded flex flex-wrap items-center justify-between gap-2">
+                <span>{challengeError}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={executeChallengeSubmit}
+                    disabled={isChallenging || !challengePrompt.trim()}
+                    className="px-2.5 py-1 rounded bg-[#B91C1C] text-white font-bold hover:bg-[#991B1B] transition"
+                  >
+                    Retry
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChallengeError(null)}
+                    className="font-semibold hover:underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
             )}
 

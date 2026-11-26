@@ -47,6 +47,7 @@ import {
   seedDemoCaseForUser,
 } from './services/firestoreStorage';
 import { calculateOverallHealth } from './services/healthScoring';
+import { mergeDiagnosticsIntoActionPlan } from './services/actionPlanEngine';
 import { getAuthHeaders } from './services/firebase';
 import { Database, AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react';
 
@@ -496,10 +497,14 @@ function BizPulseWorkspace() {
   const handleRecalculateOverall = () => {
     if (!activeCase) return;
     const newOverallHealth = calculateOverallHealth(activeCase.healthInputs, activeCase.financials);
+    const updatedActionPlan = !activeCase.profile.isDemonstrationCase
+      ? mergeDiagnosticsIntoActionPlan({ ...activeCase, overallHealth: newOverallHealth })
+      : activeCase.actionPlan;
     persistCase(
       {
         ...activeCase,
         overallHealth: newOverallHealth,
+        actionPlan: updatedActionPlan,
         updatedAt: new Date().toISOString(),
       },
       true
@@ -508,9 +513,17 @@ function BizPulseWorkspace() {
 
   const handleUpdateRecommendations = (rec: RecommendationOutput) => {
     if (!activeCase) return;
+    const shouldMergePlan =
+      !activeCase.profile.isDemonstrationCase ||
+      !activeCase.actionPlan ||
+      activeCase.actionPlan.length === 0;
+    const updatedActionPlan = shouldMergePlan
+      ? mergeDiagnosticsIntoActionPlan({ ...activeCase, recommendations: rec }, rec)
+      : activeCase.actionPlan;
     persistCase({
       ...activeCase,
       recommendations: rec,
+      actionPlan: updatedActionPlan,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -918,6 +931,11 @@ function BizPulseWorkspace() {
             onSwitchTab={(tab) => setActiveTab(tab)}
             onUpdateCase={(updated) => persistCase(updated)}
             onOpenExportModal={() => setIsExportModalOpen(true)}
+            onAccountUsageUpdate={setAccountUsage}
+            onOpenKpiTracker={() => {
+              setDashboardInitialSubTab('kpis');
+              setActiveTab('dashboard');
+            }}
             onOpenCoachWithPrompt={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -956,6 +974,7 @@ function BizPulseWorkspace() {
             onUpdateRoiScenarios={handleUpdateRoiScenarios}
             pendingRoiDraft={pendingRoiDraft}
             onClearPendingRoiDraft={() => setPendingRoiDraft(null)}
+            onAccountUsageUpdate={setAccountUsage}
             onOpenCoachWithPrompt={(prompt) => {
               setCoachInitialPrompt(prompt);
               setActiveTab('aicoach');
@@ -969,6 +988,7 @@ function BizPulseWorkspace() {
             caseRecord={activeCase}
             onUpdateActionPlan={handleUpdateActionPlan}
             onToggleSprintItem={handleToggleSprintItem}
+            onSwitchTab={(tab) => setActiveTab(tab)}
             onOpenKpiTracker={() => {
               setDashboardInitialSubTab('kpis');
               setActiveTab('dashboard');

@@ -296,6 +296,7 @@ export interface TurnaroundAction {
   horizon: TurnaroundHorizon;
   priority: 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)';
   businessIssue?: string;
+  rationale?: string;
   action: string;
   accountableRole: string;
   timeframe: string;
@@ -495,6 +496,7 @@ export interface RoiScenario {
   id: string;
   name: string;
   category: RoiCategory;
+  dataOrigin?: 'user_entered' | 'draft_estimate';
   linkedCrmId?: string;
   linkedCrmLabel?: string;
   upfrontInvestment: number;

@@ -164,6 +164,12 @@ async function enforceAiQuota(
   await syncUserStateFromAdminFirestore(uid);
   const summary = buildAccountUsageSummary(uid, stripeConfigured, email);
 
+  // During invitation-only pilot phase (when Stripe billing is inactive), do not block testers on Free Trial caps;
+  // usage counters and per-minute anti-abuse rate limits remain active.
+  if (!stripeConfigured) {
+    return { allowed: true, accountUsage: summary };
+  }
+
   if (bucket === 'coach' && summary.remaining.coachMessages <= 0) {
     return {
       allowed: false,
@@ -255,31 +261,60 @@ function toSafeApiError(
   err: any,
   fallbackMessage: string,
   defaultStatus = 500
-): { status: number; message: string } {
-  const statusCode = Number(err?.statusCode);
+): { status: number; message: string; code?: string } {
+  const statusCode = Number(err?.statusCode ?? err?.status);
   const msg = String(err?.message || '');
+  const upperMsg = msg.toUpperCase();
+
   if (statusCode === 503 && msg.includes('GEMINI_API_KEY')) {
-    return { status: 503, message: msg };
+    return { status: 503, message: msg, code: 'AI_KEY_MISSING' };
+  }
+  if (
+    upperMsg.includes('API_KEY_INVALID') ||
+    upperMsg.includes('API KEY NOT VALID') ||
+    upperMsg.includes('PERMISSION_DENIED') ||
+    statusCode === 403
+  ) {
+    return {
+      status: 503,
+      message: 'AI service credentials could not be verified by the upstream provider. Check server GEMINI_API_KEY configuration.',
+      code: 'AI_KEY_INVALID',
+    };
+  }
+  if (statusCode === 429 || upperMsg.includes('RESOURCE_EXHAUSTED')) {
+    return {
+      status: 429,
+      message: 'The AI service is temporarily busy (rate limit reached). Please wait a moment and click Retry.',
+      code: 'AI_UPSTREAM_RATE_LIMIT',
+    };
+  }
+  if (err?.code === 'AI_RESPONSE_PARSE') {
+    return {
+      status: 502,
+      message: msg || 'The AI response was incomplete or could not be structured cleanly. Please click Retry.',
+      code: 'AI_RESPONSE_PARSE',
+    };
   }
   if (statusCode >= 400 && statusCode < 500 && msg) {
-    return { status: statusCode, message: msg };
+    return { status: statusCode, message: msg, code: err?.code };
   }
   if (
     msg.includes('Unsupported file type') ||
     msg.includes('8 MB') ||
     msg.includes('appears to be empty')
   ) {
-    return { status: 400, message: msg };
+    return { status: 400, message: msg, code: 'INVALID_UPLOAD' };
   }
   return {
     status: statusCode >= 500 && statusCode < 600 ? statusCode : defaultStatus,
-    message: fallbackMessage,
+    message: msg ? `${fallbackMessage} (${msg.slice(0, 140)})` : fallbackMessage,
+    code: err?.code || 'AI_UPSTREAM_ERROR',
   };
 }
 
 async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) {
   if (!req.user?.uid) {
-    return res.status(401).json({ error: 'Unauthorized: User identity missing.' });
+    return res.status(401).json({ error: 'Unauthorized: User identity missing.', code: 'AUTH_REQUIRED' });
   }
 
   const caseId = String(
@@ -287,11 +322,11 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
   ).trim();
 
   if (!caseId) {
-    return res.status(400).json({ error: 'Bad Request: A valid caseId is required for isolation.' });
+    return res.status(400).json({ error: 'Bad Request: A valid caseId is required for isolation.', code: 'MISSING_CASE_ID' });
   }
 
   if (req.body?.ownerUid && req.body.ownerUid !== req.user.uid) {
-    return res.status(403).json({ error: 'Forbidden: Case access denied for this account.' });
+    return res.status(403).json({ error: 'Forbidden: Case access denied for this account.', code: 'CASE_FORBIDDEN' });
   }
 
   if (caseId === 'case-demo-msp-nz') {
@@ -304,6 +339,7 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
   if (existingOwner && existingOwner !== req.user.uid) {
     return res.status(403).json({
       error: 'Forbidden: This business case ID belongs to a different account.',
+      code: 'CASE_OWNER_MISMATCH',
     });
   }
 
@@ -315,15 +351,18 @@ async function verifyCaseOwnership(req: AuthenticatedRequest, res: express.Respo
         .collection('cases')
         .doc(caseId)
         .get();
-      if (!docSnap.exists) {
+      if (!docSnap.exists && existingOwner !== req.user.uid) {
+        console.warn(`[BizPulse Ownership] Case ${caseId} not yet found in Firestore Admin for uid prefix ${req.user.uid.slice(0, 6)}`);
         return res.status(403).json({
-          error: 'Forbidden: Case record not found in your authenticated workspace.',
+          error: 'Forbidden: Case record not found in your authenticated workspace. Save your case first and retry.',
+          code: 'CASE_NOT_FOUND',
         });
       }
     } catch (err: any) {
       console.error('Firestore admin ownership verification failed:', err.message);
       return res.status(503).json({
         error: 'Unable to verify business case ownership right now. Please try again shortly.',
+        code: 'OWNERSHIP_CHECK_UNAVAILABLE',
       });
     }
   }
@@ -554,13 +593,62 @@ async function startServer() {
       } catch (err: any) {
         lastError = err;
         const msg = String(err?.message || '');
+        const statusNum = Number(err?.statusCode ?? err?.status);
         const isTransient =
-          msg.includes('503') || msg.includes('500') || msg.includes('UNAVAILABLE') || msg.includes('ECONNRESET');
+          statusNum === 503 ||
+          statusNum === 500 ||
+          statusNum === 429 ||
+          msg.includes('503') ||
+          msg.includes('500') ||
+          msg.includes('UNAVAILABLE') ||
+          msg.includes('ECONNRESET') ||
+          msg.includes('ETIMEDOUT');
         if (!isTransient || attempt === 1) break;
-        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, 900 * (attempt + 1)));
       }
     }
     throw lastError;
+  }
+
+  function extractJsonFromAiResponse(response: any, contextLabel: string): any {
+    const raw = String(response?.text || '').trim();
+    if (!raw) {
+      const finishReason = response?.candidates?.[0]?.finishReason || 'unknown';
+      throw Object.assign(
+        new Error(`AI returned an empty response for ${contextLabel} (finishReason=${finishReason}). Please click Retry.`),
+        { statusCode: 502, code: 'AI_RESPONSE_PARSE' }
+      );
+    }
+
+    const candidatesToTry: string[] = [raw];
+    const fenceStripped = raw
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    if (fenceStripped !== raw) candidatesToTry.push(fenceStripped);
+
+    const firstBrace = fenceStripped.indexOf('{');
+    const lastBrace = fenceStripped.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      candidatesToTry.push(fenceStripped.slice(firstBrace, lastBrace + 1));
+    }
+
+    for (const candidate of candidatesToTry) {
+      try {
+        const parsed = JSON.parse(candidate);
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
+        }
+      } catch {
+        // try next extracted slice
+      }
+    }
+
+    console.error(`[BizPulse JSON Parse Error] ${contextLabel}: length=${raw.length}, preview=${raw.slice(0, 240)}`);
+    throw Object.assign(
+      new Error(`AI response for ${contextLabel} could not be parsed cleanly. Please click Retry.`),
+      { statusCode: 502, code: 'AI_RESPONSE_PARSE' }
+    );
   }
 
   function buildDynamicSystemInstruction(
@@ -1167,7 +1255,7 @@ COACHING & EVIDENCE RULES:
   app.post('/api/coach/query', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -1288,7 +1376,7 @@ Return strictly valid JSON matching the schema.`;
         { uid, bucket: 'coach' }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'Chat with Coach');
       const normalizePriority = (raw?: string): 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)' => {
         if (raw && raw.includes('1')) return 'Priority 1 (Urgent)';
         if (raw && raw.includes('2')) return 'Priority 2 (High)';
@@ -1312,12 +1400,12 @@ Return strictly valid JSON matching the schema.`;
         estimatesAndAssumptions: Array.isArray(parsed.estimatesAndAssumptions) ? parsed.estimatesAndAssumptions : [],
         followUpQuestions: Array.isArray(parsed.followUpQuestions) ? parsed.followUpQuestions : [],
         suggestedActions,
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Gemini Coaching Error:', err);
+      console.error('Gemini Coaching Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to reach AI Coach service.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -1325,7 +1413,7 @@ Return strictly valid JSON matching the schema.`;
   app.post('/api/coach/generate-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'recommendations', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'recommendations', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -1551,7 +1639,7 @@ Strictly do NOT invent financial facts that were not supplied. Return strictly v
         { uid, bucket: 'recommendations' }
       );
 
-      const parsedJson = JSON.parse((response.text || '{}').trim());
+      const parsedJson = extractJsonFromAiResponse(response, 'Coaching & Recommendations');
       const normalizeHorizon = (raw?: string): '0-30 Days' | '30-90 Days' | '90-180 Days' => {
         if (raw?.includes('90-180') || raw?.includes('180')) return '90-180 Days';
         if (raw?.includes('30-90') || raw?.includes('60') || raw?.includes('90')) return '30-90 Days';
@@ -1623,12 +1711,12 @@ Strictly do NOT invent financial facts that were not supplied. Return strictly v
           challenges: [],
           generatedAt: new Date().toISOString(),
         },
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Recommendation Generation Error:', err);
-      const safe = toSafeApiError(err, 'Unable to generate structured recommendation from Gemini.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      console.error('Recommendation Generation Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
+      const safe = toSafeApiError(err, 'Unable to generate Coaching & Actions diagnostic.', 502);
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -1636,7 +1724,7 @@ Strictly do NOT invent financial facts that were not supplied. Return strictly v
   app.post('/api/coach/challenge-recommendation', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -1726,12 +1814,12 @@ Respond directly, respectfully, and rigorously:
           coachResponse: replyText,
           createdAt,
         },
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Challenge Recommendation Error:', err);
+      console.error('Challenge Recommendation Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to process follow-up challenge.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -1739,7 +1827,7 @@ Respond directly, respectfully, and rigorously:
   app.post('/api/coach/analyze-document', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'documents', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'documents', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -1852,7 +1940,7 @@ Produce a structured audit JSON with:
         { uid, bucket: 'documents' }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'Document Analysis');
       return res.json({
         documentAnalysis: {
           id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1871,12 +1959,12 @@ Produce a structured audit JSON with:
           metricsFound: Array.isArray(parsed.metricsFound) ? parsed.metricsFound : [],
           extractedPreview: extracted.textContent ? extracted.textContent.slice(0, 500) : undefined,
         },
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Document Analysis Error:', err);
+      console.error('Document Analysis Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to analyze uploaded document.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -1884,7 +1972,7 @@ Produce a structured audit JSON with:
   app.post('/api/coach/synthesize-documents', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'documents', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'documents', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -1980,7 +2068,7 @@ Produce strictly valid JSON:
         { uid, bucket: 'documents' }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'Cross-Document Synthesis');
       return res.json({
         crossDocumentSynthesis: {
           summary: parsed.summary || 'Cross-document synthesis complete.',
@@ -1993,12 +2081,12 @@ Produce strictly valid JSON:
           dataGaps: Array.isArray(parsed.dataGaps) ? parsed.dataGaps : [],
           synthesizedAt: new Date().toISOString(),
         },
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Document Synthesis Error:', err);
+      console.error('Document Synthesis Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to synthesize uploaded documents.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -2006,7 +2094,7 @@ Produce strictly valid JSON:
   app.post('/api/coach/generate-script', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -2066,12 +2154,12 @@ Include:
 
       return res.json({
         script: response.text,
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Script Generation Error:', err);
+      console.error('Script Generation Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to generate script.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -2079,7 +2167,7 @@ Include:
   app.post('/api/coach/business-development', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -2171,7 +2259,7 @@ Return strictly valid JSON matching the schema:
         { uid, bucket: 'coach' }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'Business Development');
       return res.json({
         businessDevPlan: {
           idealCustomerProfile: parsed.idealCustomerProfile || 'Tailor targeting to high-margin, prompt-paying SMEs.',
@@ -2180,12 +2268,12 @@ Return strictly valid JSON matching the schema:
           outreachSuggestions: Array.isArray(parsed.outreachSuggestions) ? parsed.outreachSuggestions : [],
           generatedAt: new Date().toISOString(),
         },
-        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+        accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Business Development Generation Error:', err);
+      console.error('Business Development Generation Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to generate Business Development Plan.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -2193,7 +2281,7 @@ Return strictly valid JSON matching the schema:
   app.post('/api/coach/challenge-me', requireAuth, verifyCaseOwnership, async (req: AuthenticatedRequest, res) => {
     try {
       const uid = req.user!.uid;
-      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured);
+      const quota = await enforceAiQuota(uid, 'coach', isStripeConfigured, req.user?.email);
       if (!quota.allowed) {
         return res.status(quota.statusCode || 429).json({
           error: quota.error,
@@ -2283,13 +2371,13 @@ Return strictly valid JSON matching the schema.`;
           { uid, bucket: 'coach' }
         );
 
-        const parsed = JSON.parse((response.text || '{}').trim());
+        const parsed = extractJsonFromAiResponse(response, 'Challenge Me Start');
         return res.json({
           contradictionsDetected: Array.isArray(parsed.contradictionsDetected) ? parsed.contradictionsDetected : [],
           questionableAssumptions: Array.isArray(parsed.questionableAssumptions) ? parsed.questionableAssumptions : [],
           blindSpots: Array.isArray(parsed.blindSpots) ? parsed.blindSpots : [],
           firstRound: parsed.firstRound,
-          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
         });
       }
 
@@ -2353,12 +2441,14 @@ Return strictly valid JSON matching the schema.`;
           { uid, bucket: 'coach' }
         );
 
-        const parsed = JSON.parse((response.text || '{}').trim());
+        const parsed = extractJsonFromAiResponse(response, 'Challenge Me Response');
+        const hasValidNextRound = Boolean(parsed.nextRound?.question?.trim());
+        const shouldConclude = Boolean(parsed.shouldConclude) || !hasValidNextRound;
         return res.json({
           businessImplication: parsed.businessImplication || '',
-          shouldConclude: Boolean(parsed.shouldConclude),
-          nextRound: parsed.shouldConclude ? null : parsed.nextRound || null,
-          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured),
+          shouldConclude,
+          nextRound: shouldConclude ? null : parsed.nextRound,
+          accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
         });
       }
 
@@ -2424,7 +2514,7 @@ Return strictly valid JSON matching the schema.`;
         { uid, bucket: 'coach' }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'Challenge Me Conclusion');
       const normalizePriority = (raw?: string): 'Priority 1 (Urgent)' | 'Priority 2 (High)' | 'Priority 3 (Medium)' => {
         if (raw && raw.includes('1')) return 'Priority 1 (Urgent)';
         if (raw && raw.includes('2')) return 'Priority 2 (High)';
@@ -2451,9 +2541,9 @@ Return strictly valid JSON matching the schema.`;
         accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Challenge Me Error:', err);
+      console.error('Challenge Me Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to run Challenge Me coaching session.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -2546,7 +2636,7 @@ Summarize:
           { uid, bucket }
         );
 
-        const parsed = JSON.parse((response.text || '{}').trim());
+        const parsed = extractJsonFromAiResponse(response, 'Weekly Continuity Review');
         return res.json({
           reviewType,
           review: parsed,
@@ -2606,7 +2696,7 @@ Return strictly valid JSON:
           { uid, bucket }
         );
 
-        const parsed = JSON.parse((response.text || '{}').trim());
+        const parsed = extractJsonFromAiResponse(response, 'Monthly Continuity Review');
         return res.json({
           reviewType,
           review: parsed,
@@ -2647,16 +2737,16 @@ Evaluate long-term resilience trend ("Strengthening", "Mixed / Holding", "Under 
         { uid, bucket }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'Quarterly Continuity Review');
       return res.json({
         reviewType,
         review: parsed,
         accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('Continuity Review Error:', err);
+      console.error('Continuity Review Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to generate continuity review.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 
@@ -2781,7 +2871,7 @@ Return strictly valid JSON with:
         { uid, bucket: 'coach' }
       );
 
-      const parsed = JSON.parse((response.text || '{}').trim());
+      const parsed = extractJsonFromAiResponse(response, 'KPI Interpretation');
       return res.json({
         kpiUpdates: Array.isArray(parsed.kpiUpdates) ? parsed.kpiUpdates : [],
         recommendedAdditionalKpis: Array.isArray(parsed.recommendedAdditionalKpis)
@@ -2790,9 +2880,9 @@ Return strictly valid JSON with:
         accountUsage: buildAccountUsageSummary(uid, isStripeConfigured, req.user?.email),
       });
     } catch (err: any) {
-      console.error('KPI Interpretation Error:', err);
+      console.error('KPI Interpretation Error:', { message: err?.message, status: err?.status ?? err?.statusCode });
       const safe = toSafeApiError(err, 'Unable to interpret KPIs with AI coach.', 502);
-      return res.status(safe.status).json({ error: safe.message });
+      return res.status(safe.status).json({ error: safe.message, code: safe.code });
     }
   });
 

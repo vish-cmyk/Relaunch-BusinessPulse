@@ -13,9 +13,16 @@ import {
   TrendingUp,
   Layers,
   Link as LinkIcon,
+  Loader2,
+  Sparkles,
+  RefreshCw,
+  BookOpen,
 } from 'lucide-react';
 import { GROWTH_OPTIONS_EVALUATION } from '../data/coachingBriefing';
-import { CaseRecord, RoiScenario, RoiCategory } from '../types/bizpulse';
+import { CaseRecord, RoiScenario, RoiCategory, AccountUsageSummary } from '../types/bizpulse';
+import { computeRoiMetrics, computeRoiScenarioMetrics } from '../services/roiEngine';
+import { InfoTooltip } from './InfoTooltip';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 
 export interface PendingRoiDraft {
   linkedCrmId: string;
@@ -30,6 +37,7 @@ interface OptionsEvaluationMatrixProps {
   onUpdateRoiScenarios?: (scenarios: RoiScenario[]) => void;
   pendingRoiDraft?: PendingRoiDraft | null;
   onClearPendingRoiDraft?: () => void;
+  onAccountUsageUpdate?: (usage: AccountUsageSummary) => void;
   onOpenCoachWithPrompt?: (prompt: string) => void;
 }
 
@@ -42,49 +50,24 @@ const ROI_CATEGORIES: RoiCategory[] = [
   'Other',
 ];
 
-function computeRoiMetrics(
-  upfrontInvestment: number,
-  monthlyOperatingCost: number,
-  expectedMonthlyRevenue: number,
-  grossMarginPct: number,
-  monthsHorizon: number,
-  confidencePct: number
-) {
-  const safeHorizon = Math.max(1, monthsHorizon || 12);
-  const safeMarginRate = Math.max(0, Math.min(100, grossMarginPct || 0)) / 100;
-  const safeConfidence = Math.max(0, Math.min(100, confidencePct || 0)) / 100;
+type NumericRoiField =
+  | 'upfrontInvestment'
+  | 'monthlyOperatingCost'
+  | 'expectedMonthlyRevenue'
+  | 'grossMarginPct'
+  | 'monthsHorizon'
+  | 'confidencePct';
 
-  const monthlyGrossProfit = expectedMonthlyRevenue * safeMarginRate;
-  const monthlyNetContribution = monthlyGrossProfit - monthlyOperatingCost;
-  const totalHorizonCost = upfrontInvestment + monthlyOperatingCost * safeHorizon;
-  const totalHorizonGrossProfit = monthlyGrossProfit * safeHorizon;
-  const horizonNetBenefit = monthlyNetContribution * safeHorizon - upfrontInvestment;
-  const roiPct = totalHorizonCost > 0 ? (horizonNetBenefit / totalHorizonCost) * 100 : 0;
+function formatRoiPctLabel(roiPct: number | null, hasSufficientData: boolean): string {
+  if (!hasSufficientData) return 'Insufficient Data';
+  if (roiPct === null) return 'Zero-Cost Gain';
+  return `${roiPct.toFixed(1)}%`;
+}
 
-  const paybackMonths =
-    monthlyNetContribution > 0
-      ? upfrontInvestment === 0
-        ? 0
-        : upfrontInvestment / monthlyNetContribution
-      : null;
-
-  const monthlyAmortizedUpfront = upfrontInvestment / safeHorizon;
-  const breakEvenMonthlyRevenue =
-    safeMarginRate > 0 ? (monthlyOperatingCost + monthlyAmortizedUpfront) / safeMarginRate : null;
-
-  const riskAdjustedNetBenefit = horizonNetBenefit * safeConfidence;
-
-  return {
-    monthlyGrossProfit,
-    monthlyNetContribution,
-    totalHorizonCost,
-    totalHorizonGrossProfit,
-    horizonNetBenefit,
-    roiPct,
-    paybackMonths,
-    breakEvenMonthlyRevenue,
-    riskAdjustedNetBenefit,
-  };
+function formatPaybackLabel(paybackMonths: number | null, hasSufficientData: boolean): string {
+  if (!hasSufficientData) return 'Insufficient Data';
+  if (paybackMonths === null) return 'Never';
+  return `${paybackMonths.toFixed(1)} mo`;
 }
 
 export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = ({
@@ -92,6 +75,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
   onUpdateRoiScenarios,
   pendingRoiDraft,
   onClearPendingRoiDraft,
+  onAccountUsageUpdate,
   onOpenCoachWithPrompt,
 }) => {
   const isDemo = caseRecord?.profile?.isDemonstrationCase ?? false;
@@ -108,7 +92,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
     roiScenarios[0]?.id || null
   );
 
-  // Convert CRM draft passed from CRM tab into a pre-filled persisted ROI scenario
+  // Convert CRM draft passed from CRM tab into a pre-filled persisted ROI scenario without fabricating placeholder amounts
   useEffect(() => {
     if (!pendingRoiDraft || !onUpdateRoiScenarios) return;
 
@@ -127,15 +111,11 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
         ? pendingRoiDraft.monthlyValue
         : pendingRoiDraft.opportunityValue > 0
         ? Math.round(pendingRoiDraft.opportunityValue / 12)
-        : 2500;
-    const estUpfront =
-      pendingRoiDraft.opportunityValue > 0
-        ? Math.round(pendingRoiDraft.opportunityValue * 0.15)
-        : 1500;
+        : 0;
 
     const draftPrefix = isZeroValueDraft
-      ? '[Illustrative draft inputs — edit upfront cost, monthly revenue, and gross margin with verified figures before relying on payback] '
-      : '';
+      ? '[Needs owner figures — enter actual upfront investment, expected monthly revenue, operating cost, and gross margin % to verify payback] '
+      : '[Seeded from CRM revenue — enter actual upfront investment, monthly operating cost, and gross margin % to verify payback] ';
 
     const newScenario: RoiScenario = {
       id: `roi-${Date.now()}`,
@@ -143,16 +123,17 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
       category: isZeroValueDraft ? 'Pricing & Margin' : 'Client Retention',
       linkedCrmId: pendingRoiDraft.linkedCrmId,
       linkedCrmLabel: pendingRoiDraft.linkedCrmLabel,
-      upfrontInvestment: estUpfront,
-      monthlyOperatingCost: Math.round(estMonthlyRev * 0.25),
+      upfrontInvestment: 0,
+      monthlyOperatingCost: 0,
       expectedMonthlyRevenue: estMonthlyRev,
-      grossMarginPct: 55,
+      grossMarginPct: 50,
       monthsHorizon: 12,
-      confidencePct: isZeroValueDraft ? 45 : 65,
+      confidencePct: isZeroValueDraft ? 50 : 65,
+      dataOrigin: 'draft_estimate',
       assumptionsNote:
         draftPrefix +
         (pendingRoiDraft.notes ||
-          `Pre-populated from CRM opportunity for ${pendingRoiDraft.linkedCrmLabel}. Edit upfront setup cost, ongoing delivery cost, and gross margin % to verify payback.`),
+          `Linked to ${pendingRoiDraft.linkedCrmLabel}. Enter actual setup cost, monthly delivery cost, and gross margin % before relying on ROI.`),
       createdAt: now,
       updatedAt: now,
     };
@@ -167,19 +148,52 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
     return roiScenarios.find((s) => s.id === selectedScenarioId) || roiScenarios[0];
   }, [roiScenarios, selectedScenarioId]);
 
+  const [numDrafts, setNumDrafts] = useState<Record<NumericRoiField, string>>({
+    upfrontInvestment: '0',
+    monthlyOperatingCost: '0',
+    expectedMonthlyRevenue: '0',
+    grossMarginPct: '50',
+    monthsHorizon: '12',
+    confidencePct: '70',
+  });
+
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    reply: string;
+    estimatesAndAssumptions: string[];
+  } | null>(null);
+  const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeScenario) {
+      setNumDrafts({
+        upfrontInvestment: String(activeScenario.upfrontInvestment ?? 0),
+        monthlyOperatingCost: String(activeScenario.monthlyOperatingCost ?? 0),
+        expectedMonthlyRevenue: String(activeScenario.expectedMonthlyRevenue ?? 0),
+        grossMarginPct: String(activeScenario.grossMarginPct ?? 50),
+        monthsHorizon: String(activeScenario.monthsHorizon ?? 12),
+        confidencePct: String(activeScenario.confidencePct ?? 70),
+      });
+    }
+    setAiAnalysis(null);
+    setAiError(null);
+  }, [activeScenario?.id]);
+
   const handleCreateScenario = () => {
     const now = new Date().toISOString();
     const created: RoiScenario = {
       id: `roi-${Date.now()}`,
       name: `New Opportunity Scenario #${roiScenarios.length + 1}`,
       category: 'Sales & Marketing',
-      upfrontInvestment: 5000,
-      monthlyOperatingCost: 1200,
-      expectedMonthlyRevenue: 4000,
-      grossMarginPct: 60,
+      upfrontInvestment: 0,
+      monthlyOperatingCost: 0,
+      expectedMonthlyRevenue: 0,
+      grossMarginPct: 50,
       monthsHorizon: 12,
       confidencePct: 70,
-      assumptionsNote: 'Enter explicit delivery, setup, and conversion assumptions here.',
+      dataOrigin: 'user_entered',
+      assumptionsNote:
+        'Enter explicit upfront setup cost, monthly operating cost, expected monthly revenue, and gross margin % here.',
       createdAt: now,
       updatedAt: now,
     };
@@ -216,17 +230,95 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
     onUpdateRoiScenarios(updated);
   };
 
+  const handleNumericChange = (
+    field: NumericRoiField,
+    raw: string,
+    min: number,
+    max: number
+  ) => {
+    setNumDrafts((prev) => ({ ...prev, [field]: raw }));
+    if (raw.trim() === '') return;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return;
+    const clamped = Math.max(min, Math.min(max, parsed));
+    updateActiveField({
+      [field]: clamped,
+      dataOrigin: 'user_entered',
+    } as Partial<RoiScenario>);
+  };
+
+  const handleNumericBlur = (
+    field: NumericRoiField,
+    min: number,
+    max: number,
+    fallback: number
+  ) => {
+    const raw = numDrafts[field].trim();
+    const parsed = raw === '' ? NaN : Number(raw);
+    const normalized = Number.isFinite(parsed)
+      ? Math.max(min, Math.min(max, parsed))
+      : fallback;
+    setNumDrafts((prev) => ({ ...prev, [field]: String(normalized) }));
+    updateActiveField({
+      [field]: normalized,
+      dataOrigin: 'user_entered',
+    } as Partial<RoiScenario>);
+  };
+
   const baseMetrics = useMemo(() => {
     if (!activeScenario) return null;
-    return computeRoiMetrics(
-      activeScenario.upfrontInvestment,
-      activeScenario.monthlyOperatingCost,
-      activeScenario.expectedMonthlyRevenue,
-      activeScenario.grossMarginPct,
-      activeScenario.monthsHorizon,
-      activeScenario.confidencePct
-    );
+    return computeRoiScenarioMetrics(activeScenario);
   }, [activeScenario]);
+
+  const handleRunAiScenarioCheck = async () => {
+    if (!activeScenario || !baseMetrics || !caseRecord || isAnalyzingAi) return;
+    setIsAnalyzingAi(true);
+    setAiError(null);
+
+    try {
+      const prompt = `Critique this ROI & Options scenario for ${profile?.name || 'this business'} (${currency}) and flag execution, cash-flow, margin, or capacity risks:\n- Scenario: "${activeScenario.name}" (${activeScenario.category}, Origin: ${activeScenario.dataOrigin === 'draft_estimate' ? 'Draft/CRM Seed' : 'Owner Entered'})\n- Upfront Investment: ${currency} ${activeScenario.upfrontInvestment.toLocaleString()}\n- Monthly Operating Cost: ${currency} ${activeScenario.monthlyOperatingCost.toLocaleString()}/mo\n- Expected Monthly Revenue: ${currency} ${activeScenario.expectedMonthlyRevenue.toLocaleString()}/mo @ ${activeScenario.grossMarginPct}% Gross Margin\n- Horizon: ${activeScenario.monthsHorizon} months | Confidence: ${activeScenario.confidencePct}%\n- Calculated Net Benefit: ${currency} ${Math.round(baseMetrics.horizonNetBenefit).toLocaleString()} | ROI: ${formatRoiPctLabel(baseMetrics.roiPct, baseMetrics.hasSufficientData)} | Payback: ${formatPaybackLabel(baseMetrics.paybackMonths, baseMetrics.hasSufficientData)} | Break-Even Revenue: ${baseMetrics.breakEvenMonthlyRevenue !== null ? `${currency} ${Math.round(baseMetrics.breakEvenMonthlyRevenue).toLocaleString()}/mo` : 'Insufficient Data'}\n- Assumptions: ${activeScenario.assumptionsNote}\n\nGive a sharp commercial verdict (Approve / Stage / Defer), stress-test the assumptions against our Business Health & Cash Flow headroom, and list 2–3 key verification checks.`;
+
+      const { data } = await apiFetchWithAuth<{
+        reply?: string;
+        estimatesAndAssumptions?: string[];
+        accountUsage?: AccountUsageSummary;
+      }>('/api/coach/query', {
+        method: 'POST',
+        body: {
+          caseId: caseRecord.id,
+          prompt,
+          conversationHistory: [],
+          topic: 'ROI & Investments',
+          userRole: 'Owner / Managing Director',
+          businessProfile: caseRecord.profile,
+          healthInputs: caseRecord.healthInputs,
+          financials: caseRecord.financials,
+          overallHealth: caseRecord.overallHealth,
+          uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
+          crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
+          crmContacts: caseRecord.crmContacts || [],
+          roiScenarios: caseRecord.roiScenarios || [],
+          recommendations: caseRecord.recommendations,
+          actionPlan: caseRecord.actionPlan || [],
+          continuity: caseRecord.continuity || null,
+        },
+      });
+
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
+      setAiAnalysis({
+        reply: data.reply || 'No AI interpretation was returned.',
+        estimatesAndAssumptions: Array.isArray(data.estimatesAndAssumptions)
+          ? data.estimatesAndAssumptions
+          : [],
+      });
+    } catch (err: any) {
+      console.error('ROI AI risk check failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      setAiError(err?.message || 'Unable to run AI scenario interpretation right now.');
+    } finally {
+      setIsAnalyzingAi(false);
+    }
+  };
 
   const sensitivityCases = useMemo(() => {
     if (!activeScenario) return [];
@@ -429,20 +521,42 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
 
         {activeScenario && baseMetrics ? (
           <div className="space-y-6">
-            {activeScenario.assumptionsNote?.includes('[Illustrative draft inputs') && (
+            {(activeScenario.dataOrigin === 'draft_estimate' ||
+              activeScenario.assumptionsNote?.includes('[Illustrative draft inputs') ||
+              activeScenario.assumptionsNote?.includes('[Needs owner figures') ||
+              !baseMetrics.hasSufficientData) && (
               <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#1E3A8A] flex items-start gap-2">
                 <Info className="w-4 h-4 text-[#1D4ED8] shrink-0 mt-0.5" />
                 <span>
-                  <strong>Illustrative Placeholder Draft:</strong> This scenario was seeded from a profit opportunity without exact financial figures. Replace the upfront investment, expected monthly revenue, operating cost, and gross margin % below with verified numbers before making capital decisions.
+                  {!baseMetrics.hasSufficientData ? (
+                    <>
+                      <strong>Insufficient Data for ROI Calculation:</strong> Enter at least one cost or revenue figure alongside a Gross Margin % above 0% below to calculate ROI, Payback, and Break-Even Monthly Revenue.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Draft / CRM Seeded Scenario:</strong> Confirm or update the upfront investment, monthly operating cost, expected monthly revenue, and gross margin % below with actual quotes before making capital decisions.
+                    </>
+                  )}
                 </span>
               </div>
             )}
             {/* Editable Inputs Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-6 p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-4 text-xs">
-                <span className="font-mono font-bold uppercase tracking-wider text-[#0F172A] block">
-                  Editable Opportunity Assumptions
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono font-bold uppercase tracking-wider text-[#0F172A] block">
+                    Editable Opportunity Assumptions
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                      activeScenario.dataOrigin === 'draft_estimate'
+                        ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                        : 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]'
+                    }`}
+                  >
+                    {activeScenario.dataOrigin === 'draft_estimate' ? 'Draft / CRM Seed' : 'Owner Entered'}
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
@@ -497,104 +611,118 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                   </div>
 
                   <div>
-                    <label className="font-semibold text-[#0F172A] block mb-1">
-                      Upfront Investment ({currency})
+                    <label className="font-semibold text-[#0F172A] flex items-center gap-1 mb-1">
+                      <span>Upfront Investment ({currency})</span>
+                      <InfoTooltip
+                        title="Upfront Investment"
+                        whatItMeans="Total one-time cash outlay required to launch this initiative (equipment, setup, onboarding, deposit, or initial campaign)."
+                        whyItMatters="Directly drains cash headroom on Day 1 and sets the hurdle your monthly contribution must pay back."
+                      />
                     </label>
                     <input
                       type="number"
                       min="0"
-                      value={activeScenario.upfrontInvestment}
-                      onChange={(e) =>
-                        updateActiveField({ upfrontInvestment: Math.max(0, Number(e.target.value) || 0) })
-                      }
+                      value={numDrafts.upfrontInvestment}
+                      onChange={(e) => handleNumericChange('upfrontInvestment', e.target.value, 0, 100000000)}
+                      onBlur={() => handleNumericBlur('upfrontInvestment', 0, 100000000, 0)}
                       className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 font-mono font-bold text-[#0F172A] tabular-nums"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-[#0F172A] block mb-1">
-                      Monthly Operating Cost ({currency}/mo)
+                    <label className="font-semibold text-[#0F172A] flex items-center gap-1 mb-1">
+                      <span>Monthly Operating Cost ({currency}/mo)</span>
+                      <InfoTooltip
+                        title="Monthly Operating Cost"
+                        whatItMeans="Ongoing fixed or incremental monthly cash cost required to run this option (wages, retainers, software, or extra overhead)."
+                        whyItMatters="Subtracted every month from Gross Profit before any payback occurs."
+                      />
                     </label>
                     <input
                       type="number"
                       min="0"
-                      value={activeScenario.monthlyOperatingCost}
-                      onChange={(e) =>
-                        updateActiveField({
-                          monthlyOperatingCost: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
+                      value={numDrafts.monthlyOperatingCost}
+                      onChange={(e) => handleNumericChange('monthlyOperatingCost', e.target.value, 0, 100000000)}
+                      onBlur={() => handleNumericBlur('monthlyOperatingCost', 0, 100000000, 0)}
                       className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 font-mono font-bold text-[#0F172A] tabular-nums"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-[#0F172A] block mb-1">
-                      Expected Monthly Revenue ({currency}/mo)
+                    <label className="font-semibold text-[#0F172A] flex items-center gap-1 mb-1">
+                      <span>Expected Monthly Revenue ({currency}/mo)</span>
+                      <InfoTooltip
+                        title="Expected Monthly Revenue"
+                        whatItMeans="Realistic incremental monthly sales generated once the option is running (or saved cost translated to top-line equivalent)."
+                        whyItMatters="Multiplied by Gross Margin %—not full revenue—to determine real cash contribution."
+                      />
                     </label>
                     <input
                       type="number"
                       min="0"
-                      value={activeScenario.expectedMonthlyRevenue}
-                      onChange={(e) =>
-                        updateActiveField({
-                          expectedMonthlyRevenue: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
+                      value={numDrafts.expectedMonthlyRevenue}
+                      onChange={(e) => handleNumericChange('expectedMonthlyRevenue', e.target.value, 0, 100000000)}
+                      onBlur={() => handleNumericBlur('expectedMonthlyRevenue', 0, 100000000, 0)}
                       className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 font-mono font-bold text-[#0F172A] tabular-nums"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-[#0F172A] block mb-1">
-                      Gross Margin (%)
+                    <label className="font-semibold text-[#0F172A] flex items-center gap-1 mb-1">
+                      <span>Gross Margin (%)</span>
+                      <InfoTooltip
+                        title="Gross Margin %"
+                        whatItMeans="Share of each new revenue dollar remaining after direct materials, freight, and direct labour/subcontractors."
+                        whyItMatters="Using top-line revenue instead of gross margin overstates payback speed on low-margin trades or retail work."
+                      />
                     </label>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       max="100"
-                      value={activeScenario.grossMarginPct}
-                      onChange={(e) =>
-                        updateActiveField({
-                          grossMarginPct: Math.max(1, Math.min(100, Number(e.target.value) || 0)),
-                        })
-                      }
+                      value={numDrafts.grossMarginPct}
+                      onChange={(e) => handleNumericChange('grossMarginPct', e.target.value, 0, 100)}
+                      onBlur={() => handleNumericBlur('grossMarginPct', 0, 100, 50)}
                       className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 font-mono font-bold text-[#0F172A] tabular-nums"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-[#0F172A] block mb-1">
-                      Evaluation Horizon (Months)
+                    <label className="font-semibold text-[#0F172A] flex items-center gap-1 mb-1">
+                      <span>Evaluation Horizon (Months)</span>
+                      <InfoTooltip
+                        title="Evaluation Horizon"
+                        whatItMeans="Number of months over which you test total cash outlay, net benefit, and amortized upfront break-even."
+                        whyItMatters="Shorter horizons (6–12 mo) enforce tighter cash discipline for constrained SMEs."
+                      />
                     </label>
                     <input
                       type="number"
                       min="1"
                       max="60"
-                      value={activeScenario.monthsHorizon}
-                      onChange={(e) =>
-                        updateActiveField({
-                          monthsHorizon: Math.max(1, Math.min(60, Number(e.target.value) || 12)),
-                        })
-                      }
+                      value={numDrafts.monthsHorizon}
+                      onChange={(e) => handleNumericChange('monthsHorizon', e.target.value, 1, 60)}
+                      onBlur={() => handleNumericBlur('monthsHorizon', 1, 60, 12)}
                       className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 font-mono font-bold text-[#0F172A] tabular-nums"
                     />
                   </div>
 
                   <div>
-                    <label className="font-semibold text-[#0F172A] block mb-1">
-                      Execution Confidence (%)
+                    <label className="font-semibold text-[#0F172A] flex items-center gap-1 mb-1">
+                      <span>Execution Confidence (%)</span>
+                      <InfoTooltip
+                        title="Execution Confidence %"
+                        whatItMeans="Your realistic probability of hitting the revenue and cost targets on schedule without delay."
+                        whyItMatters="Discounts the Net Horizon Benefit into a Risk-Adjusted figure so optimistic forecasts don't hide downside."
+                      />
                     </label>
                     <input
                       type="number"
                       min="5"
                       max="100"
-                      value={activeScenario.confidencePct}
-                      onChange={(e) =>
-                        updateActiveField({
-                          confidencePct: Math.max(5, Math.min(100, Number(e.target.value) || 50)),
-                        })
-                      }
+                      value={numDrafts.confidencePct}
+                      onChange={(e) => handleNumericChange('confidencePct', e.target.value, 5, 100)}
+                      onBlur={() => handleNumericBlur('confidencePct', 5, 100, 50)}
                       className="w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 font-mono font-bold text-[#0F172A] tabular-nums"
                     />
                   </div>
@@ -618,37 +746,55 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                 <div className="grid grid-cols-2 gap-3">
                   <div
                     className={`p-4 rounded border ${
-                      baseMetrics.roiPct >= 25
+                      !baseMetrics.hasSufficientData
+                        ? 'bg-[#F8FAFC] border-[#0F172A]/15'
+                        : baseMetrics.roiPct === null || baseMetrics.roiPct >= 25
                         ? 'bg-[#ECFDF5] border-[#A7F3D0]'
                         : baseMetrics.roiPct >= 0
                         ? 'bg-[#FFFBEB] border-[#FDE68A]'
                         : 'bg-[#FEF2F2] border-[#FECACA]'
                     }`}
                   >
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#475569] block">
-                      Projected {activeScenario.monthsHorizon}-Month ROI
-                    </span>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#475569] block">
+                        Projected {activeScenario.monthsHorizon}-Month ROI
+                      </span>
+                      <InfoTooltip
+                        title="Projected ROI %"
+                        whatItMeans="Net Horizon Benefit divided by Total Cash Outlay over the evaluation period."
+                        actionOrCalculation="(Monthly Net Contribution × Horizon − Upfront) ÷ (Upfront + Monthly Cost × Horizon)"
+                        align="right"
+                      />
+                    </div>
                     <div
-                      className={`text-2xl sm:text-3xl font-bold font-mono mt-1 ${
-                        baseMetrics.roiPct >= 25
+                      className={`text-xl sm:text-2xl font-bold font-mono mt-1 ${
+                        !baseMetrics.hasSufficientData
+                          ? 'text-[#475569]'
+                          : baseMetrics.roiPct === null || baseMetrics.roiPct >= 25
                           ? 'text-[#15803D]'
                           : baseMetrics.roiPct >= 0
                           ? 'text-[#B45309]'
                           : 'text-[#B91C1C]'
                       }`}
                     >
-                      {baseMetrics.roiPct.toFixed(1)}%
+                      {formatRoiPctLabel(baseMetrics.roiPct, baseMetrics.hasSufficientData)}
                     </div>
                   </div>
 
                   <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#475569] block">
-                      Payback Period
-                    </span>
-                    <div className="text-2xl sm:text-3xl font-bold font-mono text-[#0F172A] mt-1">
-                      {baseMetrics.paybackMonths === null
-                        ? 'Never'
-                        : `${baseMetrics.paybackMonths.toFixed(1)} mo`}
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#475569] block">
+                        Payback Period
+                      </span>
+                      <InfoTooltip
+                        title="Payback Period"
+                        whatItMeans="Estimated months of positive Monthly Net Contribution required to recover the Upfront Investment."
+                        actionOrCalculation="Upfront Investment ÷ Monthly Net Contribution (shows 'Never' if monthly contribution ≤ 0)."
+                        align="right"
+                      />
+                    </div>
+                    <div className="text-xl sm:text-2xl font-bold font-mono text-[#0F172A] mt-1">
+                      {formatPaybackLabel(baseMetrics.paybackMonths, baseMetrics.hasSufficientData)}
                     </div>
                   </div>
                 </div>
@@ -709,13 +855,18 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                     </span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-[#0F172A]/10">
-                    <span className="font-bold text-[#0F172A]">
-                      Break-Even Monthly Revenue Required:
+                    <span className="font-bold text-[#0F172A] flex items-center gap-1">
+                      <span>Break-Even Monthly Revenue Required:</span>
+                      <InfoTooltip
+                        title="Break-Even Monthly Revenue"
+                        whatItMeans="Minimum monthly sales required at your Gross Margin % so monthly contribution covers both Monthly Operating Cost and amortized Upfront Investment."
+                        actionOrCalculation="(Monthly Operating Cost + Upfront ÷ Horizon) ÷ Gross Margin Rate"
+                      />
                     </span>
                     <span className="font-mono font-bold text-[#0F172A]">
                       {baseMetrics.breakEvenMonthlyRevenue !== null
                         ? `${currency} ${Math.round(baseMetrics.breakEvenMonthlyRevenue).toLocaleString()}/mo`
-                        : 'N/A'}
+                        : 'Insufficient Data'}
                     </span>
                   </div>
                   <p className="text-[11px] text-[#475569] pt-1 font-mono">
@@ -750,31 +901,101 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                   </div>
                 )}
 
-                {onOpenCoachWithPrompt && (
+                {/* Action buttons: Inline AI Risk Check + Full Coach Thread */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
-                    onClick={() =>
-                      onOpenCoachWithPrompt(
-                        `Stress-test this ROI scenario "${activeScenario.name}" (${activeScenario.category}${
-                          activeScenario.linkedCrmLabel
-                            ? `, Linked CRM: ${activeScenario.linkedCrmLabel}`
-                            : ''
-                        }) for ${profile?.name}:\n- Upfront Investment: ${currency} ${activeScenario.upfrontInvestment.toLocaleString()}\n- Monthly Operating Cost: ${currency} ${activeScenario.monthlyOperatingCost.toLocaleString()}\n- Expected Monthly Revenue: ${currency} ${activeScenario.expectedMonthlyRevenue.toLocaleString()} @ ${activeScenario.grossMarginPct}% Gross Margin\n- Projected ${activeScenario.monthsHorizon}-month Net Benefit: ${currency} ${Math.round(baseMetrics.horizonNetBenefit).toLocaleString()} (${baseMetrics.roiPct.toFixed(1)}% ROI, Payback: ${
-                          baseMetrics.paybackMonths !== null
-                            ? `${baseMetrics.paybackMonths.toFixed(1)} months`
-                            : 'Never'
-                        }, Break-Even Monthly Revenue: ${
-                          baseMetrics.breakEvenMonthlyRevenue !== null
-                            ? `${currency} ${Math.round(baseMetrics.breakEvenMonthlyRevenue).toLocaleString()}`
-                            : 'N/A'
-                        })\n- Confidence: ${activeScenario.confidencePct}% | Assumptions: ${activeScenario.assumptionsNote}\n\nCheck this against our Business Health and Cash Flow liquidity.`
-                      )
-                    }
-                    className="w-full py-2.5 px-4 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2"
+                    onClick={handleRunAiScenarioCheck}
+                    disabled={isAnalyzingAi || !baseMetrics.hasSufficientData}
+                    className="py-2.5 px-4 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition"
                   >
-                    <Bot className="w-4 h-4 text-[#60A5FA]" />
-                    <span>Stress-Test ROI &amp; Cash Impact in AI Coach</span>
+                    {isAnalyzingAi ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Running AI Risk Check...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>AI Interpretation &amp; Risk Check</span>
+                      </>
+                    )}
                   </button>
+
+                  {onOpenCoachWithPrompt && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenCoachWithPrompt(
+                          `Stress-test this ROI scenario "${activeScenario.name}" (${activeScenario.category}${
+                            activeScenario.linkedCrmLabel
+                              ? `, Linked CRM: ${activeScenario.linkedCrmLabel}`
+                              : ''
+                          }) for ${profile?.name}:\n- Upfront Investment: ${currency} ${activeScenario.upfrontInvestment.toLocaleString()}\n- Monthly Operating Cost: ${currency} ${activeScenario.monthlyOperatingCost.toLocaleString()}\n- Expected Monthly Revenue: ${currency} ${activeScenario.expectedMonthlyRevenue.toLocaleString()} @ ${activeScenario.grossMarginPct}% Gross Margin\n- Projected ${activeScenario.monthsHorizon}-month Net Benefit: ${currency} ${Math.round(baseMetrics.horizonNetBenefit).toLocaleString()} (${formatRoiPctLabel(baseMetrics.roiPct, baseMetrics.hasSufficientData)} ROI, Payback: ${formatPaybackLabel(baseMetrics.paybackMonths, baseMetrics.hasSufficientData)}, Break-Even Monthly Revenue: ${
+                            baseMetrics.breakEvenMonthlyRevenue !== null
+                              ? `${currency} ${Math.round(baseMetrics.breakEvenMonthlyRevenue).toLocaleString()}`
+                              : 'Insufficient Data'
+                          })\n- Confidence: ${activeScenario.confidencePct}% | Assumptions: ${activeScenario.assumptionsNote}\n\nCheck this against our Business Health and Cash Flow liquidity.`
+                        )
+                      }
+                      className="py-2.5 px-4 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition"
+                    >
+                      <Bot className="w-4 h-4 text-[#60A5FA]" />
+                      <span>Open in Chat with Coach</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Inline AI Scenario Risk Check Result / Error */}
+                {aiError && (
+                  <div className="p-3.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{aiError}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRunAiScenarioCheck}
+                      disabled={isAnalyzingAi}
+                      className="px-2.5 py-1 rounded bg-[#B91C1C] text-white font-bold inline-flex items-center gap-1 shrink-0"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Retry</span>
+                    </button>
+                  </div>
+                )}
+
+                {aiAnalysis && (
+                  <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        AI Scenario Interpretation &amp; Risk Verdict
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAiAnalysis(null)}
+                        className="text-[11px] font-semibold text-[#475569] hover:text-[#0F172A]"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <p className="text-[#0F172A] whitespace-pre-wrap leading-relaxed">
+                      {aiAnalysis.reply}
+                    </p>
+                    {aiAnalysis.estimatesAndAssumptions.length > 0 && (
+                      <div className="p-2.5 rounded bg-[#FFFBEB] border border-[#FDE68A] space-y-1">
+                        <span className="font-bold text-[#B45309] uppercase tracking-wider text-[10px] block">
+                          Assumptions &amp; Verification Checks
+                        </span>
+                        <ul className="space-y-1 text-[#0F172A]">
+                          {aiAnalysis.estimatesAndAssumptions.map((item, idx) => (
+                            <li key={idx}>• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -823,15 +1044,110 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                     <div className="flex justify-between pt-1 border-t border-[#0F172A]/10">
                       <span className="text-[#475569]">ROI / Payback:</span>
                       <span className="font-mono font-bold text-[#0F172A]">
-                        {sc.metrics.roiPct.toFixed(1)}% ·{' '}
-                        {sc.metrics.paybackMonths !== null
-                          ? `${sc.metrics.paybackMonths.toFixed(1)} mo`
-                          : 'Never'}
+                        {formatRoiPctLabel(sc.metrics.roiPct, sc.metrics.hasSufficientData)} ·{' '}
+                        {formatPaybackLabel(sc.metrics.paybackMonths, sc.metrics.hasSufficientData)}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Side-by-Side Comparison Matrix of All Saved ROI Scenarios */}
+            {roiScenarios.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                    <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                    <span>Side-by-Side Scenario Comparison Matrix ({roiScenarios.length})</span>
+                  </div>
+                  <span className="text-[11px] text-[#475569]">Click any row to edit</span>
+                </div>
+                <div className="overflow-x-auto border border-[#0F172A]/12 rounded">
+                  <table className="w-full text-xs text-left border-collapse tabular-nums">
+                    <thead>
+                      <tr className="bg-[#F8FAFC] border-b border-[#0F172A]/12 text-[10px] font-mono uppercase tracking-wider text-[#475569]">
+                        <th className="py-2.5 px-3">Scenario &amp; Basis</th>
+                        <th className="py-2.5 px-3">Upfront</th>
+                        <th className="py-2.5 px-3">Monthly Rev</th>
+                        <th className="py-2.5 px-3">Net Benefit</th>
+                        <th className="py-2.5 px-3">ROI %</th>
+                        <th className="py-2.5 px-3">Payback</th>
+                        <th className="py-2.5 px-3">Break-Even Rev/mo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#0F172A]/10">
+                      {roiScenarios.map((sc) => {
+                        const m = computeRoiScenarioMetrics(sc);
+                        const isSelected = sc.id === activeScenario.id;
+                        return (
+                          <tr
+                            key={sc.id}
+                            onClick={() => setSelectedScenarioId(sc.id)}
+                            className={`cursor-pointer transition ${
+                              isSelected ? 'bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]'
+                            }`}
+                          >
+                            <td className="py-2.5 px-3">
+                              <div className="font-bold text-[#0F172A]">{sc.name}</div>
+                              <div className="text-[10px] text-[#475569]">
+                                {sc.category} ·{' '}
+                                {sc.dataOrigin === 'draft_estimate' ? 'Draft / CRM Seed' : 'Owner Figures'}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 font-mono">
+                              {currency} {sc.upfrontInvestment.toLocaleString()}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono">
+                              {currency} {sc.expectedMonthlyRevenue.toLocaleString()}
+                            </td>
+                            <td
+                              className={`py-2.5 px-3 font-mono font-bold ${
+                                !m.hasSufficientData
+                                  ? 'text-[#475569]'
+                                  : m.horizonNetBenefit >= 0
+                                  ? 'text-[#15803D]'
+                                  : 'text-[#B91C1C]'
+                              }`}
+                            >
+                              {!m.hasSufficientData
+                                ? 'Insufficient Data'
+                                : `${m.horizonNetBenefit >= 0 ? '+' : '-'}${currency} ${Math.round(
+                                    Math.abs(m.horizonNetBenefit)
+                                  ).toLocaleString()}`}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono font-bold">
+                              {formatRoiPctLabel(m.roiPct, m.hasSufficientData)}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono">
+                              {formatPaybackLabel(m.paybackMonths, m.hasSufficientData)}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono">
+                              {m.breakEvenMonthlyRevenue !== null
+                                ? `${currency} ${Math.round(m.breakEvenMonthlyRevenue).toLocaleString()}`
+                                : 'Insufficient Data'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ROI Methodology & Limitations Card */}
+            <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-xs space-y-2">
+              <div className="flex items-center gap-1.5 font-bold text-[#0F172A] uppercase tracking-wider text-[11px]">
+                <BookOpen className="w-3.5 h-3.5 text-[#2563EB]" />
+                <span>ROI Methodology &amp; Commercial Limitations</span>
+              </div>
+              <p className="text-[#475569] leading-relaxed">
+                <strong>Formulas used:</strong> Monthly Gross Profit = Expected Monthly Revenue × Gross Margin %. Monthly Net Contribution = Monthly Gross Profit − Monthly Operating Cost. Payback = Upfront Investment ÷ Monthly Net Contribution. Break-Even Monthly Revenue = (Monthly Cost + Upfront ÷ Horizon) ÷ Gross Margin %.
+              </p>
+              <p className="text-[#475569] leading-relaxed">
+                <strong>Limitations:</strong> Projections are pre-tax cash estimates assuming steady monthly ramp and immediate debtor collection. Always compare 90-day cash outlay against your Cash Flow headroom and tax/GST obligations before committing capital.
+              </p>
             </div>
           </div>
         ) : (

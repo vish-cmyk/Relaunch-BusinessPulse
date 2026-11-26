@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   Users,
   BookmarkPlus,
+  RefreshCw,
 } from 'lucide-react';
 import { SCRIPT_PRESETS } from '../data/coachingBriefing';
 import {
@@ -28,7 +29,7 @@ import {
   CrmRecord,
   AccountUsageSummary,
 } from '../types/bizpulse';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 
 interface AICoachConsoleProps {
   caseRecord: CaseRecord;
@@ -108,6 +109,9 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState<boolean>(false);
   const [selectedPreset, setSelectedPreset] = useState<ScriptPreset | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [lastFailedPrompt, setLastFailedPrompt] = useState<string | null>(null);
+  const [scriptError, setScriptError] = useState<string | null>(null);
 
   useEffect(() => {
     setMessages(buildInitialMessages(caseRecord));
@@ -119,6 +123,9 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
     setGeneratedScript(null);
     setSelectedPreset(null);
     setSavedMessageIds({});
+    setChatError(null);
+    setLastFailedPrompt(null);
+    setScriptError(null);
   }, [caseRecord.id]);
 
   // Keep local messages synchronized if Firestore updates conversations on the active case
@@ -152,6 +159,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
     const textToSend = (customPrompt || inputPrompt).trim();
     if (!textToSend || isLoading) return;
 
+    const priorMessages = [...messages];
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       sender: 'user',
@@ -163,23 +171,20 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
       },
     };
 
-    const nextMessages = [...messages, userMsg];
+    const nextMessages = [...priorMessages, userMsg];
     setMessages(nextMessages);
-    setInputPrompt('');
+    if (!customPrompt) setInputPrompt('');
     setIsLoading(true);
+    setChatError(null);
+    setLastFailedPrompt(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/query', {
+      const { data } = await apiFetchWithAuth<any>('/api/coach/query', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           prompt: textToSend,
-          conversationHistory: messages.slice(-14).map((m) => ({
+          conversationHistory: priorMessages.slice(-14).map((m) => ({
             id: m.id,
             sender: m.sender,
             text: m.text,
@@ -190,23 +195,16 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: caseRecord.uploadedDocuments || [],
+          uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
           crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
           continuity: caseRecord.continuity || null,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
-        throw new Error(errJson.error || 'Failed to generate coaching response.');
-      }
-
-      const data = await response.json();
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       const coachMsg: ChatMessage = {
         id: `c-${Date.now()}`,
@@ -236,14 +234,13 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
       });
       onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
-      console.error(err);
-      const errorMsg: ChatMessage = {
-        id: `err-${Date.now()}`,
-        sender: 'coach',
-        text: `Unable to reach Chat with Coach: ${err.message || 'Please retry shortly.'}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      console.error('Coach query failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      // Restore prior clean conversation history and keep the failed prompt ready for 1-click retry
+      setMessages(priorMessages);
+      if (!customPrompt) setInputPrompt(textToSend);
+      setLastFailedPrompt(textToSend);
+      setChatError(err?.message || 'Unable to reach Chat with Coach right now.');
     } finally {
       setIsLoading(false);
     }
@@ -371,44 +368,34 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
     setSelectedPreset(preset);
     setIsGeneratingScript(true);
     setGeneratedScript(null);
+    setScriptError(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/generate-script', {
+      const { data } = await apiFetchWithAuth<any>('/api/coach/generate-script', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           scriptType: preset.title,
           businessProfile: caseRecord.profile,
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: caseRecord.uploadedDocuments || [],
+          uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
           details: preset.defaultPrompt,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
-        throw new Error(errJson.error || 'Failed to generate communication draft.');
-      }
-
-      const data = await response.json();
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       setGeneratedScript(data.script);
       onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
-      console.error(err);
-      setGeneratedScript(`Unable to generate draft: ${err.message}`);
+      console.error('Script generation failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      setScriptError(err?.message || 'Failed to generate communication draft.');
     } finally {
       setIsGeneratingScript(false);
     }
@@ -575,6 +562,21 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               <div className="py-8 text-center text-[#475569] text-xs flex flex-col items-center justify-center space-y-2">
                 <Loader2 className="w-6 h-6 text-[#2563EB] animate-spin" />
                 <span>Drafting tailored communication...</span>
+              </div>
+            ) : scriptError ? (
+              <div className="p-4 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{scriptError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => selectedPreset && handleGeneratePresetScript(selectedPreset)}
+                  className="px-3 py-1.5 rounded bg-[#B91C1C] hover:bg-[#991B1B] text-white font-bold inline-flex items-center gap-1 shrink-0"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry Draft</span>
+                </button>
               </div>
             ) : (
               <div className="bg-[#FCFCFC] p-4 rounded border border-[#0F172A]/15 text-xs text-[#0F172A] font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
@@ -840,8 +842,40 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
           )}
         </div>
 
-        {/* Input Form */}
-        <div className="p-4 bg-white border-t border-[#0F172A]/12">
+        {/* Input Form + Inline Retry Error Banner */}
+        <div className="p-4 bg-white border-t border-[#0F172A]/12 space-y-3">
+          {chatError && (
+            <div className="p-3 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{chatError}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {lastFailedPrompt && (
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleSendMessage(lastFailedPrompt)}
+                    className="px-3 py-1 rounded bg-[#B91C1C] hover:bg-[#991B1B] text-white font-bold inline-flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Retry Last Message</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChatError(null);
+                    setLastFailedPrompt(null);
+                  }}
+                  className="font-bold hover:underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();

@@ -24,19 +24,45 @@ import {
   RotateCcw,
   Download,
   Check,
+  Loader2,
+  RefreshCw,
+  FileText,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  Cell,
+} from 'recharts';
 import {
   RISK_MAP_ITEMS,
   GROWTH_OPTIONS_EVALUATION,
 } from '../data/coachingBriefing';
 import {
+  AccountUsageSummary,
   CaseRecord,
+  HealthDimensionInput,
+  RecommendationOutput,
   ReportCustomBlock,
   ReportEditorSettings,
   ReportFontFamily,
   ReportFontSize,
   ReportBlockAlign,
 } from '../types/bizpulse';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
+import { calculateOverallHealth } from '../services/healthScoring';
+import { mergeDiagnosticsIntoActionPlan } from '../services/actionPlanEngine';
+import { computeKpiTrend, computeKpiVariance, formatKpiNumber } from '../services/kpiEngine';
+import { computeRoiScenarioMetrics } from '../services/roiEngine';
+import {
+  generateDocxReportUint8Array,
+  generatePdfReportBytes,
+  renderHealthChartCanvasPng,
+} from '../services/reportGenerator';
+import { InfoTooltip } from './InfoTooltip';
 
 interface ExecutiveMemoProps {
   activeCase: CaseRecord;
@@ -44,9 +70,21 @@ interface ExecutiveMemoProps {
   onUpdateCase?: (updated: CaseRecord) => void;
   onOpenExportModal?: () => void;
   onOpenCoachWithPrompt?: (prompt: string) => void;
+  onAccountUsageUpdate?: (usage: AccountUsageSummary) => void;
+  onOpenKpiTracker?: () => void;
 }
 
-const DEFAULT_CUSTOM_ORDER = ['dimensions', 'evidence', 'recommendations', 'custom'];
+const DEFAULT_CUSTOM_ORDER = [
+  'dimensions',
+  'strengths_weaknesses',
+  'risks',
+  'opportunities',
+  'recommendations',
+  'action_plan',
+  'kpis',
+  'evidence',
+  'custom',
+];
 const DEFAULT_DEMO_ORDER = ['sec-2', 'sec-3', 'sec-4', 'sec-5', 'sec-6', 'custom'];
 
 function getFontFamilyClass(font: ReportFontFamily = 'sans'): string {
@@ -106,10 +144,15 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
   onSwitchTab,
   onUpdateCase,
   onOpenExportModal,
+  onAccountUsageUpdate,
+  onOpenKpiTracker,
 }) => {
   const [activeAccordion, setActiveAccordion] = useState<string | null>('sec-2');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [isExportingDirect, setIsExportingDirect] = useState<boolean>(false);
 
   const isDemo = activeCase.profile.isDemonstrationCase;
   const p = activeCase.profile;
@@ -138,7 +181,119 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
   const notifySaved = (msg: string) => {
     setSaveNotice(msg);
-    setTimeout(() => setSaveNotice(null), 2500);
+    setTimeout(() => setSaveNotice(null), 3000);
+  };
+
+  const triggerDownload = (bytes: Uint8Array, filename: string, mimeType: string) => {
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+    const blob = new Blob([buffer], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleDirectDownloadPdf = () => {
+    try {
+      setIsExportingDirect(true);
+      setReportError(null);
+      const safeName = (p.name || 'business').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const pdfBytes = generatePdfReportBytes(activeCase);
+      triggerDownload(pdfBytes, `${safeName}_business_health_report.pdf`, 'application/pdf');
+      notifySaved('Business Health Report PDF downloaded.');
+    } catch (err: any) {
+      console.error('Direct PDF report export failed:', err);
+      setReportError(`PDF export failed: ${err?.message || 'Unexpected error'}`);
+    } finally {
+      setIsExportingDirect(false);
+    }
+  };
+
+  const handleDirectDownloadDocx = async () => {
+    try {
+      setIsExportingDirect(true);
+      setReportError(null);
+      const safeName = (p.name || 'business').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const chartPng = renderHealthChartCanvasPng(activeCase) || undefined;
+      const docxBytes = await generateDocxReportUint8Array(activeCase, chartPng);
+      triggerDownload(
+        docxBytes,
+        `${safeName}_business_health_report.docx`,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      );
+      notifySaved('Business Health Report Word (.docx) downloaded.');
+    } catch (err: any) {
+      console.error('Direct DOCX report export failed:', err);
+      setReportError(`Word (.docx) export failed: ${err?.message || 'Unexpected error'}`);
+    } finally {
+      setIsExportingDirect(false);
+    }
+  };
+
+  const handleGenerateFullHealthReport = async () => {
+    if (isGeneratingReport || !onUpdateCase) return;
+    setIsGeneratingReport(true);
+    setReportError(null);
+
+    try {
+      const updatedHealth = calculateOverallHealth(activeCase.healthInputs, activeCase.financials);
+      const { data } = await apiFetchWithAuth<{
+        recommendation?: RecommendationOutput;
+        accountUsage?: AccountUsageSummary;
+      }>('/api/coach/generate-recommendation', {
+        method: 'POST',
+        body: {
+          caseId: p.caseId,
+          businessProfile: p,
+          healthInputs: activeCase.healthInputs,
+          financials: activeCase.financials,
+          overallHealth: updatedHealth,
+          uploadedDocuments: sanitizeDocumentsForAiPayload(docs),
+          crossDocumentSynthesis: activeCase.crossDocumentSynthesis,
+          crmContacts: activeCase.crmContacts || [],
+          roiScenarios: activeCase.roiScenarios || [],
+          actionPlan: activeCase.actionPlan || [],
+          continuity: activeCase.continuity || null,
+        },
+      });
+
+      if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
+
+      if (!data.recommendation) {
+        throw new Error('The AI engine returned an empty report payload. Please click Retry.');
+      }
+
+      const mergedRec: RecommendationOutput = {
+        ...data.recommendation,
+        challenges: rec?.challenges || [],
+      };
+
+      const candidateCase: CaseRecord = {
+        ...activeCase,
+        overallHealth: updatedHealth,
+        recommendations: mergedRec,
+      };
+      const mergedActionPlan = isDemo
+        ? activeCase.actionPlan
+        : mergeDiagnosticsIntoActionPlan(candidateCase, mergedRec);
+
+      onUpdateCase({
+        ...candidateCase,
+        actionPlan: mergedActionPlan,
+        updatedAt: new Date().toISOString(),
+      });
+      notifySaved('Business Health Report & Action Plan refreshed from latest case data.');
+    } catch (err: any) {
+      console.error('Business Health Report generation failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      setReportError(err?.message || 'Unable to generate Business Health Report right now.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   const updateSettings = (patch: Partial<ReportEditorSettings>) => {
@@ -322,38 +477,79 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
     <div className="bg-white border border-[#0F172A]/12 rounded p-4 shadow-xs space-y-3 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          {!isDemo && (
+            <button
+              type="button"
+              onClick={handleGenerateFullHealthReport}
+              disabled={isGeneratingReport}
+              className="px-3.5 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-2xs"
+            >
+              {isGeneratingReport ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 text-[#60A5FA] animate-spin" />
+                  <span>Generating Report...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <span>{rec ? 'Refresh Full Health Report' : 'Generate Business Health Report'}</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => setIsEditing((v) => !v)}
-            className={`px-3.5 py-2 rounded text-xs font-bold flex items-center gap-1.5 transition border ${
-              isEditing
-                ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                : 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]'
-            }`}
+            onClick={handleDirectDownloadPdf}
+            disabled={isExportingDirect}
+            className="px-3.5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
           >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>{isEditing ? 'Done Editing Report' : 'Edit Tools (Move, Font, Paragraphs)'}</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Download PDF</span>
           </button>
 
           <button
             type="button"
-            onClick={handleAddParagraph}
-            className="px-3.5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition shadow-2xs"
+            onClick={handleDirectDownloadDocx}
+            disabled={isExportingDirect}
+            className="px-3.5 py-2 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] disabled:opacity-50 text-[#1D4ED8] text-xs font-bold border border-[#BFDBFE] flex items-center gap-1.5 transition"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Paragraph</span>
+            <FileText className="w-3.5 h-3.5" />
+            <span>Download Word (.docx)</span>
           </button>
 
           {onOpenExportModal && (
             <button
               type="button"
               onClick={onOpenExportModal}
-              className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 flex items-center gap-1.5 transition"
+              className="px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 flex items-center gap-1.5 transition"
             >
               <Download className="w-3.5 h-3.5 text-[#2563EB]" />
-              <span>Export Edited PDF / Word</span>
+              <span>Export Options</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsEditing((v) => !v)}
+            className={`px-3 py-2 rounded text-xs font-bold flex items-center gap-1.5 transition border ${
+              isEditing
+                ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                : 'bg-white text-[#0F172A] border-[#0F172A]/15 hover:border-[#2563EB]'
+            }`}
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>{isEditing ? 'Done Editing' : 'Edit Tools'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAddParagraph}
+            className="px-3 py-2 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 flex items-center gap-1.5 transition"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#2563EB]" />
+            <span>Add Note</span>
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -410,9 +606,36 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         </div>
       </div>
 
+      {reportError && (
+        <div className="p-3.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{reportError}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleGenerateFullHealthReport}
+              disabled={isGeneratingReport}
+              className="px-3 py-1 rounded bg-[#B91C1C] hover:bg-[#991B1B] text-white font-bold inline-flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Retry</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setReportError(null)}
+              className="font-bold hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {isEditing && (
         <p className="text-[11px] text-[#475569] bg-[#F8FAFC] border border-[#0F172A]/10 rounded px-3 py-2">
-          <strong>Edit Mode Active:</strong> Use the Up/Down arrows on any section or custom paragraph to reorder it, change fonts/sizes/alignment/bold/italic, edit report text inline, or add custom paragraphs. All changes save automatically to your case and carry into PDF, Word (.docx), and Markdown exports.
+          <strong>Edit Mode Active:</strong> Use the Up/Down arrows on any section or custom paragraph to reorder it, change fonts/sizes/alignment/bold/italic, edit report text inline, or add custom paragraphs. All changes save automatically to your case and carry into PDF and Word (.docx) exports.
         </p>
       )}
     </div>
@@ -649,21 +872,70 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
     );
   };
 
-  // Custom Business Executive Diagnostic Report
+  // Custom Business Executive Diagnostic Report (All 9 Required Sections + Custom Notes)
   if (!isDemo) {
+    const dimList = Object.values(activeCase.healthInputs) as HealthDimensionInput[];
+    const healthyDims = dimList.filter((d) => d.status === 'healthy');
+    const attentionDims = dimList.filter((d) => d.status === 'at_risk' || d.status === 'needs_attention');
+    const missingDims = dimList.filter((d) => d.status === 'not_sure' || d.status === 'unanswered');
+    const crmContacts = activeCase.crmContacts || [];
+    const roiScenarios = activeCase.roiScenarios || [];
+    const effectiveActionPlan =
+      activeCase.actionPlan && activeCase.actionPlan.length > 0
+        ? activeCase.actionPlan
+        : mergeDiagnosticsIntoActionPlan(activeCase);
+    const kpis = activeCase.kpiTracker?.kpis || [];
+
+    const chartData = dimList.map((dim) => {
+      const detail = h?.dimensionScores?.find((d) => d.key === dim.key);
+      const numericScore =
+        detail && detail.score !== null
+          ? detail.score
+          : dim.status === 'healthy'
+          ? 100
+          : dim.status === 'needs_attention'
+          ? 55
+          : dim.status === 'at_risk'
+          ? 15
+          : 0;
+      const fill =
+        dim.status === 'healthy'
+          ? '#15803D'
+          : dim.status === 'needs_attention'
+          ? '#D97706'
+          : dim.status === 'at_risk'
+          ? '#B91C1C'
+          : '#2563EB';
+      return {
+        name: dim.title.length > 26 ? `${dim.title.slice(0, 24)}…` : dim.title,
+        fullTitle: dim.title,
+        score: numericScore,
+        statusLabel:
+          dim.status === 'not_sure' || dim.status === 'unanswered'
+            ? 'Insufficient Info'
+            : dim.status.replace('_', ' '),
+        fill,
+      };
+    });
+
     const renderCustomSection = (secId: string, indexNum: number) => {
-      const displayNum = String(indexNum + 1);
+      const displayNum = String(indexNum + 2);
 
       if (secId === 'dimensions') {
         return (
-          <div key="dimensions" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div key="dimensions" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
                 <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
                   {displayNum}
                 </span>
-                <h3 className="text-lg font-bold text-[#0F172A]">
-                  Twelve Business Health Capabilities
+                <h3 className="text-lg font-bold text-[#0F172A] flex items-center gap-1.5">
+                  <span>Twelve Business Health Capabilities</span>
+                  <InfoTooltip
+                    title="12-Capability Score Profile"
+                    whatItMeans="Visualises each capability from 0–100 (Healthy 100, Needs Attention 55, At Risk 15, Blue = Insufficient Data)."
+                    whyItMatters="Pinpoints operational bottlenecks dragging overall business resilience."
+                  />
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -675,6 +947,46 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   Edit Dimensions &rarr;
                 </button>
                 {renderSectionMoveControls('dimensions')}
+              </div>
+            </div>
+
+            {/* 12-Capability Visual Bar Chart */}
+            <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <span className="font-mono font-bold uppercase tracking-wider text-[#0F172A]">
+                  12-Capability Health Chart
+                </span>
+                <div className="flex flex-wrap items-center gap-3 text-[10px] font-semibold">
+                  <span className="text-[#15803D]">■ Healthy (100)</span>
+                  <span className="text-[#B45309]">■ Needs Attention (55)</span>
+                  <span className="text-[#B91C1C]">■ At Risk (15)</span>
+                  <span className="text-[#2563EB]">■ Not Sure / Unanswered (0)</span>
+                </div>
+              </div>
+              <div className="w-full h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 24, left: 10, bottom: 4 }}>
+                    <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: '#475569' }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={175}
+                      tick={{ fontSize: 10, fill: '#0F172A', fontWeight: 600 }}
+                    />
+                    <RechartsTooltip
+                      formatter={(value: any, _name: any, props: any) => [
+                        `${value}/100 (${props?.payload?.statusLabel || ''})`,
+                        props?.payload?.fullTitle || 'Capability',
+                      ]}
+                      contentStyle={{ fontSize: '12px', borderRadius: '6px' }}
+                    />
+                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                      {chartData.map((entry, idx) => (
+                        <Cell key={`cell-${idx}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
@@ -690,7 +1002,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#0F172A]/10">
-                  {Object.values(activeCase.healthInputs).map((dim) => {
+                  {dimList.map((dim) => {
                     const detail = h?.dimensionScores?.find((d) => d.key === dim.key);
                     return (
                       <tr key={dim.key} className="hover:bg-[#F8FAFC]/60 transition">
@@ -733,7 +1045,441 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         );
       }
 
+      if (secId === 'strengths_weaknesses') {
+        return (
+          <div key="strengths_weaknesses" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                  {displayNum}
+                </span>
+                <h3 className="text-lg font-bold text-[#0F172A]">
+                  Key Strengths &amp; Weaknesses
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => onSwitchTab('health')}
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                >
+                  Update Capabilities &rarr;
+                </button>
+                {renderSectionMoveControls('strengths_weaknesses')}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded bg-[#ECFDF5] border border-[#A7F3D0] space-y-2">
+                <div className="font-bold uppercase tracking-wider text-[#15803D] flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Business Strengths ({healthyDims.length})</span>
+                </div>
+                {healthyDims.length > 0 ? (
+                  <ul className="space-y-1.5 text-[#0F172A]">
+                    {healthyDims.map((d) => (
+                      <li key={d.key}>
+                        • <strong>{d.title}:</strong> {d.notes || 'Rated Healthy with owner confirmation.'}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[#475569]">
+                    No capabilities are rated Healthy yet. Complete or verify the 12-Capability Health check.
+                  </p>
+                )}
+              </div>
+
+              <div className="p-4 rounded bg-[#FFFBEB] border border-[#FDE68A] space-y-2">
+                <div className="font-bold uppercase tracking-wider text-[#B45309] flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Weaknesses &amp; Pressure Areas ({attentionDims.length})</span>
+                </div>
+                {attentionDims.length > 0 ? (
+                  <ul className="space-y-1.5 text-[#0F172A]">
+                    {attentionDims.map((d) => (
+                      <li key={d.key}>
+                        • <strong className={d.status === 'at_risk' ? 'text-[#B91C1C]' : 'text-[#B45309]'}>
+                          [{d.status === 'at_risk' ? 'At Risk' : 'Needs Attention'}] {d.title}:
+                        </strong>{' '}
+                        {d.notes || 'Flagged for corrective attention.'}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[#475569]">
+                    No capabilities are currently flagged At Risk or Needs Attention.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (secId === 'risks') {
+        const cashVal = fin?.cashInBank ?? null;
+        const limitVal = fin?.creditFacilityLimit ?? 0;
+        const usedVal = fin?.creditFacilityUsed ?? 0;
+        const headroom = cashVal !== null ? cashVal + Math.max(0, limitVal - usedVal) : null;
+        const overdueVal = fin?.overdueReceivables ?? null;
+        const arVal = fin?.accountsReceivable ?? null;
+        const top5Pct = fin?.top5ConcentrationPercent ?? null;
+        const stdTerms = fin?.standardPaymentTermsDays ?? null;
+        const actualDelay = fin?.actualPaymentDelayDays ?? null;
+
+        return (
+          <div key="risks" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA] font-mono font-bold text-xs flex items-center justify-center">
+                  {displayNum}
+                </span>
+                <h3 className="text-lg font-bold text-[#0F172A]">
+                  Cash, Debtor &amp; Sustainability Risks
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => onSwitchTab('cashflow')}
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                >
+                  Open Cash Flow Workbench &rarr;
+                </button>
+                {renderSectionMoveControls('risks')}
+              </div>
+            </div>
+
+            {fin ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs tabular-nums">
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Liquidity Headroom</span>
+                  <strong className={`font-mono text-sm ${(headroom ?? 0) < 0 ? 'text-[#B91C1C]' : 'text-[#0F172A]'}`}>
+                    {headroom !== null ? `${p.currency} ${headroom.toLocaleString()}` : 'Insufficient Data'}
+                  </strong>
+                </div>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Overdue (&gt;60d) / Total AR</span>
+                  <strong className="text-[#B91C1C] font-mono text-sm">
+                    {overdueVal !== null ? `${p.currency} ${overdueVal.toLocaleString()}` : 'Not supplied'}
+                    {arVal !== null ? ` / ${p.currency} ${arVal.toLocaleString()}` : ''}
+                  </strong>
+                </div>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Actual vs Standard Terms</span>
+                  <strong className="text-[#0F172A] font-mono text-sm">
+                    {actualDelay !== null ? `${actualDelay}d` : '—'} vs {stdTerms !== null ? `${stdTerms}d` : '—'}
+                  </strong>
+                </div>
+                <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                  <span className="text-[#475569] block text-[11px]">Top-5 Client Concentration</span>
+                  <strong className={`font-mono text-sm ${(top5Pct ?? 0) >= 40 ? 'text-[#B91C1C]' : 'text-[#0F172A]'}`}>
+                    {top5Pct !== null ? `${top5Pct}%` : 'Not supplied'}
+                  </strong>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-[#475569] bg-[#F8FAFC] p-3.5 rounded border border-[#0F172A]/10">
+                Cash Flow figures have not yet been entered. Enter Cash, Receivables, Payables, and Overdraft figures on the Cash Flow tab to activate solvency risk stress-testing.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                <strong className="text-[#0F172A] block mb-1">Owner Dependency Risk</strong>
+                <span className="text-[#475569]">
+                  Status: <strong>{activeCase.healthInputs.ownerDependency.status.replace('_', ' ').toUpperCase()}</strong>
+                  {activeCase.healthInputs.ownerDependency.notes
+                    ? ` — ${activeCase.healthInputs.ownerDependency.notes}`
+                    : ' — Add operational handoff notes in 12-Capability Health.'}
+                </span>
+              </div>
+              <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
+                <strong className="text-[#0F172A] block mb-1">Long-Term Sustainability &amp; Pricing Discipline</strong>
+                <span className="text-[#475569]">
+                  Sustainability: <strong>{activeCase.healthInputs.sustainability.status.replace('_', ' ').toUpperCase()}</strong>
+                  {fin?.pricingReviewLastYears !== null && fin?.pricingReviewLastYears !== undefined
+                    ? ` · Last pricing review: ${fin.pricingReviewLastYears} yr(s) ago`
+                    : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (secId === 'opportunities') {
+        const opps = rec?.profitOpportunities || [];
+        const totalPipeline = crmContacts.reduce((acc, c) => acc + (c.opportunityValue || 0), 0);
+        const followUpDue = crmContacts.filter(
+          (c) => c.status === 'Follow-Up Due' || c.status === 'At Risk'
+        ).length;
+
+        return (
+          <div key="opportunities" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] font-mono font-bold text-xs flex items-center justify-center">
+                  {displayNum}
+                </span>
+                <h3 className="text-lg font-bold text-[#0F172A]">
+                  Profit, Revenue &amp; ROI Opportunities
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => onSwitchTab('options')}
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                >
+                  Open ROI &amp; Options &rarr;
+                </button>
+                {renderSectionMoveControls('opportunities')}
+              </div>
+            </div>
+
+            {opps.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {opps.map((opp) => (
+                  <div key={opp.id} className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-[#15803D]">{opp.title}</span>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white border border-[#A7F3D0] text-[#0F172A]">
+                        {opp.horizon}
+                      </span>
+                    </div>
+                    <p className="text-[#0F172A] font-medium">{opp.estimatedFinancialImpact}</p>
+                    <p className="text-[#475569]">{opp.whatToDoFirst || opp.evidenceBasis}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#475569] bg-[#F8FAFC] p-3.5 rounded border border-[#0F172A]/10">
+                Generate the Business Health Report above to surface quantified profit &amp; revenue leakage opportunities tailored to {p.name}.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
+              <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-1">
+                <strong className="text-[#0F172A] uppercase tracking-wider text-[11px] block">
+                  CRM &amp; Client Pipeline ({crmContacts.length} Records)
+                </strong>
+                <p className="text-[#475569]">
+                  Active pipeline value: <strong className="font-mono text-[#0F172A]">{p.currency} {totalPipeline.toLocaleString()}</strong> ·{' '}
+                  Follow-up due / at risk: <strong className="font-mono text-[#B45309]">{followUpDue}</strong>
+                </p>
+              </div>
+              <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-1">
+                <strong className="text-[#0F172A] uppercase tracking-wider text-[11px] block">
+                  ROI Scenarios Modeled ({roiScenarios.length})
+                </strong>
+                {roiScenarios.length > 0 ? (
+                  <ul className="space-y-1 text-[#475569]">
+                    {roiScenarios.slice(0, 3).map((sc) => {
+                      const m = computeRoiScenarioMetrics(sc);
+                      return (
+                        <li key={sc.id}>
+                          • <strong>{sc.name}:</strong>{' '}
+                          {!m.hasSufficientData
+                            ? 'Insufficient Data'
+                            : m.roiPct === null
+                            ? 'Zero-Cost Gain'
+                            : `${m.roiPct.toFixed(1)}% ROI (${m.paybackMonths !== null ? `${m.paybackMonths.toFixed(1)} mo payback` : 'Never'})`}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-[#475569]">No ROI scenarios modeled yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (secId === 'action_plan') {
+        return (
+          <div key="action_plan" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                  {displayNum}
+                </span>
+                <h3 className="text-lg font-bold text-[#0F172A]">
+                  30 / 60 / 90-Day Action Plan ({effectiveActionPlan.length})
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => onSwitchTab('roadmap')}
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                >
+                  Open Action Plan &rarr;
+                </button>
+                {renderSectionMoveControls('action_plan')}
+              </div>
+            </div>
+
+            {effectiveActionPlan.length > 0 ? (
+              <div className="overflow-x-auto border border-[#0F172A]/10 rounded">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-[#0F172A]/12 text-[10px] font-mono uppercase tracking-wider text-[#475569]">
+                      <th className="py-2 px-2.5">Priority &amp; Horizon</th>
+                      <th className="py-2 px-2.5">Issue / Opportunity</th>
+                      <th className="py-2 px-2.5">Recommended Action</th>
+                      <th className="py-2 px-2.5">Reason for Action</th>
+                      <th className="py-2 px-2.5">Timeframe</th>
+                      <th className="py-2 px-2.5">Owner</th>
+                      <th className="py-2 px-2.5">Success Measure / KPI</th>
+                      <th className="py-2 px-2.5">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#0F172A]/10">
+                    {effectiveActionPlan.map((item) => (
+                      <tr key={item.id} className="hover:bg-[#F8FAFC]/60">
+                        <td className="py-2.5 px-2.5 font-semibold text-[#0F172A] whitespace-nowrap">
+                          <div>{item.priority}</div>
+                          <div className="text-[10px] text-[#475569]">{item.horizon}</div>
+                        </td>
+                        <td className="py-2.5 px-2.5 text-[#0F172A]">{item.businessIssue || 'Diagnostic priority'}</td>
+                        <td className="py-2.5 px-2.5 font-semibold text-[#0F172A]">{item.action}</td>
+                        <td className="py-2.5 px-2.5 text-[#475569]">
+                          {item.rationale || item.dependencyOrRisk || 'Direct diagnostic priority'}
+                        </td>
+                        <td className="py-2.5 px-2.5 font-mono text-[#0F172A] whitespace-nowrap">
+                          {item.timeframe || item.targetCompletionDate || 'Within 30 days'}
+                        </td>
+                        <td className="py-2.5 px-2.5 text-[#0F172A]">{item.accountableRole}</td>
+                        <td className="py-2.5 px-2.5 text-[#475569]">{item.measurableSuccessIndicator}</td>
+                        <td className="py-2.5 px-2.5 font-mono font-bold uppercase text-[10px] whitespace-nowrap">
+                          {item.status || (item.completed ? 'completed' : 'pending')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-xs text-[#475569] bg-[#F8FAFC] p-4 rounded border border-[#0F172A]/10">
+                No Action Plan tasks yet. Click <strong>Generate Business Health Report</strong> above or visit the Action Plan tab to auto-populate prioritised tasks from your diagnostics.
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      if (secId === 'kpis') {
+        return (
+          <div key="kpis" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                  {displayNum}
+                </span>
+                <h3 className="text-lg font-bold text-[#0F172A]">
+                  KPI &amp; Performance Monitoring ({kpis.length})
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => (onOpenKpiTracker ? onOpenKpiTracker() : onSwitchTab('dashboard'))}
+                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                >
+                  Open KPI Tracker &rarr;
+                </button>
+                {renderSectionMoveControls('kpis')}
+              </div>
+            </div>
+
+            {kpis.length > 0 ? (
+              <div className="overflow-x-auto border border-[#0F172A]/10 rounded">
+                <table className="w-full text-xs text-left border-collapse tabular-nums">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-[#0F172A]/12 text-[10px] font-mono uppercase tracking-wider text-[#475569]">
+                      <th className="py-2 px-2.5">KPI</th>
+                      <th className="py-2 px-2.5">Category</th>
+                      <th className="py-2 px-2.5">Baseline</th>
+                      <th className="py-2 px-2.5">Target</th>
+                      <th className="py-2 px-2.5">Latest Actual</th>
+                      <th className="py-2 px-2.5">Variance</th>
+                      <th className="py-2 px-2.5">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#0F172A]/10">
+                    {kpis.map((kpi) => {
+                      const variance = computeKpiVariance(
+                        kpi.latestActualValue,
+                        kpi.targetValue,
+                        kpi.direction,
+                        kpi.unit,
+                        p.currency
+                      );
+                      const trend = computeKpiTrend(
+                        kpi.latestActualValue,
+                        kpi.previousValue,
+                        kpi.direction,
+                        kpi.unit
+                      );
+                      return (
+                        <tr key={kpi.id} className="hover:bg-[#F8FAFC]/60">
+                          <td className="py-2.5 px-2.5 font-semibold text-[#0F172A]">{kpi.name}</td>
+                          <td className="py-2.5 px-2.5 text-[#475569]">{kpi.categoryLabel}</td>
+                          <td className="py-2.5 px-2.5 font-mono">
+                            {formatKpiNumber(kpi.baselineValue, kpi.unit, p.currency)}
+                          </td>
+                          <td className="py-2.5 px-2.5 font-mono">
+                            {formatKpiNumber(kpi.targetValue, kpi.unit, p.currency)}
+                          </td>
+                          <td className="py-2.5 px-2.5 font-mono font-bold text-[#0F172A]">
+                            {formatKpiNumber(kpi.latestActualValue, kpi.unit, p.currency)}
+                          </td>
+                          <td
+                            className={`py-2.5 px-2.5 font-mono font-bold ${
+                              !variance
+                                ? 'text-[#475569]'
+                                : variance.isFavorable
+                                ? 'text-[#15803D]'
+                                : 'text-[#B91C1C]'
+                            }`}
+                          >
+                            {variance ? variance.formattedDelta : 'Insufficient Data'}
+                          </td>
+                          <td className="py-2.5 px-2.5 font-semibold">{trend}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-xs text-[#475569] flex flex-wrap items-center justify-between gap-3">
+                <span>
+                  Insufficient KPI baseline data yet. Initialize your industry KPI preset inside Measure Improvement &rarr; KPI &amp; Performance Tracker.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => (onOpenKpiTracker ? onOpenKpiTracker() : onSwitchTab('dashboard'))}
+                  className="px-3 py-1.5 rounded bg-[#0F172A] text-white font-bold text-xs print:hidden"
+                >
+                  Setup KPI Tracker
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      }
+
       if (secId === 'evidence') {
+        const unverifiedDims = dimList.filter(
+          (d) => d.evidenceType !== 'verified' && d.status !== 'unanswered' && d.status !== 'not_sure'
+        );
+        const verifiedDims = dimList.filter((d) => d.evidenceType === 'verified' && d.status !== 'unanswered');
+
         return (
           <div key="evidence" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
@@ -742,7 +1488,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
-                  Supplied Financial &amp; Document Evidence
+                  Evidence Quality, Information Gaps &amp; Documents
                 </h3>
               </div>
               <div className="flex items-center gap-2 print:hidden">
@@ -754,6 +1500,39 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   Manage Documents ({docs.length}) &rarr;
                 </button>
                 {renderSectionMoveControls('evidence')}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] space-y-1">
+                <strong className="text-[#15803D] uppercase text-[11px] block">
+                  Known / Verified ({verifiedDims.length})
+                </strong>
+                <p className="text-[#0F172A]">
+                  {verifiedDims.length > 0
+                    ? verifiedDims.map((d) => d.title).join(', ')
+                    : 'No verified capabilities marked yet.'}
+                </p>
+              </div>
+              <div className="p-3.5 rounded bg-[#FFFBEB] border border-[#FDE68A] space-y-1">
+                <strong className="text-[#B45309] uppercase text-[11px] block">
+                  Assumptions / Needs Verification ({unverifiedDims.length})
+                </strong>
+                <p className="text-[#0F172A]">
+                  {unverifiedDims.length > 0
+                    ? unverifiedDims.map((d) => d.title).join(', ')
+                    : 'No estimated capability ratings pending verification.'}
+                </p>
+              </div>
+              <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-1">
+                <strong className="text-[#1D4ED8] uppercase text-[11px] block">
+                  Missing Information ({missingDims.length})
+                </strong>
+                <p className="text-[#0F172A]">
+                  {missingDims.length > 0
+                    ? missingDims.map((d) => d.title).join(', ')
+                    : 'All 12 capabilities answered.'}
+                </p>
               </div>
             </div>
 
@@ -854,7 +1633,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
-                  Coaching Recommendations &amp; Priority Actions
+                  Coaching Recommendations &amp; Strategic Choice
                 </h3>
               </div>
               <div className="flex items-center gap-2 print:hidden">
@@ -958,21 +1737,6 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   </div>
                 )}
 
-                {rec.profitOpportunities && rec.profitOpportunities.length > 0 && (
-                  <div className="p-4 rounded bg-[#F8FAFC] border border-[#CBD5E1] space-y-2 text-xs">
-                    <span className="font-bold font-mono text-[#0F172A] uppercase tracking-wider block text-[11px]">
-                      Top Profit &amp; Revenue Leakage Levers ({rec.profitOpportunities.length})
-                    </span>
-                    <ul className="space-y-1.5 text-[#1E293B]">
-                      {rec.profitOpportunities.slice(0, 5).map((opp) => (
-                        <li key={opp.id}>
-                          • <strong>[{opp.horizon}] {opp.title}:</strong> {opp.estimatedFinancialImpact} ({opp.whatToDoFirst || opp.evidenceBasis})
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
                 {rec.specialistAdviceNeeded && (
                   <div className="p-3.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-[#0F172A] text-xs">
                     <strong className="text-[#B45309]">Specialist Advisory Check: </strong>
@@ -987,11 +1751,12 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 </p>
                 <button
                   type="button"
-                  onClick={() => onSwitchTab('recommendations')}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold uppercase tracking-wider text-xs"
+                  onClick={handleGenerateFullHealthReport}
+                  disabled={isGeneratingReport}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-semibold uppercase tracking-wider text-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
-                  <span>Generate Coaching Plan</span>
+                  <span>{isGeneratingReport ? 'Generating...' : 'Generate Coaching Plan & Report'}</span>
                 </button>
               </div>
             )}
@@ -1010,18 +1775,18 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
       <div className={`space-y-6 max-w-5xl mx-auto print:max-w-none print:text-black ${globalFontClass}`}>
         {renderEditorToolbar()}
 
-        {/* Top Architectural Navy Executive Header */}
+        {/* Section 1: Business Profile & Executive Summary */}
         <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#0F172A]/15 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/15 pb-5 print:border-black">
             <div>
               <span className="bizpulse-label text-[#60A5FA]">
-                Executive Diagnostic Briefing · Case: {p.caseId}
+                1. Business Profile &amp; Executive Summary · Case: {p.caseId}
               </span>
               <h1 className="text-2xl sm:text-3xl font-bold text-white mt-2 tracking-tight print:text-black">
                 {p.name || 'Business Assessment'}
               </h1>
               <p className="text-[#CBD5E1] text-sm mt-1 print:text-gray-700">
-                Commercial Diagnostic &amp; Action Report · {p.industry} ({p.country})
+                Commercial Diagnostic &amp; Business Health Report · {p.industry} ({p.country})
               </p>
             </div>
             <div className="text-right text-xs text-[#CBD5E1] space-y-1 print:text-gray-700 tabular-nums">

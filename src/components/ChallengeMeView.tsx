@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Sparkles,
   Flag,
+  RefreshCw,
 } from 'lucide-react';
 import {
   CaseRecord,
@@ -23,7 +24,7 @@ import {
   TurnaroundAction,
   AccountUsageSummary,
 } from '../types/bizpulse';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 
 interface ChallengeMeViewProps {
   caseRecord: CaseRecord;
@@ -58,6 +59,10 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
   const [ownerResponse, setOwnerResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFailedAction, setLastFailedAction] = useState<'start' | 'respond' | 'conclude' | null>(null);
+  const [pendingConcludeSession, setPendingConcludeSession] = useState<ChallengeMeSession | undefined>(
+    undefined
+  );
 
   // Deterministic pre-scan of factual tensions already visible in the active case record
   const localSignals = useMemo(() => {
@@ -134,7 +139,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
     healthInputs: caseRecord.healthInputs,
     financials: caseRecord.financials,
     overallHealth: caseRecord.overallHealth,
-    uploadedDocuments: caseRecord.uploadedDocuments || [],
+    uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
     crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
     crmContacts: caseRecord.crmContacts || [],
     roiScenarios: caseRecord.roiScenarios || [],
@@ -148,29 +153,18 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
     const activeFocus = customFocus.trim() || selectedFocus;
     setIsLoading(true);
     setError(null);
+    setLastFailedAction(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/challenge-me', {
+      const { data } = await apiFetchWithAuth<any>('/api/coach/challenge-me', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           ...buildPayloadContext(),
           action: 'start',
           focusTopic: activeFocus,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
-        throw new Error(errJson.error || 'Unable to start Challenge Me interrogation.');
-      }
-
-      const data = await response.json();
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       const nowIso = new Date().toISOString();
       const firstRound: ChallengeRound = {
@@ -202,15 +196,16 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
       });
       onTrackUsage?.('coachMessagesCount');
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to launch Challenge Me session.');
+      console.error('Challenge Me start failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      setLastFailedAction('start');
+      setError(err?.message || 'Failed to launch Challenge Me session.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmitRoundResponse = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeRoundResponse = async () => {
     if (!session || session.status !== 'active' || !ownerResponse.trim() || isLoading) return;
 
     const currentRounds = [...session.rounds];
@@ -230,16 +225,12 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
 
     setIsLoading(true);
     setError(null);
+    setLastFailedAction(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/challenge-me', {
+      const { data } = await apiFetchWithAuth<any>('/api/coach/challenge-me', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           ...buildPayloadContext(),
           action: 'respond',
           focusTopic: session.focusTopic,
@@ -248,16 +239,9 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
             rounds: updatedRoundsPreCall,
           },
           ownerResponse: trimmedAnswer,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
-        throw new Error(errJson.error || 'Unable to process your response.');
-      }
-
-      const data = await response.json();
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       const nowIso = new Date().toISOString();
 
@@ -296,14 +280,22 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
 
       // If the AI signalled the challenge has reached conclusion depth, automatically synthesize conclusion
       if (data.shouldConclude) {
+        setIsLoading(false);
         await concludeSession(updatedSession);
       }
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Unable to analyze response.');
+      console.error('Challenge Me response failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      setLastFailedAction('respond');
+      setError(err?.message || 'Unable to analyze response.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmitRoundResponse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeRoundResponse();
   };
 
   const concludeSession = async (targetSession?: ChallengeMeSession) => {
@@ -312,30 +304,20 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
 
     setIsLoading(true);
     setError(null);
+    setLastFailedAction(null);
+    setPendingConcludeSession(activeSess);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/challenge-me', {
+      const { data } = await apiFetchWithAuth<any>('/api/coach/challenge-me', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           ...buildPayloadContext(),
           action: 'conclude',
           focusTopic: activeSess.focusTopic,
           currentSession: activeSess,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
-        throw new Error(errJson.error || 'Unable to generate Challenge Me conclusion.');
-      }
-
-      const data = await response.json();
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       const nowIso = new Date().toISOString();
 
@@ -351,16 +333,29 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
         updatedAt: nowIso,
       };
 
+      setPendingConcludeSession(undefined);
       onUpdateCase({
         ...caseRecord,
         challengeSession: concludedSession,
         updatedAt: nowIso,
       });
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Unable to conclude challenge session.');
+      console.error('Challenge Me conclusion failed:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
+      setLastFailedAction('conclude');
+      setError(err?.message || 'Unable to conclude challenge session.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRetryFailedAction = () => {
+    if (lastFailedAction === 'start') {
+      void handleStartChallenge();
+    } else if (lastFailedAction === 'respond') {
+      void executeRoundResponse();
+    } else if (lastFailedAction === 'conclude') {
+      void concludeSession(pendingConcludeSession);
     }
   };
 
@@ -489,18 +484,34 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
       </div>
 
       {error && (
-        <div className="p-4 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs sm:text-sm rounded flex items-center justify-between gap-3">
+        <div className="p-4 bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs sm:text-sm rounded flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setError(null)}
-            className="text-xs font-bold hover:underline shrink-0"
-          >
-            Dismiss
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {lastFailedAction && (
+              <button
+                type="button"
+                onClick={handleRetryFailedAction}
+                disabled={isLoading}
+                className="px-3 py-1.5 rounded bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-bold inline-flex items-center gap-1"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setLastFailedAction(null);
+              }}
+              className="text-xs font-bold hover:underline shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 

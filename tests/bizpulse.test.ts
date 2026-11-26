@@ -20,9 +20,13 @@ import {
   createJoiningBaseline,
 } from '../src/services/continuityEngine';
 import {
+  generateCoachingPlanDocxUint8Array,
+  generateCoachingPlanPdfBytes,
   generateDocxReportUint8Array,
   generatePdfReportBytes,
 } from '../src/services/reportGenerator';
+import { mergeDiagnosticsIntoActionPlan } from '../src/services/actionPlanEngine';
+import { computeRoiMetrics } from '../src/services/roiEngine';
 import {
   DurableSaasStore,
   isAdminEmail,
@@ -495,4 +499,174 @@ test('7. KPI & Performance Tracker calculates formulas accurately, handles missi
   });
   assert.equal(customKpi.isCustom, true);
   assert.equal(computeKpiTrend(customKpi.latestActualValue, customKpi.previousValue, customKpi.direction, customKpi.unit), 'Improving');
+});
+
+test('8. Action Plan engine populates all 8 fields non-destructively from Coaching & Top 3 Priorities', () => {
+  const tradesCase = buildElectricalTradesCase();
+  tradesCase.recommendations = {
+    initialObservation: 'Margin leakage on variations and slow 60+ day collections are tightening bank headroom.',
+    commercialWhy: 'Fixing variation sign-offs and debtor chasing recovers cash faster than chasing new low-margin work.',
+    initialRecommendation: 'Mandate written variation approval and weekly debtor calls.',
+    immediateAction: 'Call top 5 overdue accounts above 60 days this week.',
+    knownsVsAssumptions: { knowns: ['Overdue AR NZ$42,000'], assumptions: [], unknowns: ['Aged debtor breakdown'] },
+    missingEvidence: ['Itemized aged receivables ledger'],
+    contextualQuestions: [],
+    specialistAdviceNeeded: 'Accountant review of progress-claim WIP tax timing.',
+    generatedAt: new Date().toISOString(),
+    profitOpportunities: [],
+    actionItems: [
+      {
+        id: 'ai-act-1',
+        priority: 'Priority 1 (Urgent)',
+        action: 'Call top 5 overdue accounts above 60 days this week.',
+        timeframe: 'Next 7 days',
+        ownerRole: 'Managing Director',
+        expectedImpact: 'Recover NZ$25,000 cash',
+        completed: false,
+      },
+      {
+        id: 'ai-act-2',
+        priority: 'Priority 2 (High)',
+        action: 'Enforce signed variation forms prior to extra site work.',
+        timeframe: 'Days 8-30',
+        ownerRole: 'Operations Lead',
+        expectedImpact: '+4% gross margin on fixed-price jobs',
+        completed: false,
+      },
+    ],
+  };
+
+  // Seed one pre-existing rejected decision matching action #2 to verify non-destructive merge
+  tradesCase.actionPlan = [
+    {
+      id: 'existing-1',
+      horizon: '60 Days (Systems & Margin Fixes)',
+      priority: 'Priority 2 (High)',
+      businessIssue: 'Owner custom issue',
+      rationale: 'Owner custom rationale',
+      action: 'Enforce signed variation forms prior to extra site work.',
+      accountableRole: 'Site Foreman',
+      timeframe: 'Days 14-30',
+      requiredInformationOrResources: [],
+      measurableSuccessIndicator: '100% variation sign-off',
+      dependencyOrRisk: 'Client approval speed on site',
+      status: 'pending',
+      completed: false,
+      decisionStatus: 'rejected',
+    },
+  ];
+
+  const merged = mergeDiagnosticsIntoActionPlan(tradesCase);
+  // Preserved existing item with rejected decisionStatus intact
+  const preserved = merged.find((a) => a.id === 'existing-1');
+  assert.ok(preserved);
+  assert.equal(preserved?.decisionStatus, 'rejected');
+  assert.equal(preserved?.accountableRole, 'Site Foreman');
+
+  // Added immediateAction once (deduplicated against matching actionItem) + Top 3 priorities
+  const immediateMatches = merged.filter(
+    (a) => a.action.toLowerCase() === 'call top 5 overdue accounts above 60 days this week.'
+  );
+  assert.equal(immediateMatches.length, 1);
+  assert.ok(immediateMatches[0].rationale && immediateMatches[0].rationale.length > 0);
+  assert.ok(immediateMatches[0].businessIssue && immediateMatches[0].businessIssue.length > 0);
+  assert.ok(immediateMatches[0].measurableSuccessIndicator.length > 0);
+  assert.ok(merged.some((a) => a.sourceTag === 'Top 3 Health Priority'));
+});
+
+test('9. ROI engine reports Insufficient Data / Zero-Cost Gain cleanly and calculates payback accurately', () => {
+  // Missing / zero inputs must return hasSufficientData = false and null roiPct/payback
+  const emptyRoi = computeRoiMetrics(0, 0, 0, 50, 12, 70);
+  assert.equal(emptyRoi.hasSufficientData, false);
+  assert.equal(emptyRoi.roiPct, null);
+  assert.equal(emptyRoi.paybackMonths, null);
+  assert.equal(emptyRoi.breakEvenMonthlyRevenue, null);
+
+  // Zero gross margin % must also report Insufficient Data
+  const zeroMargin = computeRoiMetrics(1000, 200, 3000, 0, 12, 70);
+  assert.equal(zeroMargin.hasSufficientData, false);
+  assert.equal(zeroMargin.roiPct, null);
+
+  // Zero cost with positive revenue -> Zero-Cost Gain (roiPct: null, hasSufficientData: true, paybackMonths: 0)
+  const zeroCost = computeRoiMetrics(0, 0, 2000, 50, 12, 80);
+  assert.equal(zeroCost.hasSufficientData, true);
+  assert.equal(zeroCost.roiPct, null);
+  assert.equal(zeroCost.paybackMonths, 0);
+
+  // Standard positive scenario: Upfront 6000, Monthly Cost 500, Monthly Rev 3000 @ 50% GM (1500 GP -> 1000/mo net)
+  // Payback = 6000 / 1000 = 6.0 mo; Horizon (12 mo) net = 12000 - 6000 = 6000; Total Cost = 6000 + 6000 = 12000 -> ROI = 50%
+  const std = computeRoiMetrics(6000, 500, 3000, 50, 12, 75);
+  assert.equal(std.hasSufficientData, true);
+  assert.equal(std.monthlyGrossProfit, 1500);
+  assert.equal(std.monthlyNetContribution, 1000);
+  assert.equal(std.paybackMonths, 6);
+  assert.equal(std.horizonNetBenefit, 6000);
+  assert.equal(std.roiPct, 50);
+  assert.equal(std.riskAdjustedNetBenefit, 4500);
+  assert.equal(std.breakEvenMonthlyRevenue, 2000);
+});
+
+test('10. Coaching Plan & 9-Section Business Health Report exports produce valid PDF and Word (.docx) documents', async () => {
+  const tradesCase = buildElectricalTradesCase();
+  tradesCase.kpiTracker = initializeKpiTrackerForCase(tradesCase);
+  tradesCase.recommendations = {
+    initialObservation: 'Cash is tied up in overdue progress claims.',
+    commercialWhy: 'Delayed variation invoicing compresses cash headroom.',
+    initialRecommendation: 'Tighten variation approvals and chase >60d debtors.',
+    immediateAction: 'Contact overdue commercial accounts within 48 hours.',
+    knownsVsAssumptions: { knowns: ['Overdue AR NZ$42,000'], assumptions: [], unknowns: ['WIP breakdown'] },
+    missingEvidence: ['Confirm WIP breakdown'],
+    contextualQuestions: [],
+    specialistAdviceNeeded: 'Check tax provisioning.',
+    generatedAt: new Date().toISOString(),
+    profitOpportunities: [
+      {
+        id: 'opp-1',
+        area: '4. Slow Invoicing or Late Collections',
+        title: 'Recover Overdue Progress Debtors',
+        horizon: '0-30 Days',
+        estimatedFinancialImpact: 'NZ$25,000+ cash release',
+        effortCost: 'Low / Owner time',
+        evidenceBasis: 'Aged receivables ledger',
+        whatToDoFirst: 'Phone top 3 overdue clients directly.',
+        risks: ['Client relationship sensitivity'],
+      },
+    ],
+    actionItems: [
+      {
+        id: 'rec-1',
+        priority: 'Priority 1 (Urgent)',
+        action: 'Phone top 3 overdue accounts',
+        timeframe: 'Next 7 days',
+        ownerRole: 'Owner',
+        expectedImpact: 'Release NZ$25,000 cash',
+        completed: false,
+      },
+    ],
+  };
+  tradesCase.actionPlan = mergeDiagnosticsIntoActionPlan(tradesCase);
+
+  // Coaching & Actions Plan PDF + DOCX
+  const coachPdf = generateCoachingPlanPdfBytes(tradesCase);
+  assert.ok(coachPdf instanceof Uint8Array && coachPdf.byteLength > 1500);
+  assert.equal(Buffer.from(coachPdf.slice(0, 5)).toString('ascii'), '%PDF-');
+
+  const coachDocx = await generateCoachingPlanDocxUint8Array(tradesCase);
+  assert.ok(coachDocx instanceof Uint8Array && coachDocx.byteLength > 2500);
+  const coachZip = await JSZip.loadAsync(coachDocx);
+  const coachXml = await coachZip.file('word/document.xml')?.async('string');
+  assert.ok(coachXml && coachXml.includes('Southern Spark'));
+
+  // Full 9-Section Business Health Report PDF + DOCX
+  const fullPdf = generatePdfReportBytes(tradesCase);
+  assert.ok(fullPdf instanceof Uint8Array && fullPdf.byteLength > 2000);
+  assert.equal(Buffer.from(fullPdf.slice(0, 5)).toString('ascii'), '%PDF-');
+
+  const fullDocx = await generateDocxReportUint8Array(tradesCase);
+  const fullZip = await JSZip.loadAsync(fullDocx);
+  const fullXml = await fullZip.file('word/document.xml')?.async('string');
+  assert.ok(fullXml);
+  assert.ok(fullXml.includes('Strengths'));
+  assert.ok(fullXml.includes('KPI'));
+  assert.ok(fullXml.includes('Action Plan'));
 });

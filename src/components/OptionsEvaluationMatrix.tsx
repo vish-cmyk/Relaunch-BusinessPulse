@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   CheckCircle,
   AlertTriangle,
@@ -91,6 +91,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
     roiScenarios[0]?.id || null
   );
+  const aiResultRef = useRef<HTMLDivElement | null>(null);
 
   // Convert CRM draft passed from CRM tab into a pre-filled persisted ROI scenario without fabricating placeholder amounts
   useEffect(() => {
@@ -310,6 +311,9 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
         estimatesAndAssumptions: Array.isArray(data.estimatesAndAssumptions)
           ? data.estimatesAndAssumptions
           : [],
+      });
+      requestAnimationFrame(() => {
+        aiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     } catch (err: any) {
       console.error('ROI AI risk check failed:', err);
@@ -966,7 +970,10 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                 )}
 
                 {aiAnalysis && (
-                  <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs space-y-2.5">
+                  <div
+                    ref={aiResultRef}
+                    className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs space-y-2.5 scroll-mt-24"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="font-mono font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" />

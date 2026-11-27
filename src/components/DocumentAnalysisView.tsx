@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   FileUp,
   FileText,
@@ -20,7 +20,7 @@ import {
   CrossDocumentSynthesis,
   AccountUsageSummary,
 } from '../types/bizpulse';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 
 interface DocumentAnalysisViewProps {
   caseRecord: CaseRecord;
@@ -55,9 +55,18 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(documents[0]?.id || null);
 
+  const synthesisRef = useRef<HTMLDivElement | null>(null);
+  const docResultRef = useRef<HTMLDivElement | null>(null);
+
   const activeDoc = documents.find((d) => d.id === selectedDocId) || documents[0] || null;
+
+  const showTempSuccess = (msg: string) => {
+    setSuccessNotice(msg);
+    setTimeout(() => setSuccessNotice(null), 5000);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,6 +74,7 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
     if (!file) return;
 
     setError(null);
+    setSuccessNotice(null);
     const lowerName = file.name.toLowerCase();
     const hasAllowedExt = ALLOWED_EXT.some((ext) => lowerName.endsWith(ext));
     if (!hasAllowedExt) {
@@ -89,11 +99,9 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
         reader.readAsDataURL(file);
       });
 
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/analyze-document', {
+      const { data: json } = await apiFetchWithAuth<any>('/api/coach/analyze-document', {
         method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           fileName: file.name,
           mimeType: file.type,
@@ -103,25 +111,28 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: documents,
+          uploadedDocuments: sanitizeDocumentsForAiPayload(documents),
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
-        }),
+        },
       });
 
-      const json = await response.json().catch(() => ({}));
       if (json.accountUsage) onAccountUsageUpdate?.(json.accountUsage);
-      if (!response.ok) {
-        throw new Error(json.error || 'Document analysis failed.');
-      }
 
       if (json.documentAnalysis) {
         onAddDocument(json.documentAnalysis);
         setSelectedDocId(json.documentAnalysis.id);
+        showTempSuccess(`Analyzed "${file.name}" and added verified findings below.`);
+        setTimeout(() => {
+          docResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      } else {
+        throw new Error('The AI engine returned an empty document audit. Please retry.');
       }
     } catch (err: any) {
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setError(err.message || 'Unable to analyze uploaded document.');
     } finally {
       setIsAnalyzing(false);
@@ -131,34 +142,36 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
   const handleSynthesizeAll = async () => {
     if (documents.length === 0 || isSynthesizing) return;
     setError(null);
+    setSuccessNotice(null);
     setIsSynthesizing(true);
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/synthesize-documents', {
+      const { data: json } = await apiFetchWithAuth<any>('/api/coach/synthesize-documents', {
         method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           businessProfile: caseRecord.profile,
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: documents,
+          uploadedDocuments: sanitizeDocumentsForAiPayload(documents),
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
-        }),
+        },
       });
-      const json = await response.json().catch(() => ({}));
       if (json.accountUsage) onAccountUsageUpdate?.(json.accountUsage);
-      if (!response.ok) {
-        throw new Error(json.error || 'Unable to synthesize uploaded documents.');
-      }
       if (json.crossDocumentSynthesis) {
         onSynthesizeDocuments?.(json.crossDocumentSynthesis);
+        showTempSuccess('Cross-document earnings synthesis updated below.');
+        setTimeout(() => {
+          synthesisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      } else {
+        throw new Error('Synthesis returned empty output. Please retry.');
       }
     } catch (err: any) {
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setError(err.message || 'Document synthesis failed.');
     } finally {
       setIsSynthesizing(false);
@@ -227,9 +240,21 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
         )}
       </div>
 
+      {successNotice && (
+        <div className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successNotice}</span>
+          </div>
+          <button type="button" onClick={() => setSuccessNotice(null)} className="hover:underline font-bold">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Cross-Document Earnings & Trend Synthesis Card */}
       {synthesis && (
-        <div className="bg-white border border-[#2563EB]/40 rounded p-6 space-y-5 shadow-xs">
+        <div ref={synthesisRef} className="bg-white border border-[#2563EB]/40 rounded p-6 space-y-5 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#0F172A]/10">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-[#2563EB]" />
@@ -400,7 +425,7 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
 
           {/* Right Audit Breakdown */}
           {activeDoc && (
-            <div className="lg:col-span-8 space-y-5">
+            <div ref={docResultRef} className="lg:col-span-8 space-y-5">
               {/* Summary & Action Bar */}
               <div className="bg-white border border-[#0F172A]/12 rounded p-6 space-y-4">
                 <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-[#0F172A]/10">

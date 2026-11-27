@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Activity,
   CheckCircle2,
@@ -169,6 +169,18 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
   const [visibleDimensions, setVisibleDimensions] = useState<HealthDimensionKey[]>(
     TRAJECTORY_PRESETS.core.keys
   );
+  const [bottomSavedFeedback, setBottomSavedFeedback] = useState(false);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
+  const cardsTopRef = useRef<HTMLDivElement | null>(null);
+
+  const handleRecalculateAndViewResults = () => {
+    onRecalculateOverall();
+    setBottomSavedFeedback(true);
+    setTimeout(() => setBottomSavedFeedback(false), 4500);
+    requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   const handleSelectPreset = (presetId: TrajectoryPresetId) => {
     setTrajectoryPreset(presetId);
@@ -487,7 +499,11 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
       {/* OVERALL BUSINESS HEALTH SUMMARY + TOP 3 PRIORITIES + RADAR + BAR CHART */}
       {overallHealth && (
-        <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-6">
+        <div
+          id="health-results-summary"
+          ref={resultsRef}
+          className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-6 scroll-mt-24"
+        >
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#0F172A]/10">
             <div className="space-y-2 max-w-2xl">
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB] flex items-center gap-1.5">
@@ -522,6 +538,15 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                     : 'Confirmed Full 12-Capability Assessment'}
                 </span>
               </div>
+              {answeredCount < 12 && (
+                <button
+                  type="button"
+                  onClick={() => cardsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2563EB] hover:underline pt-1"
+                >
+                  <span>Jump to 12 Capability Cards Below ({12 - answeredCount} remaining) &darr;</span>
+                </button>
+              )}
             </div>
 
             {/* Numeric Score Card */}
@@ -898,7 +923,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
       )}
 
       {/* THE TWELVE HEALTH CAPABILITIES INTERACTIVE CARDS */}
-      <div className="space-y-3.5">
+      <div ref={cardsTopRef} className="space-y-3.5 scroll-mt-24">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
           <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
             <Layers className="w-4 h-4 text-[#2563EB]" />
@@ -1083,6 +1108,47 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             </div>
           );
         })}
+      </div>
+
+      {/* Bottom Completion & Immediate Score Confirmation Bar */}
+      <div className="bg-white border border-[#0F172A]/15 rounded p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+            <span>Assessment Status: {answeredCount} of 12 Capabilities Rated</span>
+            {overallHealth?.overallScore !== null && overallHealth?.overallScore !== undefined && (
+              <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8] tabular-nums">
+                Score: {overallHealth.overallScore}/100 ({overallHealth.overallRating})
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[#475569]">
+            {bottomSavedFeedback
+              ? 'Health assessment recalculated and saved. Review the summary charts above or generate your Coaching Plan.'
+              : 'Recalculate after rating capabilities to update your Health Score, Top 3 Priorities, and Action Plan.'}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleRecalculateAndViewResults}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#2563EB]" />
+            <span>Save &amp; View Health Results &uarr;</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onRecalculateOverall();
+              onProceedToRecommendations();
+            }}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap"
+          >
+            <span>Next: Coaching &amp; Actions</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

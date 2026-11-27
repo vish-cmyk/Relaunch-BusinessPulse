@@ -17,6 +17,7 @@ import { AICoachConsole } from './components/AICoachConsole';
 import { ChallengeMeView } from './components/ChallengeMeView';
 import { ReportExportModal } from './components/ReportExportModal';
 import { CheckoutModal } from './components/CheckoutModal';
+import { PilotFeedbackModal } from './components/PilotFeedbackModal';
 import { AuthScreen } from './components/AuthScreen';
 import { GrowthRoadmapView } from './components/GrowthRoadmapView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -38,6 +39,7 @@ import {
   ProfitOpportunityItem,
   MembershipContinuity,
   KpiTrackerState,
+  PilotFeedbackEntry,
 } from './types/bizpulse';
 import {
   subscribeUserCases,
@@ -48,8 +50,8 @@ import {
 } from './services/firestoreStorage';
 import { calculateOverallHealth } from './services/healthScoring';
 import { mergeDiagnosticsIntoActionPlan } from './services/actionPlanEngine';
-import { getAuthHeaders } from './services/firebase';
-import { Database, AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { apiFetchWithAuth } from './services/firebase';
+import { Database, AlertTriangle, RefreshCw, CheckCircle2, MessageSquarePlus } from 'lucide-react';
 
 function BizPulseWorkspace() {
   const { currentUser, loading: authLoading, logout } = useAuth();
@@ -67,6 +69,7 @@ function BizPulseWorkspace() {
   const [dashboardInitialSubTab, setDashboardInitialSubTab] = useState<ContinuitySubTab>('scoreboard');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState<boolean>(false);
   const [coachInitialPrompt, setCoachInitialPrompt] = useState<string | undefined>(undefined);
   const [pendingRoiDraft, setPendingRoiDraft] = useState<PendingRoiDraft | null>(null);
 
@@ -85,13 +88,12 @@ function BizPulseWorkspace() {
       return;
     }
     try {
-      const authHeaders = await getAuthHeaders();
-      const res = await fetch('/api/account/usage', { headers: authHeaders });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accountUsage) {
-          setAccountUsage(data.accountUsage);
-        }
+      const { data } = await apiFetchWithAuth<{ accountUsage?: AccountUsageSummary }>(
+        '/api/account/usage',
+        { method: 'GET' }
+      );
+      if (data.accountUsage) {
+        setAccountUsage(data.accountUsage);
       }
     } catch (err) {
       console.warn('Unable to load account usage summary:', err);
@@ -113,20 +115,18 @@ function BizPulseWorkspace() {
     const runVerificationAndUsage = async () => {
       if (paymentFlag === 'success' && sessionId) {
         try {
-          const authHeaders = await getAuthHeaders();
-          const res = await fetch('/api/payment/verify-session', {
+          const { data } = await apiFetchWithAuth<{
+            paid?: boolean;
+            accountUsage?: AccountUsageSummary;
+            record?: { tier?: string };
+          }>('/api/payment/verify-session', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...authHeaders,
-            },
-            body: JSON.stringify({
+            body: {
               sessionId,
               caseId: caseIdParam || activeCaseRef.current?.id || '',
-            }),
+            },
           });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok && data.paid) {
+          if (data.paid) {
             if (data.accountUsage) {
               setAccountUsage(data.accountUsage);
             }
@@ -283,24 +283,19 @@ function BizPulseWorkspace() {
     if (!currentUser) return;
     try {
       const customCaseIds = cases.filter((c) => !c.profile.isDemonstrationCase).map((c) => c.id);
-      const authHeaders = await getAuthHeaders();
-      const checkRes = await fetch('/api/account/check-case-limit', {
+      const { data: limitData } = await apiFetchWithAuth<{
+        allowed?: boolean;
+        planName?: string;
+        maxCustomCases?: number;
+        accountUsage?: AccountUsageSummary;
+      }>('/api/account/check-case-limit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           currentCustomCaseCount: customCaseIds.length,
           customCaseIds,
-        }),
+        },
       });
 
-      const limitData = await checkRes.json().catch(() => ({}));
-      if (!checkRes.ok) {
-        setFirestoreError(limitData.error || 'Unable to verify plan session quota. Please try again.');
-        return;
-      }
       if (limitData.accountUsage) {
         setAccountUsage(limitData.accountUsage);
       }
@@ -410,25 +405,15 @@ function BizPulseWorkspace() {
   const handleDeleteAccount = async () => {
     if (!currentUser) return;
 
-    const authHeaders = await getAuthHeaders();
-
     // 1. Delete every user case from client Firestore while user token is active
     for (const c of cases) {
       await deleteCaseFromFirestore(currentUser.uid, c.id).catch(() => {});
     }
 
     // 2. Cancel Stripe subscription + wipe server-side quota/billing records
-    const res = await fetch('/api/account/delete', {
+    await apiFetchWithAuth('/api/account/delete', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-      },
     });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Unable to purge server-side account state.');
-    }
 
     // 3. Delete Firebase Auth record from client SDK
     try {
@@ -722,6 +707,15 @@ function BizPulseWorkspace() {
     });
   };
 
+  const handleSavePilotFeedback = (entry: PilotFeedbackEntry) => {
+    if (!activeCase) return;
+    persistCase({
+      ...activeCase,
+      pilotFeedback: [entry, ...(activeCase.pilotFeedback || [])],
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   const handleEvaluateOpportunityInRoi = (contact: CrmRecord) => {
     setPendingRoiDraft({
       linkedCrmId: contact.id,
@@ -802,6 +796,7 @@ function BizPulseWorkspace() {
         }}
         onOpenExportModal={() => setIsExportModalOpen(true)}
         onOpenCheckoutModal={() => setIsCheckoutModalOpen(true)}
+        onOpenFeedbackModal={() => setIsFeedbackModalOpen(true)}
         onSignOut={handleLogout}
       />
 
@@ -1072,13 +1067,30 @@ function BizPulseWorkspace() {
         onDeleteAccount={handleDeleteAccount}
       />
 
+      <PilotFeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        activeTab={activeTab}
+        activeCase={activeCase}
+        onSaveToCase={handleSavePilotFeedback}
+      />
+
       {/* Footer */}
       <footer className="bg-white border-t border-[#0F172A]/10 py-5 text-center text-xs text-[#475569] print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             Relaunch BizPulse © 2026 • Executive Coaching &amp; Diagnostic OS
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsFeedbackModalOpen(true)}
+              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+            >
+              <MessageSquarePlus className="w-3.5 h-3.5" />
+              <span>Share Pilot Feedback</span>
+            </button>
+            <span className="text-[#CBD5E1]">|</span>
             <span>Active Session:</span>
             <strong className="text-[#0F172A]">{activeCase.profile.name}</strong>
           </div>

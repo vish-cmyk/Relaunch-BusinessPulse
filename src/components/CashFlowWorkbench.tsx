@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   DollarSign,
   AlertTriangle,
@@ -247,10 +247,15 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
   const currentNetLiquidity = cash - payables;
   const simulatedNetLiquidity = simulatedCash - payables;
 
+  const liveResultsRef = useRef<HTMLDivElement | null>(null);
+
   const handleSaveCustomBaseline = () => {
     setIsEditingBaseline(false);
     setBaselineSavedAlert(true);
-    setTimeout(() => setBaselineSavedAlert(false), 3500);
+    setTimeout(() => setBaselineSavedAlert(false), 4500);
+    requestAnimationFrame(() => {
+      liveResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
 
     if (onUpdateFinancials) {
       onUpdateFinancials({
@@ -761,15 +766,58 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               </div>
             </div>
           </div>
+          {/* Bottom Ledger Action Footer (Prevents scrolling back up after field 16) */}
+          <div className="pt-4 border-t border-[#0F172A]/10 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-[#475569]">
+              Saving updates your Net Liquidity, Gross Margin, Runway, and Business Health Score immediately.
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditingBaseline(false)}
+                className="px-3.5 py-2 rounded bg-white hover:bg-[#F8FAFC] text-xs font-semibold text-[#475569] border border-[#0F172A]/15 transition"
+              >
+                Cancel
+              </button>
+              {isDemo ? (
+                <button
+                  type="button"
+                  onClick={handleResetToDemo}
+                  className="flex items-center space-x-1 px-3 py-2 rounded bg-[#F8FAFC] text-xs font-semibold text-[#475569] hover:text-[#0F172A] border border-[#0F172A]/15 transition"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Demo Figures</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleClearCustomBaseline}
+                  className="flex items-center space-x-1 px-3 py-2 rounded bg-[#F8FAFC] text-xs font-semibold text-[#475569] hover:text-[#0F172A] border border-[#0F172A]/15 transition"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Clear Inputs</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveCustomBaseline}
+                className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold uppercase tracking-wider text-xs shadow-xs transition"
+              >
+                <Save className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <span>Save Financial Ledger</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {baselineSavedAlert && (
-        <div className="bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] p-3.5 rounded text-xs font-semibold flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>All financial ledger inputs saved to this isolated business session.</span>
-        </div>
-      )}
+      <div ref={liveResultsRef} id="cashflow-live-results" className="scroll-mt-24 space-y-6">
+        {baselineSavedAlert && (
+          <div className="bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] p-3.5 rounded text-xs font-semibold flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>All financial ledger inputs saved to this isolated business session.</span>
+          </div>
+        )}
 
       {/* 4 Core Financial Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
@@ -1166,5 +1214,6 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
         </div>
       </div>
     </div>
+  </div>
   );
 };

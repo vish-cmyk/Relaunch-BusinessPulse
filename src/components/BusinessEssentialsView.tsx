@@ -146,9 +146,24 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
   onProceedToHealth,
   onProceedToDocuments,
 }) => {
+  const getSmartInitialPosition = (p: BusinessProfile): { stepIdx: number; reviewMode: boolean } => {
+    const cleanName = (p.name || '').trim();
+    const isBlankStarter =
+      !cleanName || cleanName === 'New Business Case' || cleanName === 'My Business Assessment';
+    if (isBlankStarter) {
+      return { stepIdx: 0, reviewMode: false };
+    }
+    const firstIncompleteIdx = ESSENTIAL_STEPS.findIndex((s) => s.required && !s.isComplete(p));
+    if (firstIncompleteIdx >= 0) {
+      return { stepIdx: firstIncompleteIdx, reviewMode: false };
+    }
+    return { stepIdx: 0, reviewMode: true };
+  };
+
+  const initialPos = getSmartInitialPosition(profile);
   const [formData, setFormData] = useState<BusinessProfile>(profile);
-  const [currentStepIdx, setCurrentStepIdx] = useState<number>(0);
-  const [showAllReview, setShowAllReview] = useState<boolean>(false);
+  const [currentStepIdx, setCurrentStepIdx] = useState<number>(initialPos.stepIdx);
+  const [showAllReview, setShowAllReview] = useState<boolean>(initialPos.reviewMode);
   const [stepError, setStepError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -158,9 +173,12 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
   onUpdateProfileRef.current = onUpdateProfile;
 
   useEffect(() => {
+    const nextPos = getSmartInitialPosition(profile);
     setFormData(profile);
     latestFormRef.current = profile;
     isDirtyRef.current = false;
+    setCurrentStepIdx(nextPos.stepIdx);
+    setShowAllReview(nextPos.reviewMode);
     setIsSaved(false);
     setStepError(null);
   }, [profile.caseId]);
@@ -674,11 +692,18 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
             ))}
           </div>
 
-          <div className="pt-5 border-t border-[#0F172A]/10 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-2">
-              <ShieldCheck className="w-4 h-4 text-[#15803D] shrink-0" />
-              <span className="bizpulse-label">Isolated session active · Auto-saved</span>
-            </div>
+          <div className="pt-5 border-t border-[#0F172A]/10 space-y-3">
+            {isSaved && (
+              <div className="p-3 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>All business essentials answers saved cleanly for {formData.name || 'this business'}.</span>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center space-x-2">
+                <ShieldCheck className="w-4 h-4 text-[#15803D] shrink-0" />
+                <span className="bizpulse-label">Isolated session active · Auto-saved</span>
+              </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
               <button
@@ -714,6 +739,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 <span>Proceed to Health Assessment</span>
                 <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
               </button>
+              </div>
             </div>
           </div>
         </form>
@@ -816,6 +842,13 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               )}
             </div>
           </div>
+
+          {isSaved && (
+            <div className="p-3 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Saved Q{currentStep.stepNumber} answers cleanly.</span>
+            </div>
+          )}
 
           <div className="flex items-center space-x-2 text-xs text-[#475569]">
             <ShieldCheck className="w-4 h-4 text-[#15803D] shrink-0" />

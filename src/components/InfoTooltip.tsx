@@ -52,7 +52,7 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
       ? 'right-0'
       : align === 'center'
       ? 'left-1/2 -translate-x-1/2'
-      : 'left-0';
+      : 'left-0 sm:left-0 -translate-x-12 sm:translate-x-0';
 
   return (
     <div
@@ -82,19 +82,19 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
         }}
         aria-label={`More information about ${title}`}
         aria-expanded={isOpen}
-        className={`inline-flex items-center justify-center w-4 h-4 rounded-full transition focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+        className={`inline-flex items-center justify-center w-5 h-5 sm:w-4 sm:h-4 rounded-full transition focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
           isOpen
             ? 'bg-[#2563EB] text-white'
             : 'bg-[#EFF6FF] text-[#1D4ED8] hover:bg-[#DBEAFE] border border-[#BFDBFE]'
         }`}
       >
-        <HelpCircle className="w-3 h-3" />
+        <HelpCircle className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
       </button>
 
       {isOpen && (
         <div
           role="tooltip"
-          className={`absolute bottom-full mb-2 ${positionClass} z-50 w-72 sm:w-80 bg-white border border-[#0F172A]/20 rounded shadow-lg p-3.5 text-left text-xs text-[#0F172A] space-y-2`}
+          className={`absolute bottom-full mb-2 ${positionClass} z-50 w-[min(18rem,calc(100vw-2rem))] sm:w-80 bg-white border border-[#0F172A]/20 rounded shadow-lg p-3.5 text-left text-xs text-[#0F172A] space-y-2`}
         >
           <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-[#0F172A]/10">
             <span className="font-bold text-[#0F172A] leading-snug">{title}</span>

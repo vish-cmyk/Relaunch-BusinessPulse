@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Users,
   AlertOctagon,
@@ -38,7 +38,7 @@ import {
   BusinessDevPlan,
   AccountUsageSummary,
 } from '../types/bizpulse';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 
 interface ClientMatrixCalculatorProps {
   caseRecord?: CaseRecord;
@@ -157,6 +157,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
   const [isGeneratingBizDev, setIsGeneratingBizDev] = useState(false);
   const [bizDevError, setBizDevError] = useState<string | null>(null);
   const [savedOutreachFeedback, setSavedOutreachFeedback] = useState<string | null>(null);
+  const bizDevResultRef = useRef<HTMLDivElement | null>(null);
 
   const todayIso = new Date().toISOString().slice(0, 10);
 
@@ -406,43 +407,40 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
     setBizDevError(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/coach/business-development', {
+      const { data } = await apiFetchWithAuth<{
+        businessDevPlan?: BusinessDevPlan;
+        accountUsage?: AccountUsageSummary;
+      }>('/api/coach/business-development', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           businessProfile: caseRecord.profile,
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: caseRecord.uploadedDocuments || [],
+          uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
           crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
           crmContacts,
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations || null,
           actionPlan: caseRecord.actionPlan || [],
           focusArea: bizDevFocus.trim() || undefined,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (errJson.accountUsage) onAccountUsageUpdate?.(errJson.accountUsage);
-        throw new Error(errJson.error || 'Unable to generate Business Development Plan.');
-      }
-
-      const data = await response.json();
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
       if (data.businessDevPlan) {
         onUpdateBusinessDevPlan?.(data.businessDevPlan);
         onTrackUsage?.('coachMessagesCount');
+        setSavedOutreachFeedback('Business Development & Lead Outreach Plan generated and saved.');
+        setTimeout(() => setSavedOutreachFeedback(null), 4500);
+        requestAnimationFrame(() => {
+          bizDevResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
       }
     } catch (err: any) {
       console.error('BizDev plan error:', err);
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setBizDevError(err?.message || 'Unable to reach AI Business Development service.');
     } finally {
       setIsGeneratingBizDev(false);
@@ -1351,7 +1349,7 @@ export const ClientMatrixCalculator: React.FC<ClientMatrixCalculatorProps> = ({
         )}
 
         {businessDevPlan ? (
-          <div className="space-y-4">
+          <div ref={bizDevResultRef} className="space-y-4">
             <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-xs space-y-1">
               <span className="font-bold uppercase tracking-wider text-[#2563EB] block">
                 Recommended Ideal Customer Profile (ICP)

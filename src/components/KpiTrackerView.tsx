@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -56,7 +56,7 @@ import {
   initializeKpiTrackerForCase,
   syncKpiTrackerWithCaseData,
 } from '../services/kpiEngine';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 
 interface KpiTrackerViewProps {
   caseRecord: CaseRecord;
@@ -128,10 +128,14 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
   const [isAiRunning, setIsAiRunning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const topNoticeRef = useRef<HTMLDivElement | null>(null);
 
   const flashNotice = (msg: string) => {
     setNotice(msg);
-    setTimeout(() => setNotice(null), 4500);
+    requestAnimationFrame(() => {
+      topNoticeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    setTimeout(() => setNotice(null), 5000);
   };
 
   const commitTracker = (next: KpiTrackerState, msg?: string) => {
@@ -331,7 +335,6 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
     setErrorMsg(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
       const kpisWithTrend = trackerState.kpis.map((k) => ({
         ...k,
         trend: computeKpiTrend(k.latestActualValue, k.previousValue, k.direction, k.unit),
@@ -346,13 +349,13 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
         explanation: c.explanation,
       }));
 
-      const res = await fetch('/api/kpi/interpret', {
+      const { data } = await apiFetchWithAuth<{
+        kpiUpdates?: any[];
+        recommendedAdditionalKpis?: any[];
+        accountUsage?: AccountUsageSummary;
+      }>('/api/kpi/interpret', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           kpis: kpisWithTrend,
           selectedPreset: trackerState.selectedPreset,
@@ -361,21 +364,17 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: caseRecord.uploadedDocuments || [],
+          uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
           crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
           continuity: caseRecord.continuity || null,
-        }),
+        },
       });
 
-      const data = await res.json().catch(() => ({}));
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
-      if (!res.ok) {
-        throw new Error(data.error || 'Unable to run AI KPI interpretation.');
-      }
 
       const updateMap = new Map<string, { aiInterpretation: string; recommendedAction: string }>();
       for (const u of data.kpiUpdates || []) {
@@ -421,7 +420,11 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
         `AI Coach interpreted ${updatedKpis.length} tracked KPI(s) using your latest business data.`
       );
     } catch (err: any) {
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setErrorMsg(err.message || 'Unable to generate AI KPI interpretation.');
+      requestAnimationFrame(() => {
+        topNoticeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
     } finally {
       setIsAiRunning(false);
     }
@@ -598,29 +601,31 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
         </div>
       </div>
 
-      {notice && (
-        <div className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{notice}</span>
+      <div ref={topNoticeRef} className="scroll-mt-24">
+        {notice && (
+          <div className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#15803D] text-xs font-semibold flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{notice}</span>
+            </div>
+            <button type="button" onClick={() => setNotice(null)} className="hover:underline">
+              Dismiss
+            </button>
           </div>
-          <button type="button" onClick={() => setNotice(null)} className="hover:underline">
-            Dismiss
-          </button>
-        </div>
-      )}
+        )}
 
-      {errorMsg && (
-        <div className="p-3.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs font-semibold flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
+        {errorMsg && (
+          <div className="p-3.5 rounded bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-xs font-semibold flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+            <button type="button" onClick={() => setErrorMsg(null)} className="hover:underline">
+              Dismiss
+            </button>
           </div>
-          <button type="button" onClick={() => setErrorMsg(null)} className="hover:underline">
-            Dismiss
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Selective Additional KPI Recommendations (Shown only when warranted) */}
       {trackerState.recommendedAdditionalKpis.length > 0 && (

@@ -98,10 +98,22 @@ export interface ServerUserAccountState {
   updatedAt: string;
 }
 
+export interface PilotFeedbackStoreRecord {
+  id: string;
+  uid: string;
+  email?: string;
+  caseId?: string;
+  area: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface PersistentSaasStoreData {
   users: Record<string, ServerUserAccountState>;
   caseOwners: Record<string, string>;
   processedWebhookEventIds: string[];
+  pilotFeedback?: PilotFeedbackStoreRecord[];
 }
 
 export function getCurrentMonthKey(): string {
@@ -183,13 +195,16 @@ export class DurableSaasStore {
           processedWebhookEventIds: Array.isArray(parsed?.processedWebhookEventIds)
             ? parsed.processedWebhookEventIds.slice(-500)
             : [],
+          pilotFeedback: Array.isArray(parsed?.pilotFeedback)
+            ? parsed.pilotFeedback.slice(-500)
+            : [],
         };
         return this.cached;
       }
     } catch (err: any) {
       console.warn('SaaS store read notice, starting fresh:', err?.message || err);
     }
-    this.cached = { users: {}, caseOwners: {}, processedWebhookEventIds: [] };
+    this.cached = { users: {}, caseOwners: {}, processedWebhookEventIds: [], pilotFeedback: [] };
     return this.cached;
   }
 
@@ -249,6 +264,19 @@ export class DurableSaasStore {
       }
       this.save();
     }
+  }
+
+  addPilotFeedbackEntry(entry: PilotFeedbackStoreRecord): PilotFeedbackStoreRecord {
+    const state = this.load();
+    if (!Array.isArray(state.pilotFeedback)) {
+      state.pilotFeedback = [];
+    }
+    state.pilotFeedback.unshift(entry);
+    if (state.pilotFeedback.length > 500) {
+      state.pilotFeedback = state.pilotFeedback.slice(0, 500);
+    }
+    this.save();
+    return entry;
   }
 
   findUserByStripeIds(subscriptionId?: string | null, customerId?: string | null): ServerUserAccountState | null {
@@ -428,6 +456,7 @@ export class DurableSaasStore {
         stripeSubscriptionId: userState.stripeSubscriptionId || null,
         stripeConfigured,
         billingMode,
+        pilotMode: !stripeConfigured,
         isAdmin: isAdminEmail(email || userState.email),
       },
     };

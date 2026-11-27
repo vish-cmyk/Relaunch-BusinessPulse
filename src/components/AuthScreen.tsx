@@ -330,17 +330,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 </div>
 
                 {/* Context Notice */}
-                <div className="mb-5 text-xs text-[#475569] bg-[#F8FAFC] p-3.5 rounded border border-[#0F172A]/10 leading-relaxed">
+                <div className="mb-5 text-xs text-[#475569] bg-[#F8FAFC] p-3.5 rounded border border-[#0F172A]/10 leading-relaxed space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#15803D]">
+                    <span>Invitation-Only SME Pilot · Free Access</span>
+                  </div>
                   {mode === 'signin' && (
                     <p>
-                      Sign in to resume your saved SME health diagnostics, continuity reviews, CRM follow-ups, and 30/60/90-day action plans.
+                      Sign in with your invited email to resume your saved SME health diagnostics, continuity reviews, CRM follow-ups, and 30/60/90-day action plans.
                     </p>
                   )}
                   {mode === 'register' && (
                     <p>
                       {preferredPlanLabel
-                        ? `Starting with Free Trial (selected interest: ${preferredPlanLabel}). Create your private account first — no card required, and you can upgrade inside Account & Billing anytime.`
-                        : 'Create your private coaching account on Free Trial (no card required). Each business stays isolated inside your personal workspace vault.'}
+                        ? `Starting with Free Pilot Access (noted tier interest: ${preferredPlanLabel}). Create your private account — no payment card is requested or billed during the pilot.`
+                        : 'Create your private pilot account at zero cost (no card required). Each business stays isolated inside your personal workspace vault.'}
                     </p>
                   )}
                   {mode === 'forgot' && (

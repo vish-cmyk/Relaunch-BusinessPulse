@@ -16,7 +16,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { AccountUsageSummary, CaseRecord } from '../types/bizpulse';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth } from '../services/firebase';
 import { PUBLIC_MEMBERSHIP_PLANS, MEMBERSHIP_BILLING_POLICIES } from '../data/membershipPlans';
 
 interface CheckoutModalProps {
@@ -96,10 +96,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     let cancelled = false;
     (async () => {
       try {
-        const authHeaders = await getAuthHeaders();
-        const res = await fetch('/api/admin/metrics', { headers: authHeaders });
-        if (!res.ok) return;
-        const data = await res.json();
+        const { data } = await apiFetchWithAuth<{ adminMetrics?: AdminMetricsData }>(
+          '/api/admin/metrics',
+          { method: 'GET' }
+        );
         if (!cancelled && data.adminMetrics) {
           setAdminMetrics(data.adminMetrics);
         }
@@ -115,6 +115,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   if (!isOpen) return null;
 
   const sub = accountUsage?.subscription;
+  const isPilotMode = sub?.stripeConfigured === false || sub?.pilotMode === true;
   const limits = accountUsage?.limits || FREE_PLAN.limits;
   const used = accountUsage?.used || {
     coachMessages: 0,
@@ -137,33 +138,37 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const isCanceling = sub?.status === 'canceling';
 
   const handleCheckoutAction = async () => {
+    if (isPilotMode) {
+      setNotice({
+        tone: 'info',
+        text: 'Invitation-only pilot mode is active. All testing features run free without card checkout during this controlled pilot.',
+      });
+      return;
+    }
     setIsLoading(true);
     setNotice(null);
 
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/payment/create-checkout-session', {
+      const { data } = await apiFetchWithAuth<{
+        configured?: boolean;
+        checkoutUrl?: string;
+        error?: string;
+      }>('/api/payment/create-checkout-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           businessName: caseRecord.profile.name,
           userEmail: userEmail || undefined,
           tierId: selectedTier,
-        }),
+        },
       });
 
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || data.configured === false) {
+      if (data.configured === false) {
         setNotice({
           tone: 'info',
           text:
             data.error ||
-            'Stripe billing is not configured on this server yet. Live card checkout activates once STRIPE_SECRET_KEY is configured.',
+            'Invitation-only pilot mode is active. Card checkout is disabled during the pilot phase.',
         });
         return;
       }
@@ -188,16 +193,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setIsLoading(true);
     setNotice(null);
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/payment/create-portal-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.portalUrl) {
+      const { data } = await apiFetchWithAuth<{ portalUrl?: string; error?: string }>(
+        '/api/payment/create-portal-session',
+        { method: 'POST' }
+      );
+      if (!data.portalUrl) {
         setNotice({
           tone: 'info',
           text: data.error || 'Billing portal is only available after a live Stripe subscription is active.',
@@ -216,18 +216,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setIsLoading(true);
     setNotice(null);
     try {
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/payment/cancel-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to cancel subscription.');
-      }
+      const { data } = await apiFetchWithAuth<{ accountUsage?: AccountUsageSummary }>(
+        '/api/payment/cancel-subscription',
+        { method: 'POST' }
+      );
       if (data.accountUsage) {
         onUsageUpdated?.(data.accountUsage);
       }
@@ -290,10 +282,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#60A5FA] block">
-                Membership Plan, AI Allowances &amp; Data Ownership
+                {isPilotMode ? 'Invitation-Only Pilot Access · AI Allowances & Data Ownership' : 'Membership Plan, AI Allowances & Data Ownership'}
               </span>
               <h3 className="text-lg sm:text-xl font-bold text-white">
-                {sub?.planName || 'Free Trial'} · {userEmail || 'Authenticated Account'}
+                {isPilotMode && activeTierId === 'free_trial' ? 'Pilot Access (Free)' : sub?.planName || 'Free Trial'} · {userEmail || 'Authenticated Account'}
               </h3>
             </div>
           </div>
@@ -327,12 +319,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           )}
 
-          {!sub?.stripeConfigured && (
-            <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#0F172A] flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
+          {isPilotMode && (
+            <div className="p-3.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-xs text-[#0F172A] flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[#1D4ED8]">Account Quotas Active · Billing Not Enabled Yet: </strong>
-                Monthly allowances and token metering are actively enforced per account. Card checkout activates automatically once Stripe server keys are connected.
+                <strong className="text-[#15803D]">Invitation-Only SME Pilot Active (Free Testing Phase): </strong>
+                Your workspace operates free of charge with no card required during this controlled pilot. Monthly AI allowances protect fair use while billing remains deactivated.
               </div>
             </div>
           )}
@@ -482,21 +474,36 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           {/* Subscription Action Buttons */}
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleCheckoutAction}
-                disabled={isLoading}
-                className="flex-1 min-w-[220px] py-3 px-4 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition"
-              >
-                <CreditCard className="w-4 h-4 text-[#60A5FA]" />
+            {isPilotMode ? (
+              <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-xs text-[#475569] flex flex-wrap items-center justify-between gap-3">
                 <span>
-                  {isLoading
-                    ? 'Contacting Billing Server...'
-                    : `Continue with ${selectedPlanObj.name} (NZ$${selectedPlanObj.priceNzd}/mo)`}
+                  <strong className="text-[#0F172A]">Paid Checkout Disabled During Pilot:</strong>{' '}
+                  You do not need to enter payment details or upgrade during the 5-owner pilot.
                 </span>
-                <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
-              </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded bg-[#0B1324] hover:bg-[#172554] text-white font-semibold text-xs transition"
+                >
+                  Return to Workspace
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleCheckoutAction}
+                  disabled={isLoading}
+                  className="flex-1 min-w-[220px] py-3 px-4 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition"
+                >
+                  <CreditCard className="w-4 h-4 text-[#60A5FA]" />
+                  <span>
+                    {isLoading
+                      ? 'Contacting Billing Server...'
+                      : `Continue with ${selectedPlanObj.name} (NZ$${selectedPlanObj.priceNzd}/mo)`}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                </button>
 
               {isPaidActive && (
                 <>
@@ -519,7 +526,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </button>
                 </>
               )}
+              {!isPilotMode && (
+                <div className="hidden" />
+              )}
             </div>
+            )}
 
             <div className="p-3.5 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-[11px] text-[#475569] space-y-1">
               <p>

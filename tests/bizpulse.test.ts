@@ -670,3 +670,52 @@ test('10. Coaching Plan & 9-Section Business Health Report exports produce valid
   assert.ok(fullXml.includes('KPI'));
   assert.ok(fullXml.includes('Action Plan'));
 });
+
+test('11. Pilot feedback entries persist across DurableSaasStore restarts and pilotMode flags correctly when Stripe is off', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bizpulse-pilot-test-'));
+  try {
+    const storePath = path.join(tempDir, 'pilot-saas.json');
+    const store1 = new DurableSaasStore(storePath);
+
+    const saved = store1.addPilotFeedbackEntry({
+      id: 'fb-test-1',
+      uid: 'uid_pilot_1',
+      email: 'pilot@business.co.nz',
+      caseId: 'case-123',
+      area: '2. Business Health (12 Capabilities)',
+      rating: 5,
+      comment: 'Clear diagnostic and helpful bottom summary bar.',
+      createdAt: new Date().toISOString(),
+    });
+    assert.ok(saved.id.startsWith('fb-'));
+
+    const summary = store1.buildAccountUsageSummary(
+      'uid_pilot_1',
+      false,
+      'unconfigured',
+      'pilot@business.co.nz'
+    );
+    assert.equal(summary.subscription.stripeConfigured, false);
+    assert.equal(summary.subscription.pilotMode, true);
+
+    const liveSummary = store1.buildAccountUsageSummary(
+      'uid_pilot_1',
+      true,
+      'live',
+      'pilot@business.co.nz'
+    );
+    assert.equal(liveSummary.subscription.stripeConfigured, true);
+    assert.equal(liveSummary.subscription.pilotMode, false);
+
+    // Reload from disk and verify persistence
+    const store2 = new DurableSaasStore(storePath);
+    const reloadedRaw = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+    assert.ok(Array.isArray(reloadedRaw.pilotFeedback));
+    assert.equal(reloadedRaw.pilotFeedback.length, 1);
+    assert.equal(reloadedRaw.pilotFeedback[0].comment, 'Clear diagnostic and helpful bottom summary bar.');
+    assert.ok(store2.getOrInitUser('uid_pilot_1'));
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+

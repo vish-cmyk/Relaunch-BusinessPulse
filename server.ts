@@ -2886,8 +2886,44 @@ Return strictly valid JSON with:
     }
   });
 
+  app.post('/api/pilot/feedback', requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const rawArea = String(req.body?.area || 'General Experience').trim().slice(0, 80);
+      const rawComment = String(req.body?.comment || '').trim().slice(0, 2000);
+      const rawCaseId = String(req.body?.caseId || '').trim().slice(0, 120);
+      const ratingNum = Math.min(5, Math.max(1, Math.round(Number(req.body?.rating) || 5)));
+
+      if (!rawComment) {
+        return res.status(400).json({ error: 'Please include brief feedback notes before submitting.' });
+      }
+
+      const savedEntry = saasStore.addPilotFeedbackEntry({
+        id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        uid,
+        email: req.user?.email || undefined,
+        caseId: rawCaseId || undefined,
+        area: rawArea || 'General Experience',
+        rating: ratingNum,
+        comment: rawComment,
+        createdAt: new Date().toISOString(),
+      });
+
+      return res.json({ saved: true, entry: savedEntry });
+    } catch (err: any) {
+      console.error('Pilot feedback save error:', err);
+      const safe = toSafeApiError(err, 'Unable to submit pilot feedback.');
+      return res.status(safe.status).json({ error: safe.message });
+    }
+  });
+
   app.get('/api/health', (_req, res) => {
-    res.status(200).json({ ok: true });
+    res.status(200).json({
+      ok: true,
+      aiConfigured: Boolean(process.env.GEMINI_API_KEY),
+      billingMode: billingModeResolved,
+      pilotMode: !isStripeConfigured,
+    });
   });
 
   if (!isProduction) {

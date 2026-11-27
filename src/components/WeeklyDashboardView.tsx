@@ -29,7 +29,7 @@ import {
   captureMetricSnapshot,
   createJoiningBaseline,
 } from '../services/continuityEngine';
-import { getAuthHeaders } from '../services/firebase';
+import { apiFetchWithAuth, sanitizeDocumentsForAiPayload } from '../services/firebase';
 import { KpiTrackerView } from './KpiTrackerView';
 
 export type ContinuitySubTab = 'scoreboard' | 'kpis' | 'baseline' | 'weekly' | 'monthly' | 'quarterly';
@@ -159,14 +159,12 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
 
     try {
       const baseContinuity = ensureBaseline(continuity);
-      const authHeaders = await getAuthHeaders();
-      const response = await fetch('/api/continuity/generate-review', {
+      const { data } = await apiFetchWithAuth<{
+        review?: any;
+        accountUsage?: AccountUsageSummary;
+      }>('/api/continuity/generate-review', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({
+        body: {
           caseId: caseRecord.id,
           reviewType,
           ownerReflection: reviewType === 'weekly' ? weeklyNote : monthlyReflection,
@@ -174,22 +172,17 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
           healthInputs: caseRecord.healthInputs,
           financials: caseRecord.financials,
           overallHealth: caseRecord.overallHealth,
-          uploadedDocuments: caseRecord.uploadedDocuments || [],
+          uploadedDocuments: sanitizeDocumentsForAiPayload(caseRecord.uploadedDocuments || []),
           crossDocumentSynthesis: caseRecord.crossDocumentSynthesis || null,
           crmContacts: caseRecord.crmContacts || [],
           roiScenarios: caseRecord.roiScenarios || [],
           recommendations: caseRecord.recommendations,
           actionPlan: caseRecord.actionPlan || [],
           continuity: baseContinuity,
-        }),
+        },
       });
 
-      const data = await response.json().catch(() => ({}));
       if (data.accountUsage) onAccountUsageUpdate?.(data.accountUsage);
-
-      if (!response.ok) {
-        throw new Error(data.error || `Unable to generate AI ${reviewType} review.`);
-      }
 
       const aiReview = data.review || {};
       if (reviewType === 'weekly') {
@@ -287,6 +280,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
         showTempNotice(`Generated AI Quarterly Sustainability Review for ${entry.quarterLabel}.`);
       }
     } catch (err: any) {
+      if (err?.accountUsage) onAccountUsageUpdate?.(err.accountUsage);
       setAiError(err.message || 'Unable to generate AI continuity review.');
     } finally {
       setIsGeneratingAi(null);

@@ -416,6 +416,7 @@ export interface AccountUsageSummary {
     stripeSubscriptionId?: string | null;
     stripeConfigured: boolean;
     billingMode?: 'live' | 'test' | 'unconfigured';
+    pilotMode?: boolean;
     isAdmin?: boolean;
   };
 }
@@ -760,12 +761,22 @@ export interface CaseRecord {
   kpiTracker?: KpiTrackerState | null;
   reportBlocks?: ReportCustomBlock[];
   reportEditorSettings?: ReportEditorSettings;
+  pilotFeedback?: PilotFeedbackEntry[];
   subscriptionTier?: SubscriptionTierId;
   usageStats?: CaseUsageStats;
   paymentStatus?: PaymentStatus;
   paymentRecord?: PaymentRecord | null;
   isUnlocked?: boolean;
   updatedAt: string;
+}
+
+export interface PilotFeedbackEntry {
+  id: string;
+  area: string;
+  rating: number;
+  comment: string;
+  caseName?: string;
+  createdAt: string;
 }
 
 export interface ScriptPreset {

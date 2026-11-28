@@ -425,7 +425,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#2563EB] text-white flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#F5761A] text-[#0F172A] flex items-center gap-1">
                 <ShieldAlert className="w-3.5 h-3.5" />
                 Challenge Me
               </span>
@@ -448,7 +448,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
               disabled={isLoading}
               className="flex items-center space-x-1.5 px-4 py-2 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap shrink-0 self-start lg:self-center"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <RotateCcw className="w-3.5 h-3.5 text-[#6495ED]" />
               <span>Start New Challenge</span>
             </button>
           )}
@@ -462,7 +462,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
           </div>
           <div className="bg-white/5 rounded px-3 py-2 border border-white/10">
             <span className="text-[10px] uppercase tracking-wider text-[#94A3B8] block">Health Score</span>
-            <strong className="text-[#60A5FA] font-mono tabular-nums">
+            <strong className="text-[#6495ED] font-mono tabular-nums">
               {overallHealth?.overallScore !== null && overallHealth?.overallScore !== undefined
                 ? `${overallHealth.overallScore}/100 · ${overallHealth.overallRating}`
                 : overallHealth?.overallRating || 'Pending'}
@@ -520,7 +520,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white border border-[#0F172A]/12 rounded p-6 sm:p-7 space-y-5 shadow-xs">
             <div className="space-y-1">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                 Configure Interrogation Focus
               </span>
               <h3 className="text-lg font-bold text-[#0F172A]">
@@ -544,12 +544,12 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                     }}
                     className={`p-3.5 rounded border text-left text-xs font-semibold transition flex items-center justify-between gap-2 ${
                       isSelected
-                        ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                        : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/12 hover:border-[#2563EB]'
+                        ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
+                        : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/12 hover:border-[#0F52BA]'
                     }`}
                   >
                     <span>{preset}</span>
-                    {isSelected && <ArrowRight className="w-3.5 h-3.5 text-[#60A5FA] shrink-0" />}
+                    {isSelected && <ArrowRight className="w-3.5 h-3.5 text-[#6495ED] shrink-0" />}
                   </button>
                 );
               })}
@@ -564,7 +564,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                 value={customFocus}
                 onChange={(e) => setCustomFocus(e.target.value)}
                 placeholder="e.g., Should we hire another senior technician before clearing overdue accounts?"
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA]"
               />
             </div>
 
@@ -576,7 +576,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                 type="button"
                 onClick={handleStartChallenge}
                 disabled={isLoading}
-                className="inline-flex items-center space-x-2 px-6 py-3 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition whitespace-nowrap"
+                className="inline-flex items-center space-x-2 px-6 py-3 rounded bg-[#F5761A] hover:bg-[#E0650E] disabled:opacity-50 text-[#0F172A] text-xs font-bold uppercase tracking-wider transition whitespace-nowrap"
               >
                 {isLoading ? (
                   <>
@@ -675,14 +675,14 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                   key={round.id}
                   className={`bg-white rounded border transition ${
                     isCurrentOpen
-                      ? 'border-[#2563EB] shadow-sm'
+                      ? 'border-[#0F52BA] shadow-sm'
                       : 'border-[#0F172A]/12'
                   }`}
                 >
                   {/* Round Header */}
                   <div className="px-6 py-3.5 bg-[#F8FAFC] border-b border-[#0F172A]/10 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <span className="px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA] font-mono font-bold text-[11px]">
+                      <span className="px-2 py-0.5 rounded bg-[#0A2E6E] text-[#6495ED] font-mono font-bold text-[11px]">
                         Round {round.roundNumber}
                       </span>
                       <span className="text-xs font-bold text-[#0F172A]">
@@ -715,7 +715,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
 
                     {/* Single Pointed Question */}
                     <div className="space-y-1">
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB] block">
+                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] block">
                         Challenge Question:
                       </span>
                       <p className="text-base sm:text-lg font-bold text-[#0F172A] leading-snug">
@@ -726,8 +726,8 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                     {/* Owner Response + Business Implication (when answered) */}
                     {isAnswered && (
                       <div className="space-y-3 pt-2 border-t border-[#0F172A]/10">
-                        <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#1D4ED8] block">
+                        <div className="p-4 rounded bg-[#EDF3FD] border border-[#B7CEF7] space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#0F52BA] block">
                             Your Response
                           </span>
                           <p className="text-xs sm:text-sm text-[#0F172A] whitespace-pre-wrap leading-relaxed">
@@ -737,7 +737,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
 
                         {round.businessImplication && (
                           <div className="p-4 rounded bizpulse-hero-gradient text-white space-y-1.5">
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#60A5FA] block">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#6495ED] block">
                               Business &amp; Financial Implication
                             </span>
                             <p className="text-xs sm:text-sm text-[#F1F5F9] whitespace-pre-wrap leading-relaxed">
@@ -760,7 +760,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                           onChange={(e) => setOwnerResponse(e.target.value)}
                           disabled={isLoading}
                           placeholder="State your reasoning, numbers, trade-offs, or how you would actually execute this under pressure..."
-                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
+                          className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA]"
                         />
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           {answeredRoundsCount >= 1 ? (
@@ -770,7 +770,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                               disabled={isLoading}
                               className="px-4 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition flex items-center gap-1.5"
                             >
-                              <Flag className="w-3.5 h-3.5 text-[#2563EB]" />
+                              <Flag className="w-3.5 h-3.5 text-[#0F52BA]" />
                               <span>Conclude &amp; Extract Decisions</span>
                             </button>
                           ) : (
@@ -782,17 +782,17 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                           <button
                             type="submit"
                             disabled={isLoading || !ownerResponse.trim()}
-                            className="px-5 py-2.5 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap"
+                            className="px-5 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition whitespace-nowrap"
                           >
                             {isLoading ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 text-[#60A5FA] animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
                                 <span>Evaluating Implication...</span>
                               </>
                             ) : (
                               <>
                                 <span>Submit Response &amp; Continue</span>
-                                <Send className="w-3.5 h-3.5 text-[#60A5FA]" />
+                                <Send className="w-3.5 h-3.5 text-white" />
                               </>
                             )}
                           </button>
@@ -811,7 +811,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                   type="button"
                   onClick={() => concludeSession()}
                   disabled={isLoading}
-                  className="px-5 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition"
+                  className="px-5 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Flag className="w-4 h-4" />}
                   <span>Generate Challenge Conclusions &amp; Next Actions</span>
@@ -822,10 +822,10 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
 
           {/* Concluded Insights, Decisions & Practical Next Actions */}
           {session.status === 'concluded' && session.conclusion && (
-            <div className="bg-white border-2 border-[#0F172A] rounded p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="bg-white border-2 border-[#0A2E6E] rounded p-6 sm:p-8 space-y-6 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#0F172A]/10">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB] flex items-center gap-1.5">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
                     Challenge Me Conclusion ({session.focusTopic})
                   </span>
@@ -841,9 +841,9 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                       `Let's follow up on my Challenge Me session ("${session.focusTopic}"). Key decisions flagged: ${session.conclusion?.recommendedDecisions.slice(0, 2).join('; ')}. Help me pressure-test implementation.`
                     )
                   }
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold transition whitespace-nowrap"
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold transition whitespace-nowrap"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <MessageSquare className="w-3.5 h-3.5 text-[#6495ED]" />
                   <span>Continue in Chat with Coach</span>
                 </button>
               </div>
@@ -856,7 +856,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                   <ul className="space-y-2 text-xs text-[#0F172A]">
                     {session.conclusion.keyInsights.map((ins, i) => (
                       <li key={i} className="leading-relaxed flex items-start gap-2">
-                        <span className="text-[#2563EB] font-bold">•</span>
+                        <span className="text-[#0F52BA] font-bold">•</span>
                         <span>{ins}</span>
                       </li>
                     ))}
@@ -917,7 +917,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                         className={`px-3.5 py-2 rounded text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition ${
                           act.addedToPlan
                             ? 'bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] cursor-default'
-                            : 'bg-[#0F172A] hover:bg-[#1E293B] text-white'
+                            : 'bg-[#0A2E6E] hover:bg-[#0F52BA] text-white'
                         }`}
                       >
                         {act.addedToPlan ? (
@@ -927,7 +927,7 @@ export const ChallengeMeView: React.FC<ChallengeMeViewProps> = ({
                           </>
                         ) : (
                           <>
-                            <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
+                            <Plus className="w-3.5 h-3.5 text-[#6495ED]" />
                             <span>Add to Action Plan</span>
                           </>
                         )}

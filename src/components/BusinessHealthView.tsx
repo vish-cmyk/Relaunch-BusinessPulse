@@ -79,16 +79,16 @@ const SHORT_LABELS: Record<HealthDimensionKey, string> = {
 };
 
 const DIMENSION_COLORS: Record<HealthDimensionKey, string> = {
-  money: '#2563EB',
+  money: '#0F52BA',
   pricingMargins: '#D97706',
   operations: '#0F766E',
   customers: '#7C3AED',
   ownerDependency: '#DC2626',
-  sales: '#0284C7',
-  direction: '#0F172A',
+  sales: '#6495ED',
+  direction: '#0A2E6E',
   people: '#15803D',
   competition: '#B45309',
-  scalability: '#4F46E5',
+  scalability: '#F5761A',
   technology: '#0891B2',
   sustainability: '#059669',
 };
@@ -295,12 +295,12 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
         };
       case 'not_sure':
         return {
-          bg: 'bg-[#EFF6FF]',
-          border: 'border-[#BFDBFE]',
-          activeBorder: 'border-[#1D4ED8]',
-          text: 'text-[#1D4ED8]',
-          barColor: '#2563EB',
-          badge: 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]',
+          bg: 'bg-[#EDF3FD]',
+          border: 'border-[#B7CEF7]',
+          activeBorder: 'border-[#0F52BA]',
+          text: 'text-[#0F52BA]',
+          barColor: '#0F52BA',
+          badge: 'bg-[#EDF3FD] text-[#0F52BA] border-[#B7CEF7]',
           label: 'Insufficient Info / Not Sure',
           defaultScore: null,
           icon: HelpCircle,
@@ -308,12 +308,12 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
       case 'unanswered':
       default:
         return {
-          bg: 'bg-[#EFF6FF]',
-          border: 'border-[#DBEAFE]',
-          activeBorder: 'border-[#2563EB]',
-          text: 'text-[#1D4ED8]',
-          barColor: '#3B82F6',
-          badge: 'bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]',
+          bg: 'bg-[#EDF3FD]',
+          border: 'border-[#DCE8FC]',
+          activeBorder: 'border-[#0F52BA]',
+          text: 'text-[#0F52BA]',
+          barColor: '#6495ED',
+          badge: 'bg-[#EDF3FD] text-[#0F52BA] border-[#DCE8FC]',
           label: 'Unanswered (Info Needed)',
           defaultScore: null,
           icon: Clock,
@@ -322,7 +322,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
   };
 
   const getScoreTextColor = (score: number | null) => {
-    if (score === null) return 'text-[#1D4ED8]';
+    if (score === null) return 'text-[#0F52BA]';
     if (score >= 72) return 'text-[#15803D]';
     if (score >= 45) return 'text-[#B45309]';
     return 'text-[#B91C1C]';
@@ -332,7 +332,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
     if (rating === 'Healthy') return 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0]';
     if (rating === 'Needs Attention') return 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]';
     if (rating === 'At Risk') return 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]';
-    return 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]';
+    return 'bg-[#EDF3FD] text-[#0F52BA] border-[#B7CEF7]';
   };
 
   const getDetailForDimension = (key: HealthDimensionKey): DimensionScoreDetail | undefined => {
@@ -398,8 +398,8 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
 
           <polygon
             points={polygonPoints}
-            fill="rgba(37, 99, 235, 0.16)"
-            stroke="#2563EB"
+            fill="rgba(100, 149, 237, 0.22)"
+            stroke="#0F52BA"
             strokeWidth="2"
           />
 
@@ -447,7 +447,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="bizpulse-label text-[#60A5FA]">
+              <span className="bizpulse-label text-[#6495ED]">
                 [02] 12-Capability Diagnostic
               </span>
               <span className="text-[#94A3B8] text-xs font-medium">
@@ -468,13 +468,13 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
               onClick={onRecalculateOverall}
               className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <RefreshCw className="w-3.5 h-3.5 text-[#6495ED]" />
               <span>Recalculate Score</span>
             </button>
             <button
               type="button"
               onClick={onProceedToRecommendations}
-              className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider shadow-sm transition whitespace-nowrap"
+              className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider shadow-sm transition whitespace-nowrap"
             >
               <span>Generate Coaching Plan</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -490,7 +490,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
           </span>
           <div className="w-56 bg-white/10 rounded-full h-2 overflow-hidden border border-white/15">
             <div
-              className="bg-[#2563EB] h-full rounded-full transition-all duration-300"
+              className="bg-[#6495ED] h-full rounded-full transition-all duration-300"
               style={{ width: `${(answeredCount / 12) * 100}%` }}
             />
           </div>
@@ -506,8 +506,8 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
         >
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#0F172A]/10">
             <div className="space-y-2 max-w-2xl">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB] flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-[#2563EB]" />
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-[#0F52BA]" />
                 Overall Health Summary
               </span>
               <h3 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
@@ -542,7 +542,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                 <button
                   type="button"
                   onClick={() => cardsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2563EB] hover:underline pt-1"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F52BA] hover:underline pt-1"
                 >
                   <span>Jump to 12 Capability Cards Below ({12 - answeredCount} remaining) &darr;</span>
                 </button>
@@ -579,7 +579,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
-                  <Target className="w-4 h-4 text-[#2563EB]" />
+                  <Target className="w-4 h-4 text-[#0F52BA]" />
                   Top 3 Improvement Priorities
                 </span>
                 <span className="text-[11px] text-[#475569]">
@@ -593,10 +593,16 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                     <div
                       key={p.key}
                       onClick={() => setExpandedDimension(p.key)}
-                      className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] cursor-pointer transition space-y-2"
+                      className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#0F52BA] cursor-pointer transition space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA] font-mono font-bold text-[11px]">
+                        <span
+                          className={`px-2 py-0.5 rounded font-mono font-bold text-[11px] ${
+                            p.rank === 1
+                              ? 'bg-[#F5761A] text-[#0F172A]'
+                              : 'bg-[#0A2E6E] text-[#6495ED]'
+                          }`}
+                        >
                           Priority #{p.rank}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.badge}`}>
@@ -606,7 +612,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                       <h4 className="font-bold text-[#0F172A] text-sm">{p.title}</h4>
                       <p className="text-[#475569] leading-relaxed">{p.rationale}</p>
                       <div className="pt-1.5 border-t border-[#0F172A]/10 text-[#0F172A]">
-                        <strong className="text-[#2563EB]">Focus: </strong>
+                        <strong className="text-[#0F52BA]">Focus: </strong>
                         {p.recommendedFocus}
                       </div>
                     </div>
@@ -635,7 +641,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                     <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" /> At Risk
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" /> Insufficient Info
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#0F52BA]" /> Insufficient Info
                   </span>
                 </div>
               </div>
@@ -646,7 +652,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             <div className="bg-[#F8FAFC] rounded border border-[#0F172A]/10 p-5 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
-                  <BarChart2 className="w-4 h-4 text-[#2563EB]" />
+                  <BarChart2 className="w-4 h-4 text-[#0F52BA]" />
                   Capability Score Comparison
                 </span>
                 <span className="text-[11px] text-[#475569] font-mono tabular-nums">Scale 0–100</span>
@@ -695,7 +701,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                  <TrendingUp className="w-4 h-4 text-[#0F52BA]" />
                   Health Dimension Trajectory (Last 3 Saved Sessions)
                 </span>
                 <p className="text-[11px] text-[#475569] mt-0.5 tabular-nums">
@@ -714,8 +720,8 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                       onClick={() => handleSelectPreset(presetId)}
                       className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                         isActive
-                          ? 'bg-[#0F172A] text-white'
-                          : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
+                          ? 'bg-[#0A2E6E] text-white'
+                          : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#EDF3FD]'
                       }`}
                     >
                       {TRAJECTORY_PRESETS[presetId].label}
@@ -738,7 +744,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                     aria-pressed={selected}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold border transition ${
                       selected
-                        ? 'bg-white text-[#0F172A] border-[#0F172A]/25 shadow-2xs'
+                        ? 'bg-white text-[#0F172A] border-[#0F52BA]/40 shadow-2xs'
                         : 'bg-transparent text-[#64748B] border-[#0F172A]/10 hover:text-[#0F172A]'
                     }`}
                   >
@@ -794,14 +800,14 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                       if (!active || !payload || payload.length === 0) return null;
                       const pt = payload[0]?.payload;
                       return (
-                        <div className="bg-[#0F172A] text-white rounded border border-white/15 p-3 shadow-lg text-xs space-y-2 max-w-xs">
+                        <div className="bg-[#071936] text-white rounded border border-[#6495ED]/30 p-3 shadow-lg text-xs space-y-2 max-w-xs">
                           <div className="border-b border-white/15 pb-1.5">
                             <div className="font-bold text-white truncate">
                               {pt?.fullSessionName}
                               {pt?.isActive ? ' (Active)' : ''}
                               {pt?.isDemo ? ' · Sample Demo' : ''}
                             </div>
-                            <div className="text-[11px] text-[#94A3B8] font-mono tabular-nums">
+                            <div className="text-[11px] text-[#B7CEF7] font-mono tabular-nums">
                               Updated {pt?.updatedAtLabel} · Overall:{' '}
                               {pt?.overallScore !== null && pt?.overallScore !== undefined
                                 ? `${pt.overallScore}/100`
@@ -899,8 +905,8 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
               )}
             </div>
 
-            <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-1.5">
-              <span className="font-bold text-[#1D4ED8] uppercase tracking-wider block">
+            <div className="p-4 rounded bg-[#EDF3FD] border border-[#B7CEF7] space-y-1.5">
+              <span className="font-bold text-[#0F52BA] uppercase tracking-wider block">
                 Insufficient Info / Unverified Areas (Blue)
               </span>
               {overallHealth.missingEvidenceAreas.length > 0 ? (
@@ -926,7 +932,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
       <div ref={cardsTopRef} className="space-y-3.5 scroll-mt-24">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
           <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#2563EB]" />
+            <Layers className="w-4 h-4 text-[#0F52BA]" />
             <span>The Twelve Business Health Capabilities</span>
           </h3>
           <span className="text-xs text-[#475569]">
@@ -948,7 +954,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
               key={key}
               className={`rounded border transition-all ${
                 isExpanded
-                  ? 'bg-white border-[#2563EB] shadow-sm'
+                  ? 'bg-white border-[#0F52BA] shadow-sm'
                   : 'bg-white border-[#0F172A]/12 hover:border-[#0F172A]/30'
               }`}
             >
@@ -958,7 +964,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                 className="p-5 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none"
               >
                 <div className="flex items-center space-x-3.5 min-w-0 flex-1">
-                  <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 tabular-nums">
+                  <span className="w-7 h-7 rounded bg-[#0A2E6E] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 tabular-nums">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
@@ -989,10 +995,10 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
               {isExpanded && (
                 <div className="px-5 pb-5 pt-3 border-t border-[#0F172A]/10 space-y-4">
                   {/* Adaptive Industry & Team-Size Guidance */}
-                  <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#0F172A] flex items-start gap-2">
-                    <Compass className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
+                  <div className="p-3.5 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-xs text-[#0F172A] flex items-start gap-2">
+                    <Compass className="w-4 h-4 text-[#0F52BA] shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-[#1D4ED8] uppercase tracking-wider text-[10px] block mb-0.5">
+                      <strong className="text-[#0A2E6E] uppercase tracking-wider text-[10px] block mb-0.5">
                         Tailored Diagnostic Prompt ({profile.industry}):
                       </strong>
                       {getAdaptiveGuidancePrompt(key, profile)}
@@ -1029,7 +1035,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                         </div>
                       </div>
                       <div className="p-2.5 rounded bg-white border border-black/10 text-[11px]">
-                        <strong className="text-[#1D4ED8] uppercase text-[10px] tracking-wider mr-1.5">5. Actionable Next Step:</strong>
+                        <strong className="text-[#0F52BA] uppercase text-[10px] tracking-wider mr-1.5">5. Actionable Next Step:</strong>
                         <span className="text-[#0F172A] font-medium">{detail.recommendedStep || detail.explanation}</span>
                       </div>
                     </div>
@@ -1053,7 +1059,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                               onClick={() => handleStatusChange(key, st)}
                               className={`p-3 rounded border text-left flex items-center space-x-2 transition ${
                                 isSelected
-                                  ? `${cfg.bg} ${cfg.activeBorder} ring-1 ring-[#2563EB]/30 ${cfg.text} font-bold shadow-2xs`
+                                  ? `${cfg.bg} ${cfg.activeBorder} ring-1 ring-[#0F52BA]/30 ${cfg.text} font-bold shadow-2xs`
                                   : 'bg-[#FCFCFC] border-[#0F172A]/12 text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
                               }`}
                             >
@@ -1085,7 +1091,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                             )
                           }
                           aria-label={`Evidence basis for ${item.title}`}
-                          className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1 text-[11px] font-semibold text-[#0F172A] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+                          className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-1 text-[11px] font-semibold text-[#0F172A] focus:outline-none focus:ring-1 focus:ring-[#0F52BA]"
                         >
                           <option value="verified">Verified Records</option>
                           <option value="owner_reported">Owner Reported</option>
@@ -1100,7 +1106,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
                       value={item.notes}
                       onChange={(e) => handleNotesChange(key, e.target.value)}
                       placeholder={`Describe concrete facts or bottlenecks in ${item.title.toLowerCase()}...`}
-                      className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
+                      className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs text-[#0F172A] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA]"
                     />
                   </div>
                 </div>
@@ -1113,10 +1119,10 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
       {/* Bottom Completion & Immediate Score Confirmation Bar */}
       <div className="bg-white border border-[#0F172A]/15 rounded p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
             <span>Assessment Status: {answeredCount} of 12 Capabilities Rated</span>
             {overallHealth?.overallScore !== null && overallHealth?.overallScore !== undefined && (
-              <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8] tabular-nums">
+              <span className="px-2 py-0.5 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-[#0A2E6E] tabular-nums">
                 Score: {overallHealth.overallScore}/100 ({overallHealth.overallRating})
               </span>
             )}
@@ -1132,9 +1138,9 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
           <button
             type="button"
             onClick={handleRecalculateAndViewResults}
-            className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap"
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#2563EB]" />
+            <RefreshCw className="w-3.5 h-3.5 text-[#0F52BA]" />
             <span>Save &amp; View Health Results &uarr;</span>
           </button>
           <button
@@ -1143,7 +1149,7 @@ export const BusinessHealthView: React.FC<BusinessHealthViewProps> = ({
               onRecalculateOverall();
               onProceedToRecommendations();
             }}
-            className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap"
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap"
           >
             <span>Next: Coaching &amp; Actions</span>
             <ArrowRight className="w-3.5 h-3.5" />

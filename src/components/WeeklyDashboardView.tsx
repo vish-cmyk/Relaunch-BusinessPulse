@@ -427,7 +427,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#2563EB] text-white">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#0F52BA] text-white">
                 Scoreboard &amp; Member Continuity
               </span>
               <span className="text-[#CBD5E1] text-xs font-medium">{businessName}</span>
@@ -446,7 +446,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
           </div>
 
           <div className="bg-white/5 border border-white/15 rounded p-4 min-w-[235px] text-center shrink-0 tabular-nums">
-            <span className="text-[11px] text-[#60A5FA] uppercase tracking-wider font-bold block">
+            <span className="text-[11px] text-[#6495ED] uppercase tracking-wider font-bold block">
               Continuity Memory
             </span>
             <div className="text-sm font-bold text-white mt-1">
@@ -500,7 +500,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                 onClick={() => setSubTab(item.id)}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-xs font-semibold transition ${
                   active
-                    ? 'bg-[#2563EB] text-white'
+                    ? 'bg-[#0F52BA] text-white'
                     : 'bg-white/10 hover:bg-white/20 text-[#CBD5E1]'
                 }`}
               >
@@ -617,14 +617,14 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
               return (
                 <div
                   key={kpi.id}
-                  className="bg-white border border-[#0F172A]/12 rounded p-6 flex flex-col justify-between transition-all hover:border-[#2563EB]"
+                  className="bg-white border border-[#0F172A]/12 rounded p-6 flex flex-col justify-between transition-all hover:border-[#0F52BA]"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F172A] px-2.5 py-0.5 rounded bg-[#F8FAFC] border border-[#0F172A]/15 font-mono">
                         {kpi.area}
                       </span>
-                      <span className="text-[11px] font-semibold text-[#1D4ED8] bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#BFDBFE]">
+                      <span className="text-[11px] font-semibold text-[#0F52BA] bg-[#EDF3FD] px-2 py-0.5 rounded border border-[#B7CEF7]">
                         {kpi.accountableRole}
                       </span>
                     </div>
@@ -687,13 +687,13 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
           {/* 45-Minute Monday Meeting Protocol */}
           <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8">
             <h3 className="text-lg font-bold text-[#0F172A] mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#2563EB]" />
+              <Calendar className="w-5 h-5 text-[#0F52BA]" />
               <span>45-Minute Monday Meeting Protocol</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
               <div className="p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-2">
-                <span className="font-bold text-[#2563EB] text-sm block">
+                <span className="font-bold text-[#0F52BA] text-sm block">
                   1. Minutes 0–15: Cash &amp; Debtors
                 </span>
                 <p className="text-[#475569] leading-relaxed">
@@ -738,7 +738,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
         <div className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#0F172A]/10 pb-4">
             <div>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                 At Joining Baseline
               </span>
               <h3 className="text-xl font-bold text-[#0F172A] mt-0.5">
@@ -749,7 +749,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={handleLockOrRefreshBaseline}
-                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider transition"
+                className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 {continuity.joiningBaseline
                   ? 'Refresh Baseline Snapshot'
@@ -778,8 +778,8 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                 </div>
 
                 {currentSnapshot && (
-                  <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-2 tabular-nums">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#1D4ED8] block">
+                  <div className="p-4 rounded bg-[#EDF3FD] border border-[#B7CEF7] space-y-2 tabular-nums">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] block">
                       Live Delta Since Joining
                     </span>
                     <div className="grid grid-cols-2 gap-2.5">
@@ -847,7 +847,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
           <div className="bg-white border border-[#0F172A]/12 rounded p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                   Weekly Business Pulse
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -861,14 +861,14 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
               value={weeklyNote}
               onChange={(e) => setWeeklyNote(e.target.value)}
               placeholder="What moved forward this week? Any debtor delays, team overload, quote wins, or stalled steps?"
-              className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
 
             <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
                 onClick={handleLogDeterministicWeeklyPulse}
-                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider transition"
+                className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 Save Weekly Pulse Snapshot (Free)
               </button>
@@ -876,7 +876,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                 type="button"
                 disabled={isGeneratingAi !== null}
                 onClick={() => handleGenerateAiContinuity('weekly')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 {isGeneratingAi === 'weekly' ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -952,8 +952,8 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                         <span className="text-[#475569]">Add CRM or coaching items to track.</span>
                       )}
                     </div>
-                    <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE]">
-                      <strong className="text-[#1D4ED8] block mb-1 uppercase text-[10px]">
+                    <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7]">
+                      <strong className="text-[#0F52BA] block mb-1 uppercase text-[10px]">
                         Next Week Priorities
                       </strong>
                       {pulse.nextWeekPriorities.length > 0 ? (
@@ -979,7 +979,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
         <div className="space-y-6">
           <div className="bg-white border border-[#0F172A]/12 rounded p-6 space-y-4">
             <div>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                 Monthly Business Review
               </span>
               <h3 className="text-lg font-bold text-[#0F172A]">
@@ -992,14 +992,14 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
               value={monthlyReflection}
               onChange={(e) => setMonthlyReflection(e.target.value)}
               placeholder="Summarize this month's sales, margin pressures, staffing updates, or debtor changes..."
-              className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#F8FAFC] border border-[#0F172A]/15 rounded px-4 py-2.5 text-xs sm:text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
 
             <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
                 onClick={handleLogDeterministicMonthlyReview}
-                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider transition"
+                className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 Run Monthly Comparison (Free)
               </button>
@@ -1007,7 +1007,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                 type="button"
                 disabled={isGeneratingAi !== null}
                 onClick={() => handleGenerateAiContinuity('monthly')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 {isGeneratingAi === 'monthly' ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1063,7 +1063,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                   </p>
 
                   {rev.comparisonToPreviousReview && (
-                    <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-mono tabular-nums">
+                    <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-[#0A2E6E] font-mono tabular-nums">
                       Compared vs previous review ({rev.comparisonToPreviousReview.previousMonth}):{' '}
                       Health {formatDelta(rev.comparisonToPreviousReview.healthScoreChange, '', ' pts')} ·{' '}
                       Cash {formatDelta(rev.comparisonToPreviousReview.cashChange, `${currency} `)}
@@ -1122,7 +1122,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                   </div>
 
                   {rev.missingInfoNeeded.length > 0 && (
-                    <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8]">
+                    <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-[#0F52BA]">
                       <strong>Missing Data Needed to Verify Progress:</strong>{' '}
                       {rev.missingInfoNeeded.join(' · ')}
                     </div>
@@ -1139,7 +1139,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
         <div className="space-y-6">
           <div className="bg-white border border-[#0F172A]/12 rounded p-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                 Quarterly Sustainability &amp; Future Earning Check
               </span>
               <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1150,7 +1150,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
               <button
                 type="button"
                 onClick={handleLogDeterministicQuarterlyReview}
-                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider transition"
+                className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 Run Quarterly Check (Free)
               </button>
@@ -1158,7 +1158,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                 type="button"
                 disabled={isGeneratingAi !== null}
                 onClick={() => handleGenerateAiContinuity('quarterly')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 {isGeneratingAi === 'quarterly' ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1186,10 +1186,10 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                       {q.quarterLabel} Sustainability Review
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded bg-[#EFF6FF] text-[#1D4ED8] font-bold border border-[#BFDBFE]">
+                      <span className="px-2.5 py-0.5 rounded bg-[#EDF3FD] text-[#0F52BA] font-bold border border-[#B7CEF7]">
                         Trend: {q.resilienceTrend}
                       </span>
-                      <span className="px-2.5 py-0.5 rounded bg-[#0F172A] text-white font-bold">
+                      <span className="px-2.5 py-0.5 rounded bg-[#0A2E6E] text-white font-bold">
                         Path: {q.strategicChoice}
                       </span>
                     </div>
@@ -1239,7 +1239,7 @@ export const WeeklyDashboardView: React.FC<WeeklyDashboardViewProps> = ({
                   </div>
 
                   {q.missingInfoNeeded.length > 0 && (
-                    <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1D4ED8]">
+                    <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-[#0F52BA]">
                       <strong>Missing Data Needed:</strong> {q.missingInfoNeeded.join(' · ')}
                     </div>
                   )}

@@ -100,15 +100,15 @@ export const PilotFeedbackModal: React.FC<PilotFeedbackModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050811]/75 backdrop-blur-xs p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071936]/75 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white border border-[#0F172A]/15 rounded w-full max-w-2xl shadow-2xl overflow-hidden text-[#0F172A] my-6 max-h-[90vh] flex flex-col">
         <div className="bizpulse-hero-gradient text-white px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#2563EB] flex items-center justify-center border border-white/15">
+            <div className="w-9 h-9 rounded bg-[#0F52BA] flex items-center justify-center border border-white/15">
               <MessageSquarePlus className="w-4 h-4 text-white" />
             </div>
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#60A5FA] block">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#6495ED] block">
                 Invitation-Only Pilot Feedback
               </span>
               <h3 className="text-base sm:text-lg font-bold text-white">
@@ -141,7 +141,7 @@ export const PilotFeedbackModal: React.FC<PilotFeedbackModalProps> = ({
                 <select
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-xs text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-xs text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 >
                   {FEEDBACK_AREAS.map((opt) => (
                     <option key={opt.id} value={opt.label}>
@@ -163,11 +163,11 @@ export const PilotFeedbackModal: React.FC<PilotFeedbackModalProps> = ({
                       onClick={() => setRating(num)}
                       className={`flex-1 py-2 rounded border text-xs font-bold flex items-center justify-center gap-1 transition ${
                         rating === num
-                          ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                          : 'bg-[#F8FAFC] text-[#475569] border-[#0F172A]/15 hover:border-[#2563EB]'
+                          ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
+                          : 'bg-[#F8FAFC] text-[#475569] border-[#0F172A]/15 hover:border-[#0F52BA]'
                       }`}
                     >
-                      <Star className={`w-3 h-3 ${rating >= num ? 'text-[#F59E0B]' : ''}`} />
+                      <Star className={`w-3 h-3 ${rating >= num ? 'text-[#F5761A]' : ''}`} />
                       <span>{num}</span>
                     </button>
                   ))}
@@ -185,7 +185,7 @@ export const PilotFeedbackModal: React.FC<PilotFeedbackModalProps> = ({
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="e.g., 'Cash Flow numbers were clear, but I expected to see...' or 'Action Plan steps helped me spot overdue accounts quickly.'"
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3.5 py-2.5 text-xs text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3.5 py-2.5 text-xs text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
             </div>
 
@@ -214,7 +214,7 @@ export const PilotFeedbackModal: React.FC<PilotFeedbackModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting || !comment.trim()}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{isSubmitting ? 'Sending...' : 'Submit Feedback'}</span>

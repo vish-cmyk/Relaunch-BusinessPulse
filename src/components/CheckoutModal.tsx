@@ -272,16 +272,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050811]/75 backdrop-blur-xs p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071936]/75 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white border border-[#0F172A]/15 rounded w-full max-w-4xl shadow-2xl overflow-hidden text-[#0F172A] my-6 max-h-[92vh] flex flex-col">
-        {/* Charcoal Header */}
+        {/* Deep Sapphire Header */}
         <div className="bizpulse-hero-gradient text-white px-6 py-5 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded bg-[#2563EB] text-white flex items-center justify-center border border-white/15">
+            <div className="w-10 h-10 rounded bg-[#0F52BA] text-white flex items-center justify-center border border-white/15">
               <Crown className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#60A5FA] block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#6495ED] block">
                 {isPilotMode ? 'Invitation-Only Pilot Access · AI Allowances & Data Ownership' : 'Membership Plan, AI Allowances & Data Ownership'}
               </span>
               <h3 className="text-lg sm:text-xl font-bold text-white">
@@ -333,7 +333,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[#0F172A] flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-[#2563EB]" />
+                <Activity className="w-4 h-4 text-[#0F52BA]" />
                 Monthly Account AI Allowance ({accountUsage?.monthKey || 'Current Month'})
               </span>
               <span className="text-[11px] font-mono text-[#475569] tabular-nums">
@@ -392,18 +392,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     className={`rounded p-5 border-2 cursor-pointer transition flex flex-col justify-between space-y-4 ${
                       plan.id === 'business_plus_monthly'
                         ? isSelected
-                          ? 'border-[#2563EB] bg-[#0B1324] text-white'
-                          : 'border-[#0B1324] bg-[#0B1324] text-white opacity-95 hover:opacity-100'
+                          ? 'border-[#0F52BA] bg-[#0A2E6E] text-white'
+                          : 'border-[#0A2E6E] bg-[#0A2E6E] text-white opacity-95 hover:opacity-100'
                         : isSelected
-                        ? 'border-[#2563EB] bg-[#EFF6FF]/70 text-[#0F172A]'
-                        : 'border-[#0F172A]/12 bg-white hover:border-[#2563EB]/50 text-[#0F172A]'
+                        ? 'border-[#0F52BA] bg-[#EDF3FD]/80 text-[#0F172A]'
+                        : 'border-[#0F172A]/12 bg-white hover:border-[#0F52BA]/50 text-[#0F172A]'
                     }`}
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <span
                           className={`text-[10px] font-bold uppercase tracking-wider ${
-                            plan.id === 'business_plus_monthly' ? 'text-[#60A5FA]' : 'text-[#1D4ED8]'
+                            plan.id === 'business_plus_monthly' ? 'text-[#6495ED]' : 'text-[#0F52BA]'
                           }`}
                         >
                           {plan.badge}
@@ -413,7 +413,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                             Active Plan
                           </span>
                         ) : isSelected ? (
-                          <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded bg-[#0F52BA] text-white text-[10px] font-bold">
                             Selected
                           </span>
                         ) : null}
@@ -444,7 +444,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                           <li key={feat} className="flex items-start gap-2">
                             <Check
                               className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
-                                plan.id === 'business_plus_monthly' ? 'text-[#60A5FA]' : 'text-[#15803D]'
+                                plan.id === 'business_plus_monthly' ? 'text-[#6495ED]' : 'text-[#15803D]'
                               }`}
                             />
                             <span>{feat}</span>
@@ -483,7 +483,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded bg-[#0B1324] hover:bg-[#172554] text-white font-semibold text-xs transition"
+                  className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white font-semibold text-xs transition"
                 >
                   Return to Workspace
                 </button>
@@ -494,15 +494,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   type="button"
                   onClick={handleCheckoutAction}
                   disabled={isLoading}
-                  className="flex-1 min-w-[220px] py-3 px-4 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition"
+                  className="flex-1 min-w-[220px] py-3 px-4 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition"
                 >
-                  <CreditCard className="w-4 h-4 text-[#60A5FA]" />
+                  <CreditCard className="w-4 h-4 text-[#EDF3FD]" />
                   <span>
                     {isLoading
                       ? 'Contacting Billing Server...'
                       : `Continue with ${selectedPlanObj.name} (NZ$${selectedPlanObj.priceNzd}/mo)`}
                   </span>
-                  <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                  <ArrowRight className="w-4 h-4 text-[#EDF3FD]" />
                 </button>
 
               {isPaidActive && (
@@ -511,9 +511,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     type="button"
                     onClick={handleOpenBillingPortal}
                     disabled={isLoading}
-                    className="px-4 py-3 rounded bg-white hover:bg-[#F8FAFC] border border-[#0F172A]/15 text-xs font-bold text-[#0F172A] flex items-center gap-1.5 transition"
+                    className="px-4 py-3 rounded bg-white hover:bg-[#EDF3FD] border border-[#0F172A]/15 text-xs font-bold text-[#0F172A] flex items-center gap-1.5 transition"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <ExternalLink className="w-3.5 h-3.5 text-[#0F52BA]" />
                     <span>Manage Billing</span>
                   </button>
                   <button
@@ -542,7 +542,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#475569] px-1 font-medium">
               <span className="flex items-center gap-1">
-                <Lock className="w-3.5 h-3.5 text-[#2563EB]" />
+                <Lock className="w-3.5 h-3.5 text-[#0F52BA]" />
                 <span>Cancel anytime • Rate-limited &amp; metered server-side</span>
               </span>
               <span className="flex items-center gap-1 text-[#0F172A]">
@@ -555,13 +555,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           {/* Founder / Admin Unit Economics View (rendered strictly when server confirms ADMIN_EMAILS) */}
           {adminMetrics && (
             <div className="pt-5 border-t border-[#0F172A]/12 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0F52BA] flex items-center gap-1.5">
                 <BarChart3 className="w-4 h-4" />
                 <span>Founder Unit Economics ({adminMetrics.monthKey})</span>
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs tabular-nums">
-                <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE]">
-                  <span className="text-[10px] text-[#1D4ED8] uppercase font-bold block">Est. MRR vs Target</span>
+                <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7]">
+                  <span className="text-[10px] text-[#0F52BA] uppercase font-bold block">Est. MRR vs Target</span>
                   <strong className="text-base font-mono text-[#0F172A]">
                     NZ${adminMetrics.estimatedMonthlyMrrNzd.toLocaleString()}
                   </strong>
@@ -615,9 +615,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   type="button"
                   onClick={onExportAllAccountData}
-                  className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#0F172A]/15 text-xs font-bold text-[#0F172A] flex items-center gap-1.5 shrink-0 transition"
+                  className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] border border-[#0F172A]/15 text-xs font-bold text-[#0F172A] flex items-center gap-1.5 shrink-0 transition"
                 >
-                  <Download className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <Download className="w-3.5 h-3.5 text-[#0F52BA]" />
                   <span>Export All Account Data (.json)</span>
                 </button>
               )}

@@ -747,11 +747,11 @@ function BizPulseWorkspace() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center text-[#0F172A] font-sans">
-        <div className="w-12 h-12 rounded bg-[#0B1324] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#2563EB]">
+        <div className="w-12 h-12 rounded bg-[#0A2E6E] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#F5761A]">
           BP
         </div>
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#475569] font-mono">
-          <RefreshCw className="w-4 h-4 animate-spin text-[#2563EB]" />
+          <RefreshCw className="w-4 h-4 animate-spin text-[#0F52BA]" />
           <span>Verifying session...</span>
         </div>
       </div>
@@ -767,11 +767,11 @@ function BizPulseWorkspace() {
   if (casesLoading || !activeCase) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center text-[#0F172A] font-sans">
-        <div className="w-12 h-12 rounded bg-[#0B1324] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#2563EB]">
+        <div className="w-12 h-12 rounded bg-[#0A2E6E] flex items-center justify-center font-bold text-white text-xl mb-4 border-b-2 border-[#F5761A]">
           BP
         </div>
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#475569] font-mono">
-          <Database className="w-4 h-4 text-[#2563EB]" />
+          <Database className="w-4 h-4 text-[#0F52BA]" />
           <span>Loading your private SME workspace...</span>
         </div>
       </div>
@@ -780,7 +780,7 @@ function BizPulseWorkspace() {
 
   // 4. Authenticated Workspace
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-[#2563EB]/20 selection:text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-[#0F52BA]/20 selection:text-[#0F172A]">
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -1085,7 +1085,7 @@ function BizPulseWorkspace() {
             <button
               type="button"
               onClick={() => setIsFeedbackModalOpen(true)}
-              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+              className="inline-flex items-center gap-1 text-[#0F52BA] hover:underline font-semibold"
             >
               <MessageSquarePlus className="w-3.5 h-3.5" />
               <span>Share Pilot Feedback</span>

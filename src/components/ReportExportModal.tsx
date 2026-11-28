@@ -119,12 +119,12 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
       // Slide 1: Title Slide
       const slide1 = pres.addSlide();
-      slide1.background = { color: '070B14' };
+      slide1.background = { color: '071936' };
       slide1.addText('Relaunch BizPulse • Executive Coaching & Diagnostic OS', {
         x: 0.8,
         y: 1.0,
         fontSize: 13,
-        color: '60A5FA',
+        color: '6495ED',
         bold: true,
       });
       slide1.addText(profile.name || 'Business Diagnostic', {
@@ -153,12 +153,12 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
       // Slide 2: Overall Health Summary
       const slide2 = pres.addSlide();
-      slide2.background = { color: '0F172A' };
+      slide2.background = { color: '0A2E6E' };
       slide2.addText('Executive Health Summary & Commercial Baseline', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
-        color: '60A5FA',
+        color: '6495ED',
         bold: true,
       });
       const scoreDisplay =
@@ -189,20 +189,20 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
       // Slide 3: 12 Capabilities Scorecard Table
       const slide3 = pres.addSlide();
-      slide3.background = { color: '0F172A' };
+      slide3.background = { color: '0A2E6E' };
       slide3.addText('Twelve Business Health Capabilities', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
-        color: '60A5FA',
+        color: '6495ED',
         bold: true,
       });
       const tableData: any[][] = [
         [
-          { text: 'Dimension', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
-          { text: 'Status', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
-          { text: 'Score', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
-          { text: 'Owner Notes', options: { bold: true, color: 'FFFFFF', fill: '1D4ED8' } },
+          { text: 'Dimension', options: { bold: true, color: 'FFFFFF', fill: '0F52BA' } },
+          { text: 'Status', options: { bold: true, color: 'FFFFFF', fill: '0F52BA' } },
+          { text: 'Score', options: { bold: true, color: 'FFFFFF', fill: '0F52BA' } },
+          { text: 'Owner Notes', options: { bold: true, color: 'FFFFFF', fill: '0F52BA' } },
         ],
         ...Object.values(healthInputs).map((item) => {
           const detail = overallHealth?.dimensionScores?.find((d) => d.key === item.key);
@@ -213,12 +213,12 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               ? 'F87171'
               : item.status === 'needs_attention'
               ? 'FBBF24'
-              : '60A5FA';
+              : '6495ED';
           return [
-            { text: item.title, options: { color: 'FFFFFF', fill: '0F172A' } },
-            { text: item.status.replace('_', ' ').toUpperCase(), options: { color, bold: true, fill: '0F172A' } },
-            { text: detail && detail.score !== null ? `${detail.score}/100` : '—', options: { color: 'CBD5E1', fill: '0F172A' } },
-            { text: item.notes || 'No notes supplied', options: { color: 'CBD5E1', fill: '0F172A' } },
+            { text: item.title, options: { color: 'FFFFFF', fill: '071936' } },
+            { text: item.status.replace('_', ' ').toUpperCase(), options: { color, bold: true, fill: '071936' } },
+            { text: detail && detail.score !== null ? `${detail.score}/100` : '—', options: { color: 'CBD5E1', fill: '071936' } },
+            { text: item.notes || 'No notes supplied', options: { color: 'CBD5E1', fill: '071936' } },
           ];
         }),
       ];
@@ -226,12 +226,12 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
       // Slide 4: Coaching Recommendations & Sustainability
       const slide4 = pres.addSlide();
-      slide4.background = { color: '0F172A' };
+      slide4.background = { color: '0A2E6E' };
       slide4.addText('Diagnostic Coaching & Strategic Choice', {
         x: 0.8,
         y: 0.6,
         fontSize: 22,
-        color: '60A5FA',
+        color: '6495ED',
         bold: true,
       });
       if (recommendations) {
@@ -261,12 +261,12 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       // Slide 5: CRM & ROI Highlights (when populated)
       if ((caseRecord.crmContacts?.length || 0) > 0 || (caseRecord.roiScenarios?.length || 0) > 0) {
         const slide5 = pres.addSlide();
-        slide5.background = { color: '0F172A' };
+        slide5.background = { color: '0A2E6E' };
         slide5.addText('CRM Pipeline & ROI Investment Scenarios', {
           x: 0.8,
           y: 0.6,
           fontSize: 22,
-          color: '60A5FA',
+          color: '6495ED',
           bold: true,
         });
         const crmLines = (caseRecord.crmContacts || [])
@@ -336,24 +336,24 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
         : '#F87171';
 
     const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="790" viewBox="0 0 900 790" style="background:#070B14; font-family:sans-serif;">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="790" viewBox="0 0 900 790" style="background:#071936; font-family:sans-serif;">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#070B14"/>
-      <stop offset="100%" stop-color="#0F172A"/>
+      <stop offset="0%" stop-color="#071936"/>
+      <stop offset="100%" stop-color="#0A2E6E"/>
     </linearGradient>
   </defs>
   <rect width="900" height="790" fill="url(#bg)"/>
-  <text x="40" y="48" fill="#60A5FA" font-size="16" font-weight="bold">Relaunch BizPulse • Executive Health Infographic</text>
+  <text x="40" y="48" fill="#6495ED" font-size="16" font-weight="bold">Relaunch BizPulse • Executive Health Infographic</text>
   <text x="40" y="80" fill="#FFFFFF" font-size="24" font-weight="bold">${safeName}</text>
   <text x="40" y="106" fill="#CBD5E1" font-size="13">${safeIndustry} • ${safeCountry} (${safeCurrency}) • Case: ${safeCaseId}</text>
 
-  <rect x="650" y="28" width="210" height="92" rx="12" fill="#172554" stroke="#1D4ED8" stroke-width="1.5"/>
-  <text x="755" y="54" fill="#93C5FD" font-size="11" text-anchor="middle" font-weight="bold">OVERALL HEALTH</text>
+  <rect x="650" y="28" width="210" height="92" rx="12" fill="#0A2E6E" stroke="#0F52BA" stroke-width="1.5"/>
+  <text x="755" y="54" fill="#B7CEF7" font-size="11" text-anchor="middle" font-weight="bold">OVERALL HEALTH</text>
   <text x="755" y="90" fill="${scoreColor}" font-size="26" text-anchor="middle" font-weight="bold">${escapeXml(scoreText)}</text>
   <text x="755" y="110" fill="#E2E8F0" font-size="11" text-anchor="middle">${escapeXml(rating)}</text>
 
-  <text x="40" y="152" fill="#93C5FD" font-size="15" font-weight="bold">The Twelve Business Health Capabilities</text>
+  <text x="40" y="152" fill="#B7CEF7" font-size="15" font-weight="bold">The Twelve Business Health Capabilities</text>
   ${dims
     .map((d, i) => {
       const col = i % 2;
@@ -367,13 +367,13 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           ? '#F59E0B'
           : d.status === 'at_risk'
           ? '#EF4444'
-          : '#3B82F6';
+          : '#6495ED';
       const safeTitle = escapeXml(d.title);
       const safeStatus = escapeXml(d.status.replace('_', ' ').toUpperCase());
       const safeNotes = escapeXml((d.notes || 'No specific notes entered').substring(0, 52));
       return `
       <g>
-        <rect x="${x}" y="${y}" width="400" height="76" rx="8" fill="#111C33" stroke="#1E3A8A" stroke-width="1"/>
+        <rect x="${x}" y="${y}" width="400" height="76" rx="8" fill="#0B224D" stroke="#0F52BA" stroke-width="1"/>
         <circle cx="${x + 22}" cy="${y + 24}" r="7" fill="${color}"/>
         <text x="${x + 38}" y="${y + 28}" fill="#FFFFFF" font-size="13" font-weight="bold">${safeTitle}</text>
         <text x="${x + 382}" y="${y + 28}" fill="${color}" font-size="11" font-weight="bold" text-anchor="end">${safeStatus}</text>
@@ -382,7 +382,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     })
     .join('')}
 
-  <rect x="40" y="720" width="820" height="44" rx="8" fill="#111C33" stroke="#1E3A8A" stroke-width="1"/>
+  <rect x="40" y="720" width="820" height="44" rx="8" fill="#0B224D" stroke="#0F52BA" stroke-width="1"/>
   <text x="56" y="747" fill="#CBD5E1" font-size="11">Objective: ${safeObjective.substring(0, 75)}</text>
 </svg>`;
 
@@ -573,10 +573,10 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/65 backdrop-blur-xs p-4">
       <div className="bg-white border border-[#0F172A]/15 rounded w-full max-w-2xl shadow-2xl overflow-hidden text-[#0F172A]">
-        {/* Architectural Executive Navy Modal Header */}
-        <div className="bizpulse-bar-gradient text-white px-6 py-4 flex items-center justify-between border-b border-white/10">
+        {/* Deep Sapphire Modal Header */}
+        <div className="bizpulse-hero-gradient text-white px-6 py-4 flex items-center justify-between border-b border-white/10">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded bg-[#2563EB] text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-[#0F52BA] text-white flex items-center justify-center border border-white/20">
               <Download className="w-4 h-4" />
             </div>
             <div>
@@ -617,13 +617,13 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadDirectPdf}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#0F52BA] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
               <div className="w-8 h-8 rounded bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center border border-[#FECACA]">
                 <Printer className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#0F52BA]">
                   PDF Report (.pdf)
                 </span>
                 <span className="text-[11px] text-[#475569]">
@@ -637,13 +637,13 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadWordDoc}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#0F52BA] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded bg-[#0F172A] text-[#60A5FA] flex items-center justify-center border border-[#0F172A]">
+              <div className="w-8 h-8 rounded bg-[#0A2E6E] text-[#6495ED] flex items-center justify-center border border-[#0A2E6E]">
                 <FileText className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#0F52BA]">
                   Word (.docx)
                 </span>
                 <span className="text-[11px] text-[#475569]">
@@ -657,13 +657,13 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadPowerPointDeck}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#0F52BA] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded bg-[#EFF6FF] text-[#1D4ED8] flex items-center justify-center border border-[#BFDBFE]">
+              <div className="w-8 h-8 rounded bg-[#EDF3FD] text-[#0F52BA] flex items-center justify-center border border-[#B7CEF7]">
                 <Presentation className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#0F52BA]">
                   Slides (.pptx)
                 </span>
                 <span className="text-[11px] text-[#475569]">
@@ -677,13 +677,13 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               type="button"
               onClick={handleDownloadInfographic}
               disabled={isGenerating}
-              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
+              className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#0F52BA] hover:bg-white transition text-left flex flex-col justify-between space-y-2.5 group disabled:opacity-50"
             >
               <div className="w-8 h-8 rounded bg-[#ECFDF5] text-[#15803D] flex items-center justify-center border border-[#A7F3D0]">
                 <ImageIcon className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#2563EB]">
+                <span className="font-bold text-[#0F172A] text-xs block group-hover:text-[#0F52BA]">
                   Infographic (.svg)
                 </span>
                 <span className="text-[11px] text-[#475569]">
@@ -703,7 +703,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
                 }}
                 className="text-[#475569] hover:text-[#0F172A] flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:bg-white transition font-medium"
               >
-                <Printer className="w-3.5 h-3.5 text-[#2563EB]" />
+                <Printer className="w-3.5 h-3.5 text-[#0F52BA]" />
                 <span>Print View</span>
               </button>
 
@@ -741,7 +741,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           </div>
 
           <div className="p-3 bg-[#F8FAFC] rounded border border-[#0F172A]/10 text-[11px] text-[#475569] flex items-start gap-2">
-            <Activity className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
+            <Activity className="w-4 h-4 text-[#0F52BA] shrink-0 mt-0.5" />
             <span>
               All exports compile strictly from <strong>{profile.name}</strong> and never mix figures from other saved businesses.
             </span>

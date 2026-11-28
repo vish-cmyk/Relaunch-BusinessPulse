@@ -76,7 +76,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
         {/* Active Business Selector & Resume Dropdown */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[#0F172A]/60 font-mono uppercase tracking-[0.12em] text-[10px] flex items-center gap-1.5 whitespace-nowrap">
-            <Building2 className="w-3.5 h-3.5 text-[#2563EB]" />
+            <Building2 className="w-3.5 h-3.5 text-[#0F52BA]" />
             <span>Business Session</span>
           </span>
 
@@ -87,14 +87,14 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                 setIsOpen(!isOpen);
                 setConfirmDeleteId(null);
               }}
-              className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-[#0F172A]/15 hover:border-[#2563EB] text-[#0F172A] font-semibold transition"
+              className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-[#0F172A]/15 hover:border-[#0F52BA] text-[#0F172A] font-semibold transition"
             >
-              <FolderOpen className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+              <FolderOpen className="w-3.5 h-3.5 text-[#0F52BA] shrink-0" />
               <span className="max-w-[180px] sm:max-w-[260px] truncate text-left">
                 {activeCase.profile.name || 'New Business Assessment'}
               </span>
               {activeCase.profile.isDemonstrationCase && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#2563EB]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0F52BA]">
                   · Sample Demo (Not Real Data)
                 </span>
               )}
@@ -123,7 +123,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                         key={c.id}
                         className={`flex items-center justify-between p-2.5 rounded border transition ${
                           isCurrent
-                            ? 'bg-[#EFF6FF] border-[#2563EB]'
+                            ? 'bg-[#EDF3FD] border-[#0F52BA]'
                             : 'bg-white border-transparent hover:bg-[#F8FAFC] hover:border-[#0F172A]/10'
                         }`}
                       >
@@ -141,7 +141,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                               {c.profile.name || 'Untitled Business'}
                             </span>
                             {isCurrent && (
-                              <span className="text-[10px] font-bold text-[#2563EB]">(Active)</span>
+                              <span className="text-[10px] font-bold text-[#0F52BA]">(Active)</span>
                             )}
                           </div>
                           <div className="text-[11px] text-[#475569] truncate mt-0.5 tabular-nums">
@@ -152,7 +152,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
 
                         <div className="flex items-center gap-1 shrink-0">
                           {c.profile.isDemonstrationCase ? (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2563EB]">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0F52BA]">
                               Demo
                             </span>
                           ) : confirmDeleteId === c.id ? (
@@ -206,9 +206,9 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                       onNewCase();
                       setIsOpen(false);
                     }}
-                    className="p-2 rounded bg-[#0B1324] hover:bg-[#172554] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                    className="p-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
+                    <Plus className="w-3.5 h-3.5 text-[#6495ED]" />
                     <span>New Business</span>
                   </button>
                   <button
@@ -217,9 +217,9 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
                       onLoadDemoCase();
                       setIsOpen(false);
                     }}
-                    className="p-2 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] border border-[#0F172A]/15 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                    className="p-2 rounded bg-white hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
                   >
-                    <FolderSync className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <FolderSync className="w-3.5 h-3.5 text-[#0F52BA]" />
                     <span>Sample Demo Business</span>
                   </button>
                 </div>
@@ -240,10 +240,10 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
           <button
             type="button"
             onClick={onNewCase}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-[#0B1324] hover:bg-[#172554] text-white transition text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white transition text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
             title="Start a completely separate, clean business session"
           >
-            <Plus className="w-3 h-3 text-[#60A5FA]" />
+            <Plus className="w-3 h-3 text-[#6495ED]" />
             <span>New Business</span>
           </button>
 
@@ -251,7 +251,7 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
             type="button"
             onClick={onSaveCase}
             disabled={isSyncing}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 text-white transition text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-60 text-white transition text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
             title="Save current business state to your private workspace"
           >
             <Save className="w-3 h-3" />
@@ -261,20 +261,20 @@ export const CaseManagerBar: React.FC<CaseManagerBarProps> = ({
           <button
             type="button"
             onClick={onReenterEssentials}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] border border-[#0F172A]/15 transition text-[11px] font-semibold whitespace-nowrap"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-white hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 transition text-[11px] font-semibold whitespace-nowrap"
             title="Re-enter or edit business essentials for this session"
           >
-            <Edit3 className="w-3 h-3 text-[#2563EB]" />
+            <Edit3 className="w-3 h-3 text-[#0F52BA]" />
             <span className="hidden sm:inline">Re-enter Essentials</span>
           </button>
 
           <button
             type="button"
             onClick={onLoadDemoCase}
-            className="hidden md:flex items-center space-x-1 px-2.5 py-1.5 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] border border-[#0F172A]/15 transition text-[11px] font-medium whitespace-nowrap"
+            className="hidden md:flex items-center space-x-1 px-2.5 py-1.5 rounded bg-white hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 transition text-[11px] font-medium whitespace-nowrap"
             title="Load benchmark NZ Managed IT Services example"
           >
-            <FolderSync className="w-3 h-3 text-[#2563EB]" />
+            <FolderSync className="w-3 h-3 text-[#0F52BA]" />
             <span>Sample Demo</span>
           </button>
 

@@ -420,7 +420,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#2563EB] text-white flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#0F52BA] text-white flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
                 Chat with Coach
               </span>
@@ -442,7 +442,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               <select
                 value={userRole}
                 onChange={(e) => setUserRole(e.target.value)}
-                className="bg-[#0F172A] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#2563EB] max-w-[220px]"
+                className="bg-[#0A2E6E] text-xs font-bold text-white border border-white/20 rounded px-2.5 py-1.5 focus:outline-none focus:border-[#6495ED] max-w-[220px]"
               >
                 {roleOptions.map((role) => (
                   <option key={role} value={role}>
@@ -458,7 +458,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 onClick={onOpenChallengeMe}
                 className="flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition whitespace-nowrap"
               >
-                <ShieldAlert className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <ShieldAlert className="w-3.5 h-3.5 text-[#F5761A]" />
                 <span>Switch to Challenge Me</span>
               </button>
             )}
@@ -482,7 +482,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
       <div className="bg-white border border-[#0F172A]/12 rounded p-5">
         <div className="flex items-center justify-between mb-3">
           <span className="bizpulse-label text-[#0F172A] font-bold flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#2563EB]" />
+            <FileText className="w-3.5 h-3.5 text-[#0F52BA]" />
             Commercial Script Drafts ({profile.country})
           </span>
           <span className="text-xs text-[#475569]">1-Click Custom Draft</span>
@@ -494,15 +494,15 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               key={preset.id}
               type="button"
               onClick={() => handleGeneratePresetScript(preset)}
-              className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#2563EB] hover:bg-white transition text-left space-y-1 group"
+              className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/12 hover:border-[#0F52BA] hover:bg-white transition text-left space-y-1 group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white text-[#1D4ED8] border border-[#0F172A]/12">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#EDF3FD] text-[#0F52BA] border border-[#B7CEF7]">
                   {preset.category}
                 </span>
-                <Sparkles className="w-3 h-3 text-[#64748B] group-hover:text-[#2563EB] transition" />
+                <Sparkles className="w-3 h-3 text-[#64748B] group-hover:text-[#0F52BA] transition" />
               </div>
-              <h4 className="font-bold text-[#0F172A] text-xs line-clamp-1 group-hover:text-[#2563EB]">
+              <h4 className="font-bold text-[#0F172A] text-xs line-clamp-1 group-hover:text-[#0F52BA]">
                 {preset.title}
               </h4>
               <p className="text-[11px] text-[#475569] line-clamp-2">{preset.description}</p>
@@ -513,10 +513,10 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
       {/* Generated Script Drawer */}
       {selectedPreset && (
-        <div className="bg-white border border-[#2563EB] rounded p-6">
+        <div className="bg-white border border-[#0F52BA] rounded p-6">
           <div className="flex items-center justify-between pb-4 border-b border-[#0F172A]/10">
             <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-[#2563EB]" />
+              <FileText className="w-5 h-5 text-[#0F52BA]" />
               <div>
                 <h3 className="font-bold text-[#0F172A] text-sm">
                   Draft Script: {selectedPreset.title}
@@ -532,16 +532,16 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 <button
                   type="button"
                   onClick={() => copyToClipboard(generatedScript, 'generated-script')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#0F172A] text-white text-xs font-bold hover:bg-[#1E293B] transition whitespace-nowrap shrink-0"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#0A2E6E] text-white text-xs font-bold hover:bg-[#0F52BA] transition whitespace-nowrap shrink-0"
                 >
                   {copiedScriptId === 'generated-script' ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-[#60A5FA]" />
+                      <Check className="w-3.5 h-3.5 text-[#6495ED]" />
                       <span>Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5 text-[#60A5FA]" />
+                      <Copy className="w-3.5 h-3.5 text-[#6495ED]" />
                       <span>Copy Script</span>
                     </>
                   )}
@@ -560,7 +560,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
           <div className="mt-4">
             {isGeneratingScript ? (
               <div className="py-8 text-center text-[#475569] text-xs flex flex-col items-center justify-center space-y-2">
-                <Loader2 className="w-6 h-6 text-[#2563EB] animate-spin" />
+                <Loader2 className="w-6 h-6 text-[#0F52BA] animate-spin" />
                 <span>Drafting tailored communication...</span>
               </div>
             ) : scriptError ? (
@@ -600,7 +600,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                   onClick={() => setSelectedTopic(topic)}
                   className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                     selectedTopic === topic
-                      ? 'bg-[#0F172A] text-white'
+                      ? 'bg-[#0A2E6E] text-white'
                       : 'text-[#475569] hover:text-[#0F172A] hover:bg-white'
                   }`}
                 >
@@ -653,8 +653,8 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 className={`flex gap-3 ${isCoach ? 'justify-start' : 'justify-end'}`}
               >
                 {isCoach && (
-                  <div className="w-8 h-8 rounded bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
-                    <Bot className="w-4 h-4 text-[#60A5FA]" />
+                  <div className="w-8 h-8 rounded bg-[#0A2E6E] flex items-center justify-center shrink-0 text-white">
+                    <Bot className="w-4 h-4 text-[#6495ED]" />
                   </div>
                 )}
 
@@ -662,7 +662,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                   className={`max-w-3xl rounded p-4 text-xs sm:text-sm leading-relaxed space-y-3 ${
                     isCoach
                       ? 'bg-white border border-[#0F172A]/12 text-[#0F172A]'
-                      : 'bg-[#EFF6FF] border border-[#BFDBFE] text-[#0F172A] font-medium'
+                      : 'bg-[#EDF3FD] border border-[#B7CEF7] text-[#0F172A] font-medium'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4 text-[10px] text-[#475569]">
@@ -694,7 +694,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                   {isCoach && followUps.length > 0 && (
                     <div className="pt-1 space-y-1.5">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#475569] flex items-center gap-1">
-                        <HelpCircle className="w-3 h-3 text-[#2563EB]" />
+                        <HelpCircle className="w-3 h-3 text-[#0F52BA]" />
                         Coach Follow-Up Questions (Click to Answer):
                       </span>
                       <div className="flex flex-col gap-1.5">
@@ -703,7 +703,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                             key={idx}
                             type="button"
                             onClick={() => setInputPrompt(`In response to "${q}": `)}
-                            className="text-left text-xs px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#0F172A]/12 hover:border-[#2563EB] text-[#0F172A] transition"
+                            className="text-left text-xs px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] border border-[#0F172A]/12 hover:border-[#0F52BA] text-[#0F172A] transition"
                           >
                             {q}
                           </button>
@@ -729,7 +729,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                                 <span
                                   className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-white border ${
                                     act.targetType === 'crm_followup'
-                                      ? 'border-[#BFDBFE] text-[#1D4ED8]'
+                                      ? 'border-[#B7CEF7] text-[#0F52BA]'
                                       : 'border-[#FDE68A] text-[#B45309]'
                                   }`}
                                 >
@@ -749,7 +749,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                               className={`px-3 py-1.5 rounded text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 transition ${
                                 act.savedToPlan
                                   ? 'bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0]'
-                                  : 'bg-[#0F172A] hover:bg-[#1E293B] text-white'
+                                  : 'bg-[#0A2E6E] hover:bg-[#0F52BA] text-white'
                               }`}
                             >
                               {act.savedToPlan ? (
@@ -759,12 +759,12 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                                 </>
                               ) : act.targetType === 'crm_followup' ? (
                                 <>
-                                  <Users className="w-3.5 h-3.5 text-[#60A5FA]" />
+                                  <Users className="w-3.5 h-3.5 text-[#6495ED]" />
                                   <span>Add CRM Follow-Up</span>
                                 </>
                               ) : (
                                 <>
-                                  <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
+                                  <Plus className="w-3.5 h-3.5 text-[#6495ED]" />
                                   <span>Add to Action Plan</span>
                                 </>
                               )}
@@ -791,7 +791,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                           </>
                         ) : (
                           <>
-                            <BookmarkPlus className="w-3.5 h-3.5 text-[#2563EB]" />
+                            <BookmarkPlus className="w-3.5 h-3.5 text-[#0F52BA]" />
                             <span>Save Insight as Action Task</span>
                           </>
                         )}
@@ -801,7 +801,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                 </div>
 
                 {!isCoach && (
-                  <div className="w-8 h-8 rounded bg-[#2563EB] flex items-center justify-center shrink-0 text-white">
+                  <div className="w-8 h-8 rounded bg-[#0F52BA] flex items-center justify-center shrink-0 text-white">
                     <UserCheck className="w-4 h-4" />
                   </div>
                 )}
@@ -820,7 +820,7 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
                     key={idx}
                     type="button"
                     onClick={() => handleSendMessage(starter)}
-                    className="text-left text-xs px-3 py-2 rounded bg-white hover:bg-[#EFF6FF] border border-[#0F172A]/15 hover:border-[#2563EB] text-[#0F172A] transition"
+                    className="text-left text-xs px-3 py-2 rounded bg-white hover:bg-[#EDF3FD] border border-[#0F172A]/15 hover:border-[#0F52BA] text-[#0F172A] transition"
                   >
                     {starter}
                   </button>
@@ -831,11 +831,11 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded bg-[#0F172A] flex items-center justify-center shrink-0 text-white">
-                <Bot className="w-4 h-4 text-[#60A5FA]" />
+              <div className="w-8 h-8 rounded bg-[#0A2E6E] flex items-center justify-center shrink-0 text-white">
+                <Bot className="w-4 h-4 text-[#6495ED]" />
               </div>
               <div className="bg-white border border-[#0F172A]/12 rounded p-4 text-xs text-[#475569] flex items-center space-x-2">
-                <Loader2 className="w-4 h-4 text-[#2563EB] animate-spin" />
+                <Loader2 className="w-4 h-4 text-[#0F52BA] animate-spin" />
                 <span>Reviewing {profile.name}’s business context &amp; conversation history...</span>
               </div>
             </div>
@@ -889,15 +889,15 @@ Ask about cash flow, profitability, growth options, client priorities, or challe
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder={`Ask ${profile.name}'s coach, challenge a recommendation, or test a growth/ROI decision...`}
               disabled={isLoading}
-              className="flex-1 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] disabled:opacity-50"
+              className="flex-1 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-4 py-3 text-xs sm:text-sm text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA] disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isLoading || !inputPrompt.trim()}
-              className="px-5 py-3 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition whitespace-nowrap shrink-0"
+              className="px-5 py-3 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition whitespace-nowrap shrink-0"
             >
               <span>Send</span>
-              <Send className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <Send className="w-3.5 h-3.5 text-white" />
             </button>
           </form>
         </div>

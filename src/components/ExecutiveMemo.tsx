@@ -113,9 +113,9 @@ function getAccentClasses(accent: ReportCustomBlock['accent'] = 'slate'): {
   switch (accent) {
     case 'blue':
       return {
-        card: 'bg-[#EFF6FF] border-[#BFDBFE]',
-        heading: 'text-[#1D4ED8]',
-        badge: 'bg-[#1D4ED8] text-white',
+        card: 'bg-[#EDF3FD] border-[#B7CEF7]',
+        heading: 'text-[#0F52BA]',
+        badge: 'bg-[#0F52BA] text-white',
       };
     case 'green':
       return {
@@ -134,7 +134,7 @@ function getAccentClasses(accent: ReportCustomBlock['accent'] = 'slate'): {
       return {
         card: 'bg-[#F8FAFC] border-[#0F172A]/12',
         heading: 'text-[#0F172A]',
-        badge: 'bg-[#0F172A] text-white',
+        badge: 'bg-[#0A2E6E] text-white',
       };
   }
 }
@@ -482,16 +482,16 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               type="button"
               onClick={handleGenerateFullHealthReport}
               disabled={isGeneratingReport}
-              className="px-3.5 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-2xs"
+              className="px-3.5 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-2xs"
             >
               {isGeneratingReport ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 text-[#60A5FA] animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 text-[#6495ED] animate-spin" />
                   <span>Generating Report...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#6495ED]" />
                   <span>{rec ? 'Refresh Full Health Report' : 'Generate Business Health Report'}</span>
                 </>
               )}
@@ -502,7 +502,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             type="button"
             onClick={handleDirectDownloadPdf}
             disabled={isExportingDirect}
-            className="px-3.5 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
+            className="px-3.5 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download PDF</span>
@@ -512,7 +512,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             type="button"
             onClick={handleDirectDownloadDocx}
             disabled={isExportingDirect}
-            className="px-3.5 py-2 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] disabled:opacity-50 text-[#1D4ED8] text-xs font-bold border border-[#BFDBFE] flex items-center gap-1.5 transition"
+            className="px-3.5 py-2 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] disabled:opacity-50 text-[#0F52BA] text-xs font-bold border border-[#B7CEF7] flex items-center gap-1.5 transition"
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Download Word (.docx)</span>
@@ -524,7 +524,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               onClick={onOpenExportModal}
               className="px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 flex items-center gap-1.5 transition"
             >
-              <Download className="w-3.5 h-3.5 text-[#2563EB]" />
+              <Download className="w-3.5 h-3.5 text-[#0F52BA]" />
               <span>Export Options</span>
             </button>
           )}
@@ -534,8 +534,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             onClick={() => setIsEditing((v) => !v)}
             className={`px-3 py-2 rounded text-xs font-bold flex items-center gap-1.5 transition border ${
               isEditing
-                ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                : 'bg-white text-[#0F172A] border-[#0F172A]/15 hover:border-[#2563EB]'
+                ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
+                : 'bg-white text-[#0F172A] border-[#0F172A]/15 hover:border-[#0F52BA]'
             }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -547,7 +547,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             onClick={handleAddParagraph}
             className="px-3 py-2 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 flex items-center gap-1.5 transition"
           >
-            <Plus className="w-3.5 h-3.5 text-[#2563EB]" />
+            <Plus className="w-3.5 h-3.5 text-[#0F52BA]" />
             <span>Add Note</span>
           </button>
         </div>
@@ -585,7 +585,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 onClick={() => updateSettings({ fontSize: sz })}
                 className={`px-2.5 py-1 rounded text-[11px] font-bold transition ${
                   editorSettings.fontSize === sz
-                    ? 'bg-[#0F172A] text-white'
+                    ? 'bg-[#0A2E6E] text-white'
                     : 'text-[#475569] hover:text-[#0F172A]'
                 }`}
               >
@@ -643,15 +643,24 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
   const renderCustomParagraphsSection = (displayNum: string) => {
     if (reportBlocks.length === 0 && !isEditing) return null;
+    const isSection09 = displayNum === '9' || displayNum === '09';
 
     return (
       <div
         key="custom"
-        className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4"
+        className={
+          isSection09
+            ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+            : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+        }
       >
         <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10 gap-2">
           <div className="flex items-center space-x-2.5">
-            <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+            <span
+              className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+              }`}
+            >
               {displayNum}
             </span>
             <h3 className="text-lg font-bold text-[#0F172A]">
@@ -662,7 +671,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <button
               type="button"
               onClick={handleAddParagraph}
-              className="px-3 py-1.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] text-xs font-bold border border-[#BFDBFE] flex items-center gap-1 transition"
+              className="px-3 py-1.5 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] text-[#0F52BA] text-xs font-bold border border-[#B7CEF7] flex items-center gap-1 transition"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Paragraph</span>
@@ -730,7 +739,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             title="Bold"
                             className={`p-1.5 rounded border text-xs ${
                               block.bold
-                                ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                                ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                                 : 'bg-white text-[#0F172A] border-[#0F172A]/15'
                             }`}
                           >
@@ -743,7 +752,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             title="Italic"
                             className={`p-1.5 rounded border text-xs ${
                               block.italic
-                                ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                                ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                                 : 'bg-white text-[#0F172A] border-[#0F172A]/15'
                             }`}
                           >
@@ -767,7 +776,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                                   title={al.label}
                                   className={`p-1.5 ${
                                     (block.align || 'left') === al.id
-                                      ? 'bg-[#2563EB] text-white'
+                                      ? 'bg-[#0F52BA] text-white'
                                       : 'text-[#475569] hover:text-[#0F172A]'
                                   }`}
                                 >
@@ -788,7 +797,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             className="bg-white border border-[#0F172A]/15 rounded px-2 py-1 text-[11px] font-semibold text-[#0F172A]"
                           >
                             <option value="slate">Neutral Card</option>
-                            <option value="blue">Cobalt Highlight</option>
+                            <option value="blue">Sapphire Highlight</option>
                             <option value="green">Positive / Action</option>
                             <option value="amber">Attention / Watch</option>
                           </select>
@@ -817,7 +826,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                             type="button"
                             onClick={() => handleDuplicateBlock(block)}
                             title="Duplicate paragraph"
-                            className="p-1.5 rounded bg-white border border-[#0F172A]/15 text-[#2563EB] hover:bg-[#EFF6FF]"
+                            className="p-1.5 rounded bg-white border border-[#0F172A]/15 text-[#0F52BA] hover:bg-[#EDF3FD]"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>
@@ -837,14 +846,14 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                         value={block.heading}
                         onChange={(e) => handleUpdateBlock(block.id, { heading: e.target.value })}
                         placeholder="Paragraph / Section Heading..."
-                        className={`w-full bg-white border border-[#0F172A]/15 rounded px-3 py-1.5 font-bold focus:outline-none focus:ring-1 focus:ring-[#2563EB] ${blockFont} ${accent.heading}`}
+                        className={`w-full bg-white border border-[#0F172A]/15 rounded px-3 py-1.5 font-bold focus:outline-none focus:ring-1 focus:ring-[#0F52BA] ${blockFont} ${accent.heading}`}
                       />
                       <textarea
                         rows={4}
                         value={block.body}
                         onChange={(e) => handleUpdateBlock(block.id, { body: e.target.value })}
                         placeholder="Enter paragraph commentary..."
-                        className={`w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:ring-1 focus:ring-[#2563EB] ${blockFont} ${blockSize} ${blockAlign} ${
+                        className={`w-full bg-white border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:ring-1 focus:ring-[#0F52BA] ${blockFont} ${blockSize} ${blockAlign} ${
                           block.bold ? 'font-bold' : 'font-normal'
                         } ${block.italic ? 'italic' : ''}`}
                       />
@@ -905,7 +914,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
           ? '#D97706'
           : dim.status === 'at_risk'
           ? '#B91C1C'
-          : '#2563EB';
+          : '#6495ED';
       return {
         name: dim.title.length > 26 ? `${dim.title.slice(0, 24)}…` : dim.title,
         fullTitle: dim.title,
@@ -920,13 +929,25 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
     const renderCustomSection = (secId: string, indexNum: number) => {
       const displayNum = String(indexNum + 2);
+      const isSection09 = displayNum === '9';
 
       if (secId === 'dimensions') {
         return (
-          <div key="dimensions" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-5">
+          <div
+            key="dimensions"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-5'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-5'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A] flex items-center gap-1.5">
@@ -942,7 +963,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('health')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold print:hidden"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold print:hidden"
                 >
                   Edit Dimensions &rarr;
                 </button>
@@ -960,7 +981,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   <span className="text-[#15803D]">■ Healthy (100)</span>
                   <span className="text-[#B45309]">■ Needs Attention (55)</span>
                   <span className="text-[#B91C1C]">■ At Risk (15)</span>
-                  <span className="text-[#2563EB]">■ Not Sure / Unanswered (0)</span>
+                  <span className="text-[#0F52BA]">■ Not Sure / Unanswered (0)</span>
                 </div>
               </div>
               <div className="w-full h-72">
@@ -1017,8 +1038,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                                 : dim.status === 'at_risk'
                                 ? 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]'
                                 : dim.status === 'not_sure'
-                                ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
-                                : 'bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]'
+                                ? 'bg-[#EDF3FD] text-[#0F52BA] border-[#B7CEF7]'
+                                : 'bg-[#EDF3FD] text-[#0F52BA] border-[#B7CEF7]'
                             }`}
                           >
                             {dim.status === 'not_sure' ? 'INSUFFICIENT INFO' : dim.status.replace('_', ' ').toUpperCase()}
@@ -1047,10 +1068,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'strengths_weaknesses') {
         return (
-          <div key="strengths_weaknesses" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="strengths_weaknesses"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1061,7 +1093,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('health')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Update Capabilities &rarr;
                 </button>
@@ -1129,10 +1161,23 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         const actualDelay = fin?.actualPaymentDelayDays ?? null;
 
         return (
-          <div key="risks" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="risks"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA] font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09
+                      ? 'bg-[#F5761A] text-[#0F172A]'
+                      : 'bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1143,7 +1188,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('cashflow')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Open Cash Flow Workbench &rarr;
                 </button>
@@ -1217,10 +1262,23 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         ).length;
 
         return (
-          <div key="opportunities" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="opportunities"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09
+                      ? 'bg-[#F5761A] text-[#0F172A]'
+                      : 'bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0]'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1231,7 +1289,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('options')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Open ROI &amp; Options &rarr;
                 </button>
@@ -1301,10 +1359,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'action_plan') {
         return (
-          <div key="action_plan" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="action_plan"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1315,7 +1384,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('roadmap')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Open Action Plan &rarr;
                 </button>
@@ -1374,10 +1443,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'kpis') {
         return (
-          <div key="kpis" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="kpis"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1388,7 +1468,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => (onOpenKpiTracker ? onOpenKpiTracker() : onSwitchTab('dashboard'))}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Open KPI Tracker &rarr;
                 </button>
@@ -1464,7 +1544,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => (onOpenKpiTracker ? onOpenKpiTracker() : onSwitchTab('dashboard'))}
-                  className="px-3 py-1.5 rounded bg-[#0F172A] text-white font-bold text-xs print:hidden"
+                  className="px-3 py-1.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white font-bold text-xs transition print:hidden"
                 >
                   Setup KPI Tracker
                 </button>
@@ -1481,10 +1561,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         const verifiedDims = dimList.filter((d) => d.evidenceType === 'verified' && d.status !== 'unanswered');
 
         return (
-          <div key="evidence" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="evidence"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1495,7 +1586,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('documents')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Manage Documents ({docs.length}) &rarr;
                 </button>
@@ -1524,8 +1615,8 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                     : 'No estimated capability ratings pending verification.'}
                 </p>
               </div>
-              <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-1">
-                <strong className="text-[#1D4ED8] uppercase text-[11px] block">
+              <div className="p-3.5 rounded bg-[#EDF3FD] border border-[#B7CEF7] space-y-1">
+                <strong className="text-[#0F52BA] uppercase text-[11px] block">
                   Missing Information ({missingDims.length})
                 </strong>
                 <p className="text-[#0F172A]">
@@ -1587,7 +1678,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   >
                     <div className="flex items-center justify-between font-bold text-[#0F172A]">
                       <span className="flex items-center gap-1.5">
-                        <FileSpreadsheet className="w-3.5 h-3.5 text-[#2563EB]" />
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-[#0F52BA]" />
                         {d.fileName}
                       </span>
                       <span className="text-[11px] font-mono text-[#475569]">{d.fileType.toUpperCase()}</span>
@@ -1626,10 +1717,21 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
       if (secId === 'recommendations') {
         return (
-          <div key="recommendations" className="bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4">
+          <div
+            key="recommendations"
+            className={
+              isSection09
+                ? 'bg-white border border-[#F5761A]/35 border-t-4 border-t-[#F5761A] rounded p-6 sm:p-8 shadow-xs space-y-4'
+                : 'bg-white border border-[#0F172A]/12 rounded p-6 sm:p-8 shadow-xs space-y-4'
+            }
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#0F172A]/10">
               <div className="flex items-center space-x-2.5">
-                <span className="w-7 h-7 rounded bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center">
+                <span
+                  className={`w-7 h-7 rounded font-mono font-bold text-xs flex items-center justify-center ${
+                    isSection09 ? 'bg-[#F5761A] text-[#0F172A]' : 'bg-[#0A2E6E] text-white'
+                  }`}
+                >
                   {displayNum}
                 </span>
                 <h3 className="text-lg font-bold text-[#0F172A]">
@@ -1640,7 +1742,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 <button
                   type="button"
                   onClick={() => onSwitchTab('recommendations')}
-                  className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-bold"
+                  className="text-xs text-[#0F52BA] hover:text-[#0A3D8F] font-bold"
                 >
                   Open Coaching Tab &rarr;
                 </button>
@@ -1651,7 +1753,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             {rec ? (
               <div className={`space-y-4 ${globalSizeClass}`}>
                 <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2">
-                  <span className="font-bold font-mono text-[#2563EB] uppercase tracking-wider block text-[11px]">
+                  <span className="font-bold font-mono text-[#0F52BA] uppercase tracking-wider block text-[11px]">
                     Core Commercial Finding
                   </span>
                   {isEditing ? (
@@ -1710,12 +1812,12 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                 </div>
 
                 {rec.sustainabilityAssessment && (
-                  <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-2 text-xs">
+                  <div className="p-4 rounded bg-[#EDF3FD] border border-[#B7CEF7] space-y-2 text-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-bold font-mono text-[#1D4ED8] uppercase tracking-wider text-[11px]">
+                      <span className="font-bold font-mono text-[#0F52BA] uppercase tracking-wider text-[11px]">
                         Business Sustainability &amp; Strategic Choice
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#0F172A] text-white font-bold text-[10px] uppercase">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#0A2E6E] text-white font-bold text-[10px] uppercase">
                         {rec.sustainabilityAssessment.recommendedChoice}
                       </span>
                     </div>
@@ -1727,7 +1829,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                       <strong>6–12 Month Outlook: </strong>
                       {rec.sustainabilityAssessment.futureOutlook6to12Months}
                     </p>
-                    <p className="text-[#1E3A8A] leading-relaxed">
+                    <p className="text-[#0A2E6E] leading-relaxed">
                       <strong>Choice Rationale: </strong>
                       {rec.sustainabilityAssessment.choiceRationale}
                     </p>
@@ -1753,9 +1855,9 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   type="button"
                   onClick={handleGenerateFullHealthReport}
                   disabled={isGeneratingReport}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-semibold uppercase tracking-wider text-xs"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white font-semibold uppercase tracking-wider text-xs transition"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
                   <span>{isGeneratingReport ? 'Generating...' : 'Generate Coaching Plan & Report'}</span>
                 </button>
               </div>
@@ -1779,7 +1881,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         <div className="bizpulse-hero-gradient text-white rounded p-6 sm:p-8 shadow-sm border border-[#0F172A]/15 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/15 pb-5 print:border-black">
             <div>
-              <span className="bizpulse-label text-[#60A5FA]">
+              <span className="bizpulse-label text-[#6495ED]">
                 1. Business Profile &amp; Executive Summary · Case: {p.caseId}
               </span>
               <h1 className="text-2xl sm:text-3xl font-bold text-white mt-2 tracking-tight print:text-black">
@@ -1809,7 +1911,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
 
           <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="p-4 rounded bg-white/10 border border-white/15 space-y-1">
-              <span className="text-[#60A5FA] font-mono font-bold uppercase tracking-wider text-[10px] block">
+              <span className="text-[#6495ED] font-mono font-bold uppercase tracking-wider text-[10px] block">
                 Overall Health Score
               </span>
               <div className="text-xl font-bold text-white font-mono tabular-nums">
@@ -1819,7 +1921,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             </div>
 
             <div className="p-4 rounded bg-white/10 border border-white/15 space-y-1">
-              <span className="text-[#60A5FA] font-mono font-bold uppercase tracking-wider text-[10px] block">
+              <span className="text-[#6495ED] font-mono font-bold uppercase tracking-wider text-[10px] block">
                 Primary Objective
               </span>
               {isEditing ? (
@@ -1837,7 +1939,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             </div>
 
             <div className="p-4 rounded bg-white/10 border border-white/15 space-y-1">
-              <span className="text-[#FCD34D] font-mono font-bold uppercase tracking-wider text-[10px] block">
+              <span className="text-[#F5761A] font-mono font-bold uppercase tracking-wider text-[10px] block">
                 Primary Concern
               </span>
               {isEditing ? (
@@ -1865,7 +1967,11 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <div className="mt-4 pt-3 border-t border-white/15 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               {h.topThreePriorities.map((tp) => (
                 <div key={tp.key} className="p-3 rounded bg-white/10 border border-white/15">
-                  <span className="text-[10px] font-mono font-bold uppercase text-[#60A5FA] block">
+                  <span
+                    className={`text-[10px] font-mono font-bold uppercase block ${
+                      tp.rank === 1 ? 'text-[#F5761A]' : 'text-[#6495ED]'
+                    }`}
+                  >
                     Priority #{tp.rank} · {tp.title}
                   </span>
                   <p className="text-[#E2E8F0] mt-1 leading-relaxed">{tp.recommendedFocus}</p>
@@ -1881,7 +1987,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         {/* Bottom Next Actions Bar */}
         <div className="p-6 sm:p-8 rounded bg-white border border-[#0F172A]/12 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
           <div className="space-y-1">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
               Interactive Execution Tools
             </span>
             <h4 className="text-base font-bold text-[#0F172A]">
@@ -1910,7 +2016,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
             <button
               type="button"
               onClick={() => onSwitchTab('aicoach')}
-              className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition shadow-xs"
+              className="px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition shadow-xs"
             >
               Consult AI Coach
             </button>
@@ -1935,7 +2041,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
               onClick={() => toggleAccordion('sec-2')}
               className="flex-1 text-left flex items-center space-x-3"
             >
-              <span className="w-8 h-8 rounded bg-[#0F172A] text-white font-mono font-bold text-sm flex items-center justify-center shrink-0">
+              <span className="w-8 h-8 rounded bg-[#0A2E6E] text-white font-mono font-bold text-sm flex items-center justify-center shrink-0">
                 {displayNum}
               </span>
               <div>
@@ -2103,7 +2209,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                   className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold uppercase tracking-wider text-[#2563EB] font-mono">
+                    <span className="font-bold uppercase tracking-wider text-[#0F52BA] font-mono">
                       {item.category}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]">
@@ -2165,7 +2271,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
                     key={opt.id}
                     className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/10 space-y-2 text-xs"
                   >
-                    <span className="font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA] font-mono inline-block">
+                    <span className="font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0A2E6E] text-[#6495ED] font-mono inline-block">
                       {opt.id}
                     </span>
                     <h3 className="font-bold text-[#0F172A] text-sm">{opt.title}</h3>
@@ -2188,7 +2294,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         <div key="sec-6" className="p-6 sm:p-8 rounded bg-white border border-[#0F172A]/12 shadow-xs space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center space-x-2 text-[#0F172A] font-bold text-base">
-              <ShieldCheck className="w-5 h-5 text-[#2563EB]" />
+              <ShieldCheck className="w-5 h-5 text-[#0F52BA]" />
               <span>48-Hour Management Decision Gates</span>
             </div>
             {renderSectionMoveControls('sec-6')}
@@ -2233,7 +2339,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="bizpulse-label text-[#60A5FA]">
+                <span className="bizpulse-label text-[#6495ED]">
                   Executive Turnaround Briefing
                 </span>
                 <span className="text-[11px] font-mono uppercase tracking-wider text-[#CBD5E1] bg-white/10 px-2.5 py-0.5 rounded border border-white/15">
@@ -2268,7 +2374,7 @@ export const ExecutiveMemo: React.FC<ExecutiveMemoProps> = ({
         <div className="mt-5 p-4 rounded bg-white/10 border border-white/15 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-[#60A5FA]" />
+              <Activity className="w-5 h-5 text-[#6495ED]" />
               <span className="font-bold text-white text-sm">
                 Overall Health Assessment:
               </span>

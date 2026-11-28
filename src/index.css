@@ -3,20 +3,27 @@
 :root {
   --bg: #F8FAFC;
   --ink: #0F172A;
-  --accent: #2563EB;
+  --accent: #0F52BA;
   --border: rgba(15, 23, 42, 0.12);
 }
 
 @theme {
-  /* Deep Navy & Electric Blue Executive Palette */
+  /* Sapphire Blue, Cornflower Blue & Pumpkin Orange Executive Palette */
   --color-canvas: #F8FAFC;
   --color-panel: #FFFFFF;
-  --color-obsidian: #050811;
-  --color-midnight: #0B1324;
-  --color-navy-deep: #172554;
-  --color-electric-blue: #2563EB;
-  --color-electric-hover: #1D4ED8;
-  --color-light-blue: #60A5FA;
+  --color-sapphire-night: #071936;
+  --color-sapphire-deep: #0A2E6E;
+  --color-sapphire: #0F52BA;
+  --color-sapphire-hover: #0A3D8F;
+  --color-cornflower: #6495ED;
+  --color-cornflower-bg: #EDF3FD;
+  --color-cornflower-hover: #DCE8FC;
+  --color-cornflower-border: #B7CEF7;
+  --color-pumpkin: #F5761A;
+  --color-pumpkin-hover: #E0650D;
+  --color-pumpkin-bg: #FFF4EC;
+  --color-pumpkin-border: #F5C5A3;
+  --color-pumpkin-text: #C25107;
   --color-ink: #0F172A;
   --color-slate-muted: #475569;
   --color-border-soft: rgba(15, 23, 42, 0.12);
@@ -35,9 +42,9 @@
   --color-status-red-bg: #FEF2F2;
   --color-status-red-border: #FECACA;
 
-  --color-status-blue-text: #1D4ED8;
-  --color-status-blue-bg: #EFF6FF;
-  --color-status-blue-border: #BFDBFE;
+  --color-status-blue-text: #0F52BA;
+  --color-status-blue-bg: #EDF3FD;
+  --color-status-blue-border: #B7CEF7;
 }
 
 @layer base {
@@ -64,13 +71,13 @@
   }
 }
 
-/* Deep Black-to-Navy Hero Surfaces */
+/* Deep Sapphire Executive Hero Surfaces */
 .bizpulse-hero-gradient {
-  background: linear-gradient(135deg, #050811 0%, #0B1324 58%, #172554 100%);
+  background: linear-gradient(135deg, #071936 0%, #0A2E6E 58%, #0F52BA 100%);
 }
 
 .bizpulse-bar-gradient {
-  background-color: #FFFFFF;
+  background: linear-gradient(90deg, #071936 0%, #0A2E6E 55%, #0F52BA 100%);
 }
 
 .bizpulse-label {
@@ -94,7 +101,7 @@
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(37, 99, 235, 0.45);
+  background: rgba(15, 82, 186, 0.45);
 }
 
 @media print {

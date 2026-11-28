@@ -133,7 +133,7 @@ ${profile.name}`;
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#B91C1C] text-white flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#F5761A] text-[#0F172A] flex items-center gap-1">
                 <Flame className="w-3.5 h-3.5" />
                 Next 7 Days Execution Sprint
               </span>
@@ -150,7 +150,7 @@ ${profile.name}`;
           </div>
 
           <div className="bg-white/5 border border-white/15 rounded p-4 min-w-[200px] text-center shrink-0">
-            <span className="text-[11px] text-[#60A5FA] uppercase tracking-wider font-bold block">
+            <span className="text-[11px] text-[#6495ED] uppercase tracking-wider font-bold block">
               Sprint Progress
             </span>
             <div className="text-2xl font-bold text-white mt-1 font-mono tabular-nums">
@@ -166,7 +166,7 @@ ${profile.name}`;
         <div className="bg-white border border-[#0F172A]/12 rounded p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#0F172A]/10">
             <div>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#2563EB] block">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] block">
                 Live Sync with 30/60/90-Day Action Plan
               </span>
               <h3 className="text-sm font-bold text-[#0F172A]">
@@ -199,12 +199,12 @@ ${profile.name}`;
                     {isDone ? (
                       <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
                     ) : (
-                      <Circle className="w-4 h-4 text-[#64748B] hover:text-[#2563EB]" />
+                      <Circle className="w-4 h-4 text-[#64748B] hover:text-[#0F52BA]" />
                     )}
                   </button>
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#EDF3FD] text-[#0F52BA] border border-[#B7CEF7]">
                         {task.priority}
                       </span>
                       <span className="text-[10px] text-[#475569] font-medium">
@@ -242,13 +242,13 @@ ${profile.name}`;
               {completedActions['sprint-1'] ? (
                 <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
               ) : (
-                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#2563EB]" />
+                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#0F52BA]" />
               )}
             </button>
             <div className="flex-1 space-y-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-[#FEF2F2] text-[#B91C1C] font-bold text-xs border border-[#FECACA]">
+                  <span className="px-2 py-0.5 rounded bg-[#FFF4EC] text-[#C25107] font-bold text-xs border border-[#F5761A]/50">
                     #1 · Day 1–3 Priority
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-[#F8FAFC] text-[#0F172A] font-semibold border border-[#0F172A]/15">
@@ -280,12 +280,12 @@ ${profile.name}`;
                     <button
                       type="button"
                       onClick={() => copyToClipboard(action1Script, 'action-1')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#0F172A]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
                     >
                       {copiedKey === 'action-1' ? (
                         <Check className="w-3 h-3 text-[#15803D]" />
                       ) : (
-                        <Copy className="w-3 h-3 text-[#2563EB]" />
+                        <Copy className="w-3 h-3 text-[#0F52BA]" />
                       )}
                       <span>{copiedKey === 'action-1' ? 'Copied' : 'Copy Email'}</span>
                     </button>
@@ -317,7 +317,7 @@ ${profile.name}`;
               {completedActions['sprint-2'] ? (
                 <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
               ) : (
-                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#2563EB]" />
+                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#0F52BA]" />
               )}
             </button>
             <div className="flex-1 space-y-4">
@@ -353,12 +353,12 @@ ${profile.name}`;
                     <button
                       type="button"
                       onClick={() => copyToClipboard(action2Script, 'action-2')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#0F172A]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-[11px] font-semibold whitespace-nowrap shrink-0"
                     >
                       {copiedKey === 'action-2' ? (
                         <Check className="w-3 h-3 text-[#15803D]" />
                       ) : (
-                        <Copy className="w-3 h-3 text-[#2563EB]" />
+                        <Copy className="w-3 h-3 text-[#0F52BA]" />
                       )}
                       <span>{copiedKey === 'action-2' ? 'Copied' : 'Copy Invite'}</span>
                     </button>
@@ -390,12 +390,12 @@ ${profile.name}`;
               {completedActions['sprint-3'] ? (
                 <CheckCircle2 className="w-6 h-6 text-[#15803D]" />
               ) : (
-                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#2563EB]" />
+                <Circle className="w-6 h-6 text-[#64748B] hover:text-[#0F52BA]" />
               )}
             </button>
             <div className="flex-1 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-[#0F172A] text-white font-bold text-xs border border-[#0F172A]">
+                <span className="px-2 py-0.5 rounded bg-[#0A2E6E] text-white font-bold text-xs border border-[#0A2E6E]">
                   #3 · Day 1–7 Priority
                 </span>
                 <span className="text-xs px-2 py-0.5 rounded bg-[#F8FAFC] text-[#0F172A] font-semibold border border-[#0F172A]/15">

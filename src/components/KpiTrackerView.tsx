@@ -71,7 +71,7 @@ function getTrendBadgeClasses(trend: KpiTrendStatus): string {
     case 'Declining':
       return 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]';
     case 'Stable':
-      return 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]';
+      return 'bg-[#EDF3FD] text-[#0F52BA] border-[#B7CEF7]';
     case 'Insufficient Data':
     default:
       return 'bg-[#F8FAFC] text-[#475569] border-[#CBD5E1]';
@@ -476,7 +476,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
       <div className="bg-white border border-[#0F172A]/12 rounded p-6 space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 border-b border-[#0F172A]/10 pb-5">
           <div>
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
               <Gauge className="w-3.5 h-3.5" />
               <span>Measure Improvement Module</span>
               <span className="text-[#94A3B8]">·</span>
@@ -494,17 +494,17 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
             <button
               type="button"
               onClick={handleSyncFromCase}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-[#2563EB]" />
+              <RefreshCw className="w-3.5 h-3.5 text-[#0F52BA]" />
               <span>Sync Case Figures</span>
             </button>
             <button
               type="button"
               onClick={() => setShowKpiSelector((v) => !v)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-[#2563EB]" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#0F52BA]" />
               <span>Select KPIs ({trackerState.kpis.length}/30+)</span>
             </button>
             <button
@@ -512,14 +512,14 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
               onClick={() => setShowCustomForm((v) => !v)}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] border border-[#0F172A]/20 text-xs font-semibold transition"
             >
-              <Plus className="w-3.5 h-3.5 text-[#2563EB]" />
+              <Plus className="w-3.5 h-3.5 text-[#0F52BA]" />
               <span>Add Custom KPI</span>
             </button>
             <button
               type="button"
               disabled={isAiRunning || trackerState.kpis.length === 0}
               onClick={handleRunAiInterpretation}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-bold transition"
             >
               {isAiRunning ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -545,7 +545,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                 id="kpi-business-preset"
                 value={trackerState.selectedPreset}
                 onChange={(e) => handleSelectBusinessPreset(e.target.value as KpiBusinessTypePreset)}
-                className="px-3 py-2 rounded border border-[#0F172A]/20 bg-white text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
+                className="px-3 py-2 rounded border border-[#0F172A]/20 bg-white text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#0F52BA]"
               >
                 {KPI_BUSINESS_TYPE_PRESETS.map((preset) => (
                   <option key={preset.id} value={preset.id}>
@@ -586,11 +586,11 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
             </span>
             <div className="text-xl font-bold text-[#B91C1C] mt-0.5">{counts.declining}</div>
           </div>
-          <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE]">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#1D4ED8] block">
+          <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7]">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#0F52BA] block">
               On / Above Target
             </span>
-            <div className="text-xl font-bold text-[#1D4ED8] mt-0.5">{counts.onTarget}</div>
+            <div className="text-xl font-bold text-[#0F52BA] mt-0.5">{counts.onTarget}</div>
           </div>
           <div className="p-3 rounded bg-[#F8FAFC] border border-[#CBD5E1]">
             <span className="text-[10px] font-mono uppercase tracking-wider text-[#475569] block">
@@ -650,7 +650,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => handleToggleCatalogKpi(rec.catalogKey)}
-                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold transition"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add to Tracker</span>
@@ -676,7 +676,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
             <button
               type="button"
               onClick={() => setShowKpiSelector(false)}
-              className="px-3 py-1.5 rounded bg-[#0F172A] text-white text-xs font-semibold"
+              className="px-3 py-1.5 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold transition"
             >
               Done Selecting
             </button>
@@ -697,13 +697,13 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                       return (
                         <label
                           key={item.catalogKey}
-                          className="flex items-start gap-2 p-2 rounded bg-white border border-[#0F172A]/10 cursor-pointer hover:border-[#2563EB] text-xs"
+                          className="flex items-start gap-2 p-2 rounded bg-white border border-[#0F172A]/10 cursor-pointer hover:border-[#0F52BA] text-xs"
                         >
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => handleToggleCatalogKpi(item.catalogKey)}
-                            className="mt-0.5 rounded border-[#CBD5E1] text-[#2563EB]"
+                            className="mt-0.5 rounded border-[#CBD5E1] accent-[#0F52BA]"
                           />
                           <div>
                             <span className="font-semibold text-[#0F172A] block">{item.name}</span>
@@ -724,7 +724,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
       {showCustomForm && (
         <form
           onSubmit={handleCreateCustomKpi}
-          className="bg-white border border-[#2563EB]/30 rounded p-6 space-y-4"
+          className="bg-white border border-[#0F52BA]/35 rounded p-6 space-y-4"
         >
           <div className="flex items-center justify-between border-b border-[#0F172A]/10 pb-3">
             <h3 className="text-base font-bold text-[#0F172A]">Add Custom KPI</h3>
@@ -856,7 +856,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
           <div className="flex justify-end">
             <button
               type="submit"
-              className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold"
+              className="px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-bold transition"
             >
               Save Custom KPI
             </button>
@@ -872,7 +872,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
             onClick={() => setCategoryFilter('all')}
             className={`px-3 py-1.5 rounded text-xs font-semibold transition ${
               categoryFilter === 'all'
-                ? 'bg-[#0F172A] text-white'
+                ? 'bg-[#0A2E6E] text-white'
                 : 'bg-[#F8FAFC] text-[#475569] hover:text-[#0F172A]'
             }`}
           >
@@ -888,7 +888,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                 onClick={() => setCategoryFilter(cat.id)}
                 className={`px-3 py-1.5 rounded text-xs font-semibold transition ${
                   categoryFilter === cat.id
-                    ? 'bg-[#2563EB] text-white'
+                    ? 'bg-[#0F52BA] text-white'
                     : 'bg-[#F8FAFC] text-[#475569] hover:text-[#0F172A]'
                 }`}
               >
@@ -947,12 +947,12 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
             return (
               <div
                 key={kpi.id}
-                className="bg-white border border-[#0F172A]/12 rounded p-5 sm:p-6 flex flex-col justify-between gap-4 hover:border-[#2563EB]/60 transition"
+                className="bg-white border border-[#0F172A]/12 rounded p-5 sm:p-6 flex flex-col justify-between gap-4 hover:border-[#0F52BA]/60 transition"
               >
                 <div className="space-y-4">
                   {/* Top Bar: 2. Business-performance category & 9. Trend */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                       {kpi.categoryLabel}
                       {kpi.isCustom ? ' · Custom' : ''}
                     </span>
@@ -972,10 +972,10 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                       <button
                         type="button"
                         onClick={() => (isEditing ? setEditingKpiId(null) : openEditorForKpi(kpi))}
-                        className="p-1.5 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/12 text-xs"
+                        className="p-1.5 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/12 text-xs"
                         title="Update figures, targets, or comment"
                       >
-                        <Edit3 className="w-3.5 h-3.5 text-[#2563EB]" />
+                        <Edit3 className="w-3.5 h-3.5 text-[#0F52BA]" />
                       </button>
                       <button
                         type="button"
@@ -1017,8 +1017,8 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-3 rounded bg-[#EFF6FF] border border-[#BFDBFE]">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#1D4ED8] block">
+                    <div className="p-3 rounded bg-[#EDF3FD] border border-[#B7CEF7]">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#0F52BA] block">
                         6. Latest Actual
                       </span>
                       <div className="text-sm font-bold text-[#0F172A] font-mono mt-0.5">
@@ -1063,7 +1063,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
 
                   {/* Inline Update / Formula Input Editor */}
                   {isEditing && (
-                    <div className="p-4 rounded bg-[#F8FAFC] border border-[#2563EB]/40 space-y-3 text-xs">
+                    <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F52BA]/40 space-y-3 text-xs">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-bold text-[#0F172A]">Update KPI Figures &amp; Schedule</span>
                         {hasFormula && (
@@ -1072,7 +1072,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                               type="button"
                               onClick={() => setDraftMode('formula')}
                               className={`px-2.5 py-1 rounded text-[11px] font-semibold ${
-                                draftMode === 'formula' ? 'bg-[#2563EB] text-white' : 'text-[#475569]'
+                                draftMode === 'formula' ? 'bg-[#0F52BA] text-white' : 'text-[#475569]'
                               }`}
                             >
                               Formula Inputs
@@ -1081,7 +1081,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                               type="button"
                               onClick={() => setDraftMode('direct')}
                               className={`px-2.5 py-1 rounded text-[11px] font-semibold ${
-                                draftMode === 'direct' ? 'bg-[#2563EB] text-white' : 'text-[#475569]'
+                                draftMode === 'direct' ? 'bg-[#0F52BA] text-white' : 'text-[#475569]'
                               }`}
                             >
                               Direct Actual
@@ -1111,7 +1111,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                               </div>
                             ))}
                           </div>
-                          <div className="text-[11px] font-mono text-[#1D4ED8] bg-[#EFF6FF] border border-[#BFDBFE] rounded px-2.5 py-1.5">
+                          <div className="text-[11px] font-mono text-[#0F52BA] bg-[#EDF3FD] border border-[#B7CEF7] rounded px-2.5 py-1.5">
                             Computed Preview:{' '}
                             {formatKpiNumber(
                               evaluateKpiFormula(
@@ -1203,7 +1203,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleSaveKpiEdit(kpi)}
-                          className="px-3.5 py-1.5 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold"
+                          className="px-3.5 py-1.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-bold transition"
                         >
                           Save KPI Period Entry
                         </button>
@@ -1214,7 +1214,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                   {/* 10. AI interpretation & 11. Recommended corrective action */}
                   <div className="space-y-2 text-xs">
                     <div className="p-3 rounded bg-[#F8FAFC] border border-[#0F172A]/10">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#1D4ED8] block mb-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] block mb-1">
                         10. AI Interpretation
                       </span>
                       <p className="text-[#0F172A] leading-relaxed">{kpi.aiInterpretation}</p>
@@ -1232,7 +1232,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                 <div className="pt-3 border-t border-[#0F172A]/10 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-1.5 text-[#475569] font-mono">
-                      <Calendar className="w-3.5 h-3.5 text-[#2563EB]" />
+                      <Calendar className="w-3.5 h-3.5 text-[#0F52BA]" />
                       <span>
                         12. Next Review: <strong className="text-[#0F172A]">{kpi.nextReviewDate || 'Unscheduled'}</strong>
                       </span>
@@ -1242,7 +1242,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                       <button
                         type="button"
                         onClick={() => openEditorForKpi(kpi)}
-                        className="text-[#2563EB] hover:underline font-semibold"
+                        className="text-[#0F52BA] hover:underline font-semibold"
                       >
                         Update Actual / Inputs
                       </button>
@@ -1252,7 +1252,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                           <button
                             type="button"
                             onClick={() => setExpandedHistoryId(isHistoryOpen ? null : kpi.id)}
-                            className="inline-flex items-center gap-1 text-[#0F172A] hover:text-[#2563EB] font-semibold"
+                            className="inline-flex items-center gap-1 text-[#0F172A] hover:text-[#0F52BA] font-semibold"
                           >
                             <TrendingUp className="w-3.5 h-3.5" />
                             <span>History ({kpi.history.length})</span>
@@ -1289,7 +1289,7 @@ export const KpiTrackerView: React.FC<KpiTrackerViewProps> = ({
                                 type="monotone"
                                 dataKey="actualValue"
                                 name="Actual"
-                                stroke="#2563EB"
+                                stroke="#0F52BA"
                                 strokeWidth={2}
                                 dot={{ r: 3 }}
                               />

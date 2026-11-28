@@ -60,7 +60,7 @@ function getStatusRgb(status: HealthStatus): [number, number, number] {
     case 'not_sure':
     case 'unanswered':
     default:
-      return [29, 78, 216]; // #1D4ED8 Blue (Insufficient Information)
+      return [15, 82, 186]; // #0F52BA Sapphire Blue (Insufficient Information)
   }
 }
 
@@ -75,7 +75,7 @@ function getStatusHex(status: HealthStatus): string {
     case 'not_sure':
     case 'unanswered':
     default:
-      return '1D4ED8';
+      return '0F52BA';
   }
 }
 
@@ -114,11 +114,11 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
 
-    // Top Black-to-Blue header strip
+    // Top Deep Sapphire gradient header strip
     const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
-    grad.addColorStop(0, '#070B14');
-    grad.addColorStop(0.6, '#0F172A');
-    grad.addColorStop(1, '#1D4ED8');
+    grad.addColorStop(0, '#071936');
+    grad.addColorStop(0.55, '#0A2E6E');
+    grad.addColorStop(1, '#0F52BA');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, 44);
 
@@ -156,7 +156,7 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
 
       const lx = cx + (radius + 26) * Math.cos(angle);
       const ly = cy + (radius + 20) * Math.sin(angle);
-      ctx.fillStyle = '#0F172A';
+      ctx.fillStyle = '#0A2E6E';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(key.slice(0, 8).toUpperCase(), lx, ly + 4);
@@ -181,9 +181,9 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
       else ctx.lineTo(p.x, p.y);
     });
     ctx.closePath();
-    ctx.fillStyle = 'rgba(29, 78, 216, 0.18)';
+    ctx.fillStyle = 'rgba(100, 149, 237, 0.24)';
     ctx.fill();
-    ctx.strokeStyle = '#1D4ED8';
+    ctx.strokeStyle = '#0F52BA';
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
@@ -208,7 +208,7 @@ export function renderHealthChartCanvasPng(caseRecord: CaseRecord): Uint8Array |
       const numScore = getDimensionNumericScore(item?.status || 'unanswered');
       const [r, g, b] = getStatusRgb(item?.status || 'unanswered');
 
-      ctx.fillStyle = '#0B1324';
+      ctx.fillStyle = '#0A2E6E';
       ctx.font = 'bold 11.5px sans-serif';
       ctx.fillText(item?.title || key, barStartX, y);
 
@@ -275,15 +275,15 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
 
   const drawRunningHeader = (isFirstPage: boolean) => {
     if (isFirstPage) {
-      // Black-to-blue banded cover header
-      doc.setFillColor(7, 11, 20); // #070B14 Obsidian
+      // Deep Sapphire banded cover header
+      doc.setFillColor(7, 25, 54); // #071936 Deep Sapphire
       doc.rect(0, 0, pageWidth, 88, 'F');
-      doc.setFillColor(29, 78, 216); // #1D4ED8 Cobalt accent strip
+      doc.setFillColor(15, 82, 186); // #0F52BA Sapphire Blue accent strip
       doc.rect(0, 84, pageWidth, 4, 'F');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
-      doc.setTextColor(147, 197, 253); // #93C5FD
+      doc.setTextColor(100, 149, 237); // #6495ED Cornflower Blue
       doc.text('RELAUNCH BIZPULSE — EXECUTIVE COACHING & DIAGNOSTIC OS', margin, 26);
 
       doc.setFontSize(17);
@@ -301,9 +301,9 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
       );
       y = 110;
     } else {
-      doc.setFillColor(15, 23, 42);
+      doc.setFillColor(10, 46, 110); // #0A2E6E Deep Sapphire
       doc.rect(0, 0, pageWidth, 34, 'F');
-      doc.setFillColor(29, 78, 216);
+      doc.setFillColor(15, 82, 186); // #0F52BA Sapphire Blue
       doc.rect(0, 32, pageWidth, 2, 'F');
 
       doc.setFont('helvetica', 'bold');
@@ -312,7 +312,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
       doc.text(`${profile.name} — Diagnostic Report`, margin, 21);
 
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(147, 197, 253);
+      doc.setTextColor(100, 149, 237); // #6495ED Cornflower Blue
       doc.text(`Case: ${profile.caseId}`, pageWidth - margin, 21, { align: 'right' });
       y = 54;
     }
@@ -327,14 +327,24 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
 
   const drawSectionHeading = (num: string, title: string) => {
     ensureSpace(34);
-    doc.setFillColor(239, 246, 255); // #EFF6FF
-    doc.rect(margin, y, contentWidth, 22, 'F');
-    doc.setFillColor(29, 78, 216);
-    doc.rect(margin, y, 4, 22, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(15, 23, 42);
+    const isSection09 = num === '9' || num === '09';
+    if (isSection09) {
+      doc.setFillColor(255, 244, 236); // #FFF4EC Section 09 light Pumpkin tint
+      doc.rect(margin, y, contentWidth, 22, 'F');
+      doc.setFillColor(245, 118, 26); // #F5761A Pumpkin Orange accent bar
+      doc.rect(margin, y, 4, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
+    } else {
+      doc.setFillColor(237, 243, 253); // #EDF3FD Cornflower tint
+      doc.rect(margin, y, contentWidth, 22, 'F');
+      doc.setFillColor(15, 82, 186); // #0F52BA Sapphire Blue accent bar
+      doc.rect(margin, y, 4, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(10, 46, 110); // #0A2E6E Deep Sapphire ink
+    }
     doc.text(`${num}. ${title}`, margin + 12, y + 14.5);
     y += 30;
   };
@@ -418,7 +428,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
       ? [180, 83, 9]
       : computedHealth.overallRating === 'At Risk'
       ? [185, 28, 28]
-      : [29, 78, 216];
+      : [15, 82, 186];
 
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(ratingColor[0], ratingColor[1], ratingColor[2]);
@@ -513,7 +523,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
   });
 
   // Connect polygon perimeter cleanly
-  doc.setDrawColor(29, 78, 216);
+  doc.setDrawColor(15, 82, 186);
   doc.setLineWidth(1.6);
   for (let i = 0; i < polyPts.length; i++) {
     const curr = polyPts[i];
@@ -566,7 +576,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
   const colWidths = [130, 88, 48, contentWidth - 266];
   const drawTableHeader = () => {
     ensureSpace(24);
-    doc.setFillColor(15, 23, 42);
+    doc.setFillColor(10, 46, 110);
     doc.rect(margin, y, contentWidth, 20, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
@@ -685,7 +695,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
   // Section 5: Improvement & Profit Opportunities (incl. CRM & ROI)
   drawSectionHeading('5', 'Improvement & Profit Opportunities (CRM & ROI)');
   if (recommendations?.profitOpportunities?.length) {
-    drawWrappedParagraph('Structured Profit & Revenue Leakage Opportunities:', { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 3 });
+    drawWrappedParagraph('Structured Profit & Revenue Leakage Opportunities:', { fontSize: 9, bold: true, color: [15, 82, 186], gapAfter: 3 });
     recommendations.profitOpportunities.forEach((opp, idx) => {
       drawWrappedParagraph(
         `${idx + 1}. [${opp.area} · ${opp.horizon}] ${opp.title} — Impact: ${opp.estimatedFinancialImpact} | First Step: ${opp.whatToDoFirst || opp.evidenceBasis}`,
@@ -716,7 +726,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     });
   }
   if (roiList.length > 0) {
-    drawWrappedParagraph(`ROI & Break-Even Scenarios (${roiList.length} modeled):`, { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 3 });
+    drawWrappedParagraph(`ROI & Break-Even Scenarios (${roiList.length} modeled):`, { fontSize: 9, bold: true, color: [15, 82, 186], gapAfter: 3 });
     roiList.forEach((s) => {
       const m = computeRoiScenarioMetrics(s);
       const roiLabel = !m.hasSufficientData
@@ -744,7 +754,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     drawWrappedParagraph('Why This Matters Commercially:', { fontSize: 9, bold: true, color: [15, 23, 42], gapAfter: 2 });
     drawWrappedParagraph(recommendations.commercialWhy, { fontSize: 8.5, indent: 6, gapAfter: 5 });
 
-    drawWrappedParagraph('Core Turnaround Recommendation:', { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 2 });
+    drawWrappedParagraph('Core Turnaround Recommendation:', { fontSize: 9, bold: true, color: [15, 82, 186], gapAfter: 2 });
     drawWrappedParagraph(recommendations.initialRecommendation, { fontSize: 8.5, indent: 6, gapAfter: 5 });
 
     drawWrappedParagraph('Immediate Action (Next 48–72 Hours):', { fontSize: 9, bold: true, color: [21, 128, 61], gapAfter: 2 });
@@ -787,7 +797,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     const actCols = [72, 115, 165, 78, contentWidth - 430];
     const drawActionHeader = () => {
       ensureSpace(22);
-      doc.setFillColor(15, 23, 42);
+      doc.setFillColor(10, 46, 110);
       doc.rect(margin, y, contentWidth, 20, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
@@ -852,7 +862,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
     const kCols = [135, 72, 72, 72, 65, contentWidth - 416];
     const drawKpiHeader = () => {
       ensureSpace(22);
-      doc.setFillColor(15, 23, 42);
+      doc.setFillColor(10, 46, 110);
       doc.rect(margin, y, contentWidth, 20, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
@@ -918,7 +928,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
 
   // Section 9: Information Gaps, Assumptions, Document Audits & Custom Notes
   drawSectionHeading('9', 'Information Gaps, Assumptions, Document Audits & Owner Notes');
-  drawWrappedParagraph('Missing Information & Evidence Gaps (Blue):', { fontSize: 9, bold: true, color: [29, 78, 216], gapAfter: 3 });
+  drawWrappedParagraph('Missing Information & Evidence Gaps (Blue):', { fontSize: 9, bold: true, color: [15, 82, 186], gapAfter: 3 });
   if (computedHealth.missingEvidenceAreas.length > 0) {
     computedHealth.missingEvidenceAreas.forEach((gap) =>
       drawWrappedParagraph(`•  ${gap}`, { fontSize: 8.4, indent: 8, gapAfter: 2 })
@@ -935,7 +945,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
       drawWrappedParagraph(`Working Assumptions to Verify: ${kva.assumptions.join('; ')}`, { fontSize: 8.2, indent: 8, color: [180, 83, 9], gapAfter: 2 });
     }
     if (kva.unknowns?.length) {
-      drawWrappedParagraph(`Missing / Unknown Data: ${kva.unknowns.join('; ')}`, { fontSize: 8.2, indent: 8, color: [29, 78, 216], gapAfter: 4 });
+      drawWrappedParagraph(`Missing / Unknown Data: ${kva.unknowns.join('; ')}`, { fontSize: 8.2, indent: 8, color: [15, 82, 186], gapAfter: 4 });
     }
   }
   if (recommendations?.missingEvidence?.length) {
@@ -971,7 +981,7 @@ export function generatePdfReportBytes(rawCase: CaseRecord): Uint8Array {
       const blkFontSize = blk.fontSize === 'sm' ? 8.5 : blk.fontSize === 'lg' ? 11 : 9.5;
       const accentRgb: [number, number, number] =
         blk.accent === 'blue'
-          ? [29, 78, 216]
+          ? [15, 82, 186]
           : blk.accent === 'green'
           ? [21, 128, 61]
           : blk.accent === 'amber'
@@ -1056,28 +1066,28 @@ export async function generateDocxReportUint8Array(
     children: [
       new TableCell({
         width: { size: 2400, type: WidthType.DXA },
-        shading: { type: ShadingType.CLEAR, fill: '0F172A' },
+        shading: { type: ShadingType.CLEAR, fill: '0A2E6E' },
         borders: cellBorders,
         margins: cellMargins,
         children: [new Paragraph({ children: [new TextRun({ text: 'Dimension', bold: true, color: 'FFFFFF', size: 20 })] })],
       }),
       new TableCell({
         width: { size: 1600, type: WidthType.DXA },
-        shading: { type: ShadingType.CLEAR, fill: '0F172A' },
+        shading: { type: ShadingType.CLEAR, fill: '0A2E6E' },
         borders: cellBorders,
         margins: cellMargins,
         children: [new Paragraph({ children: [new TextRun({ text: 'Status', bold: true, color: 'FFFFFF', size: 20 })] })],
       }),
       new TableCell({
         width: { size: 1000, type: WidthType.DXA },
-        shading: { type: ShadingType.CLEAR, fill: '0F172A' },
+        shading: { type: ShadingType.CLEAR, fill: '0A2E6E' },
         borders: cellBorders,
         margins: cellMargins,
         children: [new Paragraph({ children: [new TextRun({ text: 'Score', bold: true, color: 'FFFFFF', size: 20 })] })],
       }),
       new TableCell({
         width: { size: 4600, type: WidthType.DXA },
-        shading: { type: ShadingType.CLEAR, fill: '0F172A' },
+        shading: { type: ShadingType.CLEAR, fill: '0A2E6E' },
         borders: cellBorders,
         margins: cellMargins,
         children: [new Paragraph({ children: [new TextRun({ text: 'Evidence Notes & Meaning', bold: true, color: 'FFFFFF', size: 20 })] })],
@@ -1137,7 +1147,7 @@ export async function generateDocxReportUint8Array(
   const sectionsChildren: (Paragraph | Table)[] = [
     new Paragraph({
       children: [
-        new TextRun({ text: 'RELAUNCH BIZPULSE  •  EXECUTIVE COACHING & DIAGNOSTIC REPORT', bold: true, size: 18, color: '1D4ED8' }),
+        new TextRun({ text: 'RELAUNCH BIZPULSE  •  EXECUTIVE COACHING & DIAGNOSTIC REPORT', bold: true, size: 18, color: '0F52BA' }),
       ],
       spacing: { after: 100 },
     }),
@@ -1311,7 +1321,7 @@ export async function generateDocxReportUint8Array(
         children: [
           ...(recommendations.hiddenProfitOpportunities?.length
             ? [
-                new TextRun({ text: 'Hidden Profit Opportunities:\n', bold: true, color: '1D4ED8', size: 20 }),
+                new TextRun({ text: 'Hidden Profit Opportunities:\n', bold: true, color: '0F52BA', size: 20 }),
                 ...recommendations.hiddenProfitOpportunities.map((x) => new TextRun({ text: `• ${x}\n`, size: 19 })),
                 new TextRun({ text: '\n', size: 19 }),
               ]
@@ -1376,7 +1386,7 @@ export async function generateDocxReportUint8Array(
           new TextRun({ text: `${recommendations.initialObservation}\n\n`, size: 19 }),
           new TextRun({ text: 'Commercial Rationale:\n', bold: true, size: 20 }),
           new TextRun({ text: `${recommendations.commercialWhy}\n\n`, size: 19 }),
-          new TextRun({ text: 'Strategic Turnaround Recommendation:\n', bold: true, color: '1D4ED8', size: 20 }),
+          new TextRun({ text: 'Strategic Turnaround Recommendation:\n', bold: true, color: '0F52BA', size: 20 }),
           new TextRun({ text: `${recommendations.initialRecommendation}\n\n`, size: 19 }),
           new TextRun({ text: 'Immediate Action (Next 48–72 Hours):\n', bold: true, color: '15803D', size: 20 }),
           new TextRun({ text: `${recommendations.immediateAction}\n\n`, size: 19 }),
@@ -1395,7 +1405,7 @@ export async function generateDocxReportUint8Array(
       sectionsChildren.push(
         new Paragraph({
           children: [
-            new TextRun({ text: `Sustainability Choice: ${sust.recommendedChoice}\n`, bold: true, size: 21, color: '1D4ED8' }),
+            new TextRun({ text: `Sustainability Choice: ${sust.recommendedChoice}\n`, bold: true, size: 21, color: '0F52BA' }),
             new TextRun({ text: `Current Position: ${sust.currentPositionSummary}\n`, size: 19 }),
             new TextRun({ text: `6–12 Month Outlook: ${sust.futureOutlook6to12Months}\n`, size: 19 }),
             new TextRun({ text: `Rationale: ${sust.choiceRationale}\n`, size: 19 }),
@@ -1442,7 +1452,7 @@ export async function generateDocxReportUint8Array(
         ([label, w]) =>
           new TableCell({
             width: { size: w as number, type: WidthType.DXA },
-            shading: { type: ShadingType.CLEAR, fill: '1D4ED8' },
+            shading: { type: ShadingType.CLEAR, fill: '0F52BA' },
             borders: cellBorders,
             margins: cellMargins,
             children: [new Paragraph({ children: [new TextRun({ text: label as string, bold: true, color: 'FFFFFF', size: 18 })] })],
@@ -1526,7 +1536,7 @@ export async function generateDocxReportUint8Array(
         ([label, w]) =>
           new TableCell({
             width: { size: w as number, type: WidthType.DXA },
-            shading: { type: ShadingType.CLEAR, fill: '0F172A' },
+            shading: { type: ShadingType.CLEAR, fill: '0A2E6E' },
             borders: cellBorders,
             margins: cellMargins,
             children: [new Paragraph({ children: [new TextRun({ text: label as string, bold: true, color: 'FFFFFF', size: 18 })] })],
@@ -1618,13 +1628,24 @@ export async function generateDocxReportUint8Array(
   // 9. Information Gaps, Knowns vs Assumptions, Document Audits & Custom Commentary
   sectionsChildren.push(
     new Paragraph({
-      text: '9. Information Gaps, Assumptions, Document Audits & Owner Notes',
       heading: HeadingLevel.HEADING_1,
+      shading: { type: ShadingType.CLEAR, fill: 'FFF4EC' },
+      border: {
+        left: { style: BorderStyle.SINGLE, size: 24, color: 'F5761A', space: 8 },
+      },
+      children: [
+        new TextRun({
+          text: '9. Information Gaps, Assumptions, Document Audits & Owner Notes',
+          bold: true,
+          size: 26,
+          color: 'C25107',
+        }),
+      ],
       spacing: { before: 220, after: 80 },
     }),
     new Paragraph({
       children: [
-        new TextRun({ text: 'Information & Evidence Gaps (Blue):\n', bold: true, color: '1D4ED8', size: 20 }),
+        new TextRun({ text: 'Information & Evidence Gaps (Blue):\n', bold: true, color: '0F52BA', size: 20 }),
         ...(computedHealth.missingEvidenceAreas.length > 0
           ? computedHealth.missingEvidenceAreas.map((g) => new TextRun({ text: `• ${g}\n`, size: 19 }))
           : [new TextRun({ text: '• All 12 capabilities answered.\n', size: 19, color: '15803D' })]),
@@ -1635,7 +1656,7 @@ export async function generateDocxReportUint8Array(
           ? [new TextRun({ text: `Working Assumptions: ${recommendations.knownsVsAssumptions.assumptions.join('; ')}\n`, size: 18, color: 'B45309' })]
           : []),
         ...(recommendations?.knownsVsAssumptions?.unknowns?.length
-          ? [new TextRun({ text: `Unknowns / Missing Data: ${recommendations.knownsVsAssumptions.unknowns.join('; ')}\n`, size: 18, color: '1D4ED8' })]
+          ? [new TextRun({ text: `Unknowns / Missing Data: ${recommendations.knownsVsAssumptions.unknowns.join('; ')}\n`, size: 18, color: '0F52BA' })]
           : []),
       ],
       spacing: { after: 140 },
@@ -1686,7 +1707,7 @@ export async function generateDocxReportUint8Array(
           : AlignmentType.LEFT;
       const accentHex =
         blk.accent === 'blue'
-          ? '1D4ED8'
+          ? '0F52BA'
           : blk.accent === 'green'
           ? '15803D'
           : blk.accent === 'amber'
@@ -1795,13 +1816,13 @@ export function generateCoachingPlanPdfBytes(rawCase: CaseRecord): Uint8Array {
 
   const drawHeader = (isFirst: boolean) => {
     if (isFirst) {
-      doc.setFillColor(7, 11, 20);
+      doc.setFillColor(7, 25, 54);
       doc.rect(0, 0, pageWidth, 80, 'F');
-      doc.setFillColor(37, 99, 235);
+      doc.setFillColor(15, 82, 186);
       doc.rect(0, 76, pageWidth, 4, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
-      doc.setTextColor(147, 197, 253);
+      doc.setTextColor(100, 149, 237);
       doc.text('RELAUNCH BIZPULSE — COACHING & ACTIONS PLAN', margin, 24);
       doc.setFontSize(16);
       doc.setTextColor(255, 255, 255);
@@ -1812,8 +1833,10 @@ export function generateCoachingPlanPdfBytes(rawCase: CaseRecord): Uint8Array {
       doc.text(`${profile.industry} (${profile.country}, ${profile.currency})  |  Health Score: ${computedHealth.overallScore ?? 'Pending'}/100 (${computedHealth.overallRating})`, margin, 66);
       y = 102;
     } else {
-      doc.setFillColor(15, 23, 42);
+      doc.setFillColor(10, 46, 110);
       doc.rect(0, 0, pageWidth, 32, 'F');
+      doc.setFillColor(15, 82, 186);
+      doc.rect(0, 30, pageWidth, 2, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(255, 255, 255);
@@ -1831,13 +1854,13 @@ export function generateCoachingPlanPdfBytes(rawCase: CaseRecord): Uint8Array {
 
   const heading = (title: string) => {
     ensureSpace(30);
-    doc.setFillColor(239, 246, 255);
+    doc.setFillColor(237, 243, 253);
     doc.rect(margin, y, contentWidth, 20, 'F');
-    doc.setFillColor(37, 99, 235);
+    doc.setFillColor(15, 82, 186);
     doc.rect(margin, y, 4, 20, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setTextColor(15, 23, 42);
+    doc.setTextColor(10, 46, 110);
     doc.text(title, margin + 10, y + 13.5);
     y += 28;
   };
@@ -1895,7 +1918,7 @@ export function generateCoachingPlanPdfBytes(rawCase: CaseRecord): Uint8Array {
     if (recommendations.knownsVsAssumptions) {
       para(`Knowns: ${recommendations.knownsVsAssumptions.knowns.join('; ')}`, { size: 8, indent: 4, color: [21, 128, 61], gap: 2 });
       para(`Assumptions: ${recommendations.knownsVsAssumptions.assumptions.join('; ')}`, { size: 8, indent: 4, color: [180, 83, 9], gap: 2 });
-      para(`Missing Info: ${recommendations.knownsVsAssumptions.unknowns.join('; ')}`, { size: 8, indent: 4, color: [29, 78, 216], gap: 5 });
+      para(`Missing Info: ${recommendations.knownsVsAssumptions.unknowns.join('; ')}`, { size: 8, indent: 4, color: [15, 82, 186], gap: 5 });
     }
   } else {
     heading('1. Coaching Recommendations Pending');
@@ -1939,7 +1962,7 @@ export async function generateCoachingPlanDocxUint8Array(rawCase: CaseRecord): P
 
   const children: (Paragraph | Table)[] = [
     new Paragraph({
-      children: [new TextRun({ text: 'RELAUNCH BIZPULSE  •  COACHING & ACTIONS PLAN', bold: true, size: 18, color: '1D4ED8' })],
+      children: [new TextRun({ text: 'RELAUNCH BIZPULSE  •  COACHING & ACTIONS PLAN', bold: true, size: 18, color: '0F52BA' })],
       spacing: { after: 100 },
     }),
     new Paragraph({
@@ -2014,7 +2037,7 @@ export async function generateCoachingPlanDocxUint8Array(rawCase: CaseRecord): P
           children: [
             new TextRun({ text: `Knowns: ${recommendations.knownsVsAssumptions.knowns.join('; ')}\n`, size: 18, color: '15803D' }),
             new TextRun({ text: `Working Assumptions: ${recommendations.knownsVsAssumptions.assumptions.join('; ')}\n`, size: 18, color: 'B45309' }),
-            new TextRun({ text: `Missing Info: ${recommendations.knownsVsAssumptions.unknowns.join('; ')}`, size: 18, color: '1D4ED8' }),
+            new TextRun({ text: `Missing Info: ${recommendations.knownsVsAssumptions.unknowns.join('; ')}`, size: 18, color: '0F52BA' }),
           ],
           spacing: { after: 140 },
         })

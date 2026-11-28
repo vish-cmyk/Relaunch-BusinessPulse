@@ -185,7 +185,7 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 text-xs font-medium">
-              <span className="bizpulse-label text-[#60A5FA]">[03] Evidence &amp; Trend Intelligence</span>
+              <span className="bizpulse-label text-[#6495ED]">[03] Evidence &amp; Trend Intelligence</span>
               <span aria-hidden="true" className="text-[#94A3B8]">·</span>
               <span className="font-mono text-[#CBD5E1]">{profile.name}</span>
             </div>
@@ -205,7 +205,7 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
                 disabled={isSynthesizing}
                 className="inline-flex items-center gap-2 px-4 py-3 rounded bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-semibold uppercase tracking-wider text-xs border border-white/20 transition whitespace-nowrap"
               >
-                <RefreshCw className={`w-4 h-4 text-[#60A5FA] ${isSynthesizing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 text-[#6495ED] ${isSynthesizing ? 'animate-spin' : ''}`} />
                 <span>{isSynthesizing ? 'Synthesizing...' : 'Synthesize Trends & Earnings'}</span>
               </button>
             )}
@@ -213,8 +213,8 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
             <label
               className={`inline-flex items-center gap-2 px-5 py-3 rounded font-semibold uppercase tracking-wider text-xs shadow-sm transition cursor-pointer shrink-0 whitespace-nowrap ${
                 isAnalyzing
-                  ? 'bg-[#2563EB]/40 text-[#BFDBFE] cursor-wait border border-[#2563EB]/30'
-                  : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
+                  ? 'bg-[#0F52BA]/40 text-[#B7CEF7] cursor-wait border border-[#0F52BA]/30'
+                  : 'bg-[#0F52BA] hover:bg-[#0A3D8F] text-white'
               }`}
             >
               <FileUp className="w-4 h-4" />
@@ -254,10 +254,10 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
 
       {/* Cross-Document Earnings & Trend Synthesis Card */}
       {synthesis && (
-        <div ref={synthesisRef} className="bg-white border border-[#2563EB]/40 rounded p-6 space-y-5 shadow-xs">
+        <div ref={synthesisRef} className="bg-white border border-[#0F52BA]/40 rounded p-6 space-y-5 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#0F172A]/10">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#2563EB]" />
+              <Sparkles className="w-5 h-5 text-[#0F52BA]" />
               <div>
                 <h3 className="text-base font-bold text-[#0F172A]">
                   Cross-Document Earnings &amp; Trend Synthesis ({documents.length} Document{documents.length === 1 ? '' : 's'})
@@ -274,9 +274,9 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
                   `Based on our cross-document earnings synthesis ("${synthesis.summary.slice(0, 110)}..."), which earning scenario should we plan around for the next 90 days?`
                 )
               }
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold uppercase tracking-wider transition"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <MessageSquare className="w-3.5 h-3.5 text-[#6495ED]" />
               <span>Discuss Scenarios</span>
             </button>
           </div>
@@ -350,7 +350,7 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
       {/* Document List & Main Evidence Viewer */}
       {documents.length === 0 ? (
         <div className="bg-white border border-[#0F172A]/12 rounded p-10 text-center space-y-4">
-          <div className="w-12 h-12 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-[#0F52BA] flex items-center justify-center mx-auto">
             <FileSpreadsheet className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 max-w-lg mx-auto">
@@ -361,8 +361,8 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
               Upload your Profit &amp; Loss extract, Balance Sheet, Aged Debtors CSV/Excel ledger, or supplier contract summary. BizPulse separates directly verified evidence from owner assumptions and lets you synthesize multiple periods into future earnings scenarios.
             </p>
           </div>
-          <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold uppercase tracking-wider text-xs cursor-pointer transition">
-            <FileUp className="w-4 h-4 text-[#60A5FA]" />
+          <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white font-semibold uppercase tracking-wider text-xs cursor-pointer transition">
+            <FileUp className="w-4 h-4 text-[#6495ED]" />
             <span>Select File (CSV, XLSX, PDF, DOCX, TXT)</span>
             <input
               type="file"
@@ -393,13 +393,13 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
                     onClick={() => setSelectedDocId(docItem.id)}
                     className={`p-3 rounded border cursor-pointer transition flex items-start justify-between gap-2 ${
                       isSelected
-                        ? 'bg-[#EFF6FF] border-[#2563EB] text-[#0F172A]'
+                        ? 'bg-[#EDF3FD] border-[#0F52BA] text-[#0F172A]'
                         : 'bg-[#F8FAFC] border-[#0F172A]/10 hover:border-[#0F172A]/25'
                     }`}
                   >
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-1.5">
-                        <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#2563EB]' : 'text-[#475569]'}`} />
+                        <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#0F52BA]' : 'text-[#475569]'}`} />
                         <span className="text-xs font-bold truncate text-[#0F172A]">{docItem.fileName}</span>
                       </div>
                       <div className="text-[11px] text-[#475569] font-mono">
@@ -443,15 +443,15 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
                         `Regarding the uploaded document "${activeDoc.fileName}", what is the single highest-value cash flow or margin improvement action I should take next?`
                       )
                     }
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap"
                   >
-                    <MessageSquare className="w-3.5 h-3.5 text-[#60A5FA]" />
+                    <MessageSquare className="w-3.5 h-3.5 text-[#6495ED]" />
                     <span>Discuss With Coach</span>
                   </button>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+                  <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                     Document Summary
                   </h4>
                   <p className="text-sm text-[#0F172A] leading-relaxed">{activeDoc.summary}</p>
@@ -516,9 +516,9 @@ export const DocumentAnalysisView: React.FC<DocumentAnalysisViewProps> = ({
 
               {/* Earning Potential, Risks & Opportunities */}
               <div className="bg-white border border-[#0F172A]/12 rounded p-6 space-y-5 text-xs">
-                <div className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-bold text-[#1D4ED8] uppercase tracking-wider">
-                    <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                <div className="p-4 rounded bg-[#EDF3FD] border border-[#B7CEF7] space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-[#0F52BA] uppercase tracking-wider">
+                    <TrendingUp className="w-4 h-4 text-[#0F52BA]" />
                     <span>Reasoned Assessment of Future Earning Potential</span>
                   </div>
                   <p className="text-sm text-[#0F172A] leading-relaxed">

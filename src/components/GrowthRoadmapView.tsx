@@ -23,7 +23,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
       {/* Navy-to-Black Editorial Hero */}
       <section className="bizpulse-hero-gradient text-white rounded p-6 sm:p-10 border border-[#0F172A]/15">
         <div className="max-w-3xl space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#60A5FA] font-mono uppercase tracking-widest">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[#6495ED] font-mono uppercase tracking-widest">
             <Compass className="w-3.5 h-3.5" />
             <span>Platform Vision &amp; Development Roadmap</span>
             {businessName && (
@@ -38,7 +38,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
             {BIZPULSE_VISION.headline}
           </h1>
 
-          <p className="text-base sm:text-lg font-medium text-[#60A5FA]">
+          <p className="text-base sm:text-lg font-medium text-[#6495ED]">
             {BIZPULSE_VISION.subheading}
           </p>
 
@@ -71,7 +71,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
               onClick={() => setSelectedPillarId('all')}
               className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
                 selectedPillarId === 'all'
-                  ? 'bg-[#0F172A] text-white'
+                  ? 'bg-[#0A2E6E] text-white'
                   : 'text-[#475569] hover:text-[#0F172A]'
               }`}
             >
@@ -84,7 +84,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                 onClick={() => setSelectedPillarId(pillar.id)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
                   selectedPillarId === pillar.id
-                    ? 'bg-[#0F172A] text-white'
+                    ? 'bg-[#0A2E6E] text-white'
                     : 'text-[#475569] hover:text-[#0F172A]'
                 }`}
               >
@@ -107,7 +107,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2 text-xs text-[#475569]">
-                  <span className="font-mono font-bold text-[#2563EB] tracking-wider">
+                  <span className="font-mono font-bold text-[#0F52BA] tracking-wider">
                     Pillar {pillar.number}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] font-semibold">
@@ -119,7 +119,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                   <h3 className="text-lg sm:text-xl font-bold text-[#0F172A]">
                     {pillar.number}. {pillar.title}
                   </h3>
-                  <p className="text-sm font-semibold text-[#1D4ED8] mt-1">
+                  <p className="text-sm font-semibold text-[#0F52BA] mt-1">
                     {pillar.tagline}
                   </p>
                   <p className="text-xs sm:text-sm text-[#475569] mt-3 leading-relaxed">
@@ -135,7 +135,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                         key={cap}
                         className="flex items-start gap-2.5 text-xs sm:text-sm text-[#0F172A]"
                       >
-                        <Check className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 text-[#0F52BA] shrink-0 mt-0.5" />
                         <span>{cap}</span>
                       </li>
                     ))}
@@ -151,10 +151,10 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onNavigateTab(pillar.availableNowTab!)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 hover:border-[#0F52BA] text-xs font-semibold transition whitespace-nowrap shrink-0"
                   >
                     <span>{pillar.availableNowLabel}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <ArrowRight className="w-3.5 h-3.5 text-[#0F52BA]" />
                   </button>
                 </div>
               )}
@@ -179,7 +179,7 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
           </div>
 
           <div className="lg:col-span-5 bg-[#F8FAFC] border border-[#0F172A]/12 rounded p-5 sm:p-6 space-y-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8] block">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0F52BA] block">
               {BIZPULSE_VISION.ambitionLead}
             </span>
             <p className="text-sm font-medium text-[#0F172A] leading-relaxed">
@@ -190,10 +190,10 @@ export const GrowthRoadmapView: React.FC<GrowthRoadmapViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onNavigateTab('health')}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
                   <span>Assess Business Health Today</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <ArrowRight className="w-3.5 h-3.5 text-white" />
                 </button>
               </div>
             )}

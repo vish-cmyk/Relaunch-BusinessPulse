@@ -428,7 +428,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="bizpulse-label text-[#60A5FA]">
+              <span className="bizpulse-label text-[#6495ED]">
                 ROI Calculator, Break-Even &amp; Trade-Off Analysis
               </span>
               <span className="text-xs text-[#94A3B8] font-medium">
@@ -446,7 +446,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
           <button
             type="button"
             onClick={handleCreateScenario}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New ROI Scenario</span>
@@ -461,7 +461,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#0F172A]/10">
           <div>
             <div className="flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-[#2563EB]" />
+              <Calculator className="w-5 h-5 text-[#0F52BA]" />
               <h3 className="text-lg font-bold text-[#0F172A]">
                 Editable ROI &amp; Break-Even Scenario Workbench
               </h3>
@@ -476,7 +476,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               <button
                 type="button"
                 onClick={() => handleDuplicateScenario(activeScenario)}
-                className="px-3 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/15 hover:border-[#2563EB] text-xs font-semibold text-[#0F172A] inline-flex items-center gap-1"
+                className="px-3 py-1.5 rounded bg-[#F8FAFC] border border-[#0F172A]/15 hover:border-[#0F52BA] text-xs font-semibold text-[#0F172A] inline-flex items-center gap-1"
               >
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </button>
@@ -503,15 +503,15 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                   onClick={() => setSelectedScenarioId(sc.id)}
                   className={`px-3.5 py-2 rounded text-xs font-semibold border transition text-left ${
                     isSelected
-                      ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                      : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/15 hover:border-[#2563EB]'
+                      ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
+                      : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/15 hover:border-[#0F52BA]'
                   }`}
                 >
                   <span>{sc.name}</span>
                   {sc.linkedCrmLabel && (
                     <span
                       className={`ml-1.5 text-[10px] font-mono ${
-                        isSelected ? 'text-[#60A5FA]' : 'text-[#2563EB]'
+                        isSelected ? 'text-[#6495ED]' : 'text-[#0F52BA]'
                       }`}
                     >
                       [{sc.linkedCrmLabel}]
@@ -529,8 +529,8 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               activeScenario.assumptionsNote?.includes('[Illustrative draft inputs') ||
               activeScenario.assumptionsNote?.includes('[Needs owner figures') ||
               !baseMetrics.hasSufficientData) && (
-              <div className="p-3.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#1E3A8A] flex items-start gap-2">
-                <Info className="w-4 h-4 text-[#1D4ED8] shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-xs text-[#0A2E6E] flex items-start gap-2">
+                <Info className="w-4 h-4 text-[#0F52BA] shrink-0 mt-0.5" />
                 <span>
                   {!baseMetrics.hasSufficientData ? (
                     <>
@@ -592,7 +592,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
 
                   <div>
                     <label className="font-semibold text-[#0F172A] block mb-1 flex items-center gap-1">
-                      <LinkIcon className="w-3 h-3 text-[#2563EB]" /> Link to CRM Opportunity
+                      <LinkIcon className="w-3 h-3 text-[#0F52BA]" /> Link to CRM Opportunity
                     </label>
                     <select
                       value={activeScenario.linkedCrmId || ''}
@@ -854,7 +854,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                     <span className="text-[#475569]">
                       Risk-Adjusted Net Benefit (@ {activeScenario.confidencePct}% confidence):
                     </span>
-                    <span className="font-mono font-bold text-[#2563EB]">
+                    <span className="font-mono font-bold text-[#0F52BA]">
                       {currency} {Math.round(baseMetrics.riskAdjustedNetBenefit).toLocaleString()}
                     </span>
                   </div>
@@ -911,7 +911,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                     type="button"
                     onClick={handleRunAiScenarioCheck}
                     disabled={isAnalyzingAi || !baseMetrics.hasSufficientData}
-                    className="py-2.5 px-4 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition"
+                    className="py-2.5 px-4 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition"
                   >
                     {isAnalyzingAi ? (
                       <>
@@ -942,9 +942,9 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                           })\n- Confidence: ${activeScenario.confidencePct}% | Assumptions: ${activeScenario.assumptionsNote}\n\nCheck this against our Business Health and Cash Flow liquidity.`
                         )
                       }
-                      className="py-2.5 px-4 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition"
+                      className="py-2.5 px-4 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition"
                     >
-                      <Bot className="w-4 h-4 text-[#60A5FA]" />
+                      <Bot className="w-4 h-4 text-[#6495ED]" />
                       <span>Open in Chat with Coach</span>
                     </button>
                   )}
@@ -972,10 +972,10 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                 {aiAnalysis && (
                   <div
                     ref={aiResultRef}
-                    className="p-4 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-xs space-y-2.5 scroll-mt-24"
+                    className="p-4 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-xs space-y-2.5 scroll-mt-24"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
+                      <span className="font-mono font-bold uppercase tracking-wider text-[#0F52BA] flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" />
                         AI Scenario Interpretation &amp; Risk Verdict
                       </span>
@@ -1010,7 +1010,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
             {/* Revenue & Margin Sensitivity Matrix */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0F172A]">
-                <Layers className="w-4 h-4 text-[#2563EB]" />
+                <Layers className="w-4 h-4 text-[#0F52BA]" />
                 <span>Revenue &amp; Margin Sensitivity Scenarios</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs tabular-nums">
@@ -1065,7 +1065,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0F172A]">
-                    <TrendingUp className="w-4 h-4 text-[#2563EB]" />
+                    <TrendingUp className="w-4 h-4 text-[#0F52BA]" />
                     <span>Side-by-Side Scenario Comparison Matrix ({roiScenarios.length})</span>
                   </div>
                   <span className="text-[11px] text-[#475569]">Click any row to edit</span>
@@ -1092,7 +1092,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                             key={sc.id}
                             onClick={() => setSelectedScenarioId(sc.id)}
                             className={`cursor-pointer transition ${
-                              isSelected ? 'bg-[#EFF6FF]' : 'hover:bg-[#F8FAFC]'
+                              isSelected ? 'bg-[#EDF3FD]' : 'hover:bg-[#F8FAFC]'
                             }`}
                           >
                             <td className="py-2.5 px-3">
@@ -1146,7 +1146,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
             {/* ROI Methodology & Limitations Card */}
             <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 text-xs space-y-2">
               <div className="flex items-center gap-1.5 font-bold text-[#0F172A] uppercase tracking-wider text-[11px]">
-                <BookOpen className="w-3.5 h-3.5 text-[#2563EB]" />
+                <BookOpen className="w-3.5 h-3.5 text-[#0F52BA]" />
                 <span>ROI Methodology &amp; Commercial Limitations</span>
               </div>
               <p className="text-[#475569] leading-relaxed">
@@ -1159,7 +1159,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
           </div>
         ) : (
           <div className="p-8 rounded bg-[#F8FAFC] border border-dashed border-[#0F172A]/20 text-center space-y-3">
-            <TrendingUp className="w-8 h-8 text-[#2563EB] mx-auto" />
+            <TrendingUp className="w-8 h-8 text-[#0F52BA] mx-auto" />
             <h4 className="font-bold text-[#0F172A] text-sm">
               No Custom ROI Scenarios Modeled Yet
             </h4>
@@ -1169,9 +1169,9 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
             <button
               type="button"
               onClick={handleCreateScenario}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-bold uppercase tracking-wider transition"
             >
-              <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Create First ROI Scenario</span>
             </button>
           </div>
@@ -1198,8 +1198,8 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                   onClick={() => setSelectedOptionId(optId)}
                   className={`px-3 py-1.5 rounded text-xs font-bold transition ${
                     selectedOptionId === optId
-                      ? 'bg-[#2563EB] text-white border border-[#2563EB]'
-                      : 'bg-white text-[#0F172A] border border-[#0F172A]/15 hover:border-[#2563EB]'
+                      ? 'bg-[#0F52BA] text-white border border-[#0F52BA]'
+                      : 'bg-white text-[#0F172A] border border-[#0F172A]/15 hover:border-[#0F52BA]'
                   }`}
                 >
                   {optId}
@@ -1218,13 +1218,13 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                   onClick={() => setSelectedOptionId(opt.id)}
                   className={`p-5 rounded cursor-pointer transition-all border flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-white border-[#2563EB] shadow-md ring-1 ring-[#2563EB]/30'
+                      ? 'bg-white border-[#0F52BA] shadow-md ring-1 ring-[#0F52BA]/30'
                       : 'bg-white border-[#0F172A]/12 hover:border-[#0F172A]/30'
                   }`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-[#0F172A] text-[#60A5FA] font-mono">
+                      <span className="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-[#0A2E6E] text-[#6495ED] font-mono">
                         {opt.id}
                       </span>
                       <span
@@ -1276,7 +1276,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#0F172A]/10">
               <div>
                 <div className="flex items-center space-x-3">
-                  <span className="px-3 py-1 rounded bg-[#0F172A] text-[#60A5FA] font-mono font-bold text-sm">
+                  <span className="px-3 py-1 rounded bg-[#0A2E6E] text-[#6495ED] font-mono font-bold text-sm">
                     {selectedOption.id}
                   </span>
                   <h3 className="text-xl font-bold text-[#0F172A]">{selectedOption.title}</h3>
@@ -1320,7 +1320,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
               </div>
 
               <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-2">
-                <h4 className="font-bold text-[#2563EB] text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                <h4 className="font-bold text-[#0F52BA] text-xs flex items-center gap-1.5 uppercase tracking-wider">
                   <Clock className="w-4 h-4" />
                   Timeframe to Positive Cash Return
                 </h4>
@@ -1342,7 +1342,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
 
             <div className="p-5 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-2.5 text-xs">
               <div className="flex items-center space-x-2 text-[#0F172A] font-bold text-sm">
-                <Calculator className="w-4 h-4 text-[#2563EB]" />
+                <Calculator className="w-4 h-4 text-[#0F52BA]" />
                 <span>Break-Even Formula</span>
               </div>
               <div className="p-3 bg-white rounded font-mono text-[#0F172A] border border-[#0F172A]/15">
@@ -1404,9 +1404,9 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
                     `Stress-test my ROI scenarios for ${profile?.name || 'this business'} against our current cash headroom, 12-capability health flags, and delivery capacity.`
                   )
                 }
-                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition shrink-0"
+                className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition shrink-0"
               >
-                <Bot className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <Bot className="w-3.5 h-3.5 text-[#6495ED]" />
                 <span>Stress-Test ROI with Coach</span>
               </button>
             )}
@@ -1433,7 +1433,7 @@ export const OptionsEvaluationMatrix: React.FC<OptionsEvaluationMatrixProps> = (
             </div>
             <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1.5">
               <h4 className="font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-[#2563EB]" />
+                <ShieldAlert className="w-4 h-4 text-[#0F52BA]" />
                 3. Operational Capacity Check
               </h4>
               <p className="text-[#475569] leading-relaxed">

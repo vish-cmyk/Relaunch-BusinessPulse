@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-3">
           {/* Brand Lockup */}
           <div className="flex items-center space-x-3 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded bg-[#0B1324] flex items-center justify-center text-white font-bold text-sm sm:text-base shrink-0 border-b-2 border-[#2563EB]">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded bg-[#0A2E6E] flex items-center justify-center text-white font-bold text-sm sm:text-base shrink-0 border-b-2 border-[#F5761A]">
               BP
             </div>
             <div className="min-w-0">
@@ -222,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenFeedbackModal}
-                className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE] text-xs font-semibold transition whitespace-nowrap shrink-0"
+                className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] text-[#0F52BA] border border-[#B7CEF7] text-xs font-semibold transition whitespace-nowrap shrink-0"
                 title="Submit pilot usability feedback on any feature"
               >
                 <MessageSquarePlus className="w-3.5 h-3.5" />
@@ -234,10 +234,10 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenCheckoutModal}
-                className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition whitespace-nowrap shrink-0"
+                className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition whitespace-nowrap shrink-0"
                 title="View Pilot Allowances, Quotas & Account Ownership"
               >
-                <Crown className="w-3.5 h-3.5 text-[#2563EB]" />
+                <Crown className="w-3.5 h-3.5 text-[#0F52BA]" />
                 <span>{tierLabel}</span>
                 {typeof remainingCoach === 'number' && (
                   <span className="hidden md:inline font-mono text-[10px] text-[#475569] border-l border-[#0F172A]/15 pl-1.5 tabular-nums">
@@ -250,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onOpenExportModal}
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap shrink-0"
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] text-xs font-semibold border border-[#0F172A]/15 transition whitespace-nowrap shrink-0"
               title="Download PDF, Word (.docx), PowerPoint (.pptx), or Scorecard (.csv)"
             >
               <Download className="w-3.5 h-3.5 text-[#475569]" />
@@ -260,9 +260,9 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onOpenCoachModal}
-              className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 rounded bg-[#0B1324] hover:bg-[#172554] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+              className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#EDF3FD]" />
               <span className="hidden sm:inline">Consult Coach</span>
               <span className="sm:hidden">Coach</span>
             </button>
@@ -307,11 +307,11 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => handleSelectTab(tab.id)}
                   className={`flex items-center space-x-1.5 py-2.5 text-xs whitespace-nowrap shrink-0 border-b-2 transition-colors ${
                     isActive
-                      ? 'border-[#2563EB] text-[#0F172A] font-bold'
+                      ? 'border-[#0F52BA] text-[#0F172A] font-bold'
                       : 'border-transparent text-[#0F172A]/70 hover:text-[#0F172A] font-medium'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#2563EB]' : 'text-[#0F172A]/55'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#0F52BA]' : 'text-[#0F172A]/55'}`} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -325,11 +325,11 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-expanded={toolsOpen}
                 className={`flex items-center space-x-1.5 py-2.5 text-xs whitespace-nowrap shrink-0 border-b-2 transition-colors ${
                   activeTool
-                    ? 'border-[#2563EB] text-[#0F172A] font-bold'
+                    ? 'border-[#0F52BA] text-[#0F172A] font-bold'
                     : 'border-transparent text-[#0F172A]/70 hover:text-[#0F172A] font-medium'
                 }`}
               >
-                <TrendingUp className={`w-3.5 h-3.5 ${activeTool ? 'text-[#2563EB]' : 'text-[#0F172A]/55'}`} />
+                <TrendingUp className={`w-3.5 h-3.5 ${activeTool ? 'text-[#0F52BA]' : 'text-[#0F172A]/55'}`} />
                 <span>{activeTool ? `Tools: ${activeTool.label}` : 'Financial & Tracking'}</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${toolsOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -346,13 +346,13 @@ export const Header: React.FC<HeaderProps> = ({
                         onClick={() => handleSelectTab(tool.id)}
                         className={`w-full text-left px-3.5 py-2.5 flex items-start gap-2.5 transition ${
                           isToolActive
-                            ? 'bg-[#EFF6FF] text-[#1D4ED8]'
+                            ? 'bg-[#EDF3FD] text-[#0F52BA]'
                             : 'hover:bg-[#F8FAFC] text-[#0F172A]'
                         }`}
                       >
                         <ToolIcon
                           className={`w-4 h-4 shrink-0 mt-0.5 ${
-                            isToolActive ? 'text-[#2563EB]' : 'text-[#475569]'
+                            isToolActive ? 'text-[#0F52BA]' : 'text-[#475569]'
                           }`}
                         />
                         <div className="min-w-0">
@@ -380,11 +380,11 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => handleSelectTab(tab.id)}
                   className={`flex items-center space-x-1.5 py-2.5 text-xs whitespace-nowrap shrink-0 border-b-2 transition-colors ${
                     isActive
-                      ? 'border-[#2563EB] text-[#0F172A] font-bold'
+                      ? 'border-[#0F52BA] text-[#0F172A] font-bold'
                       : 'border-transparent text-[#0F172A]/70 hover:text-[#0F172A] font-medium'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#2563EB]' : 'text-[#0F172A]/55'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#0F52BA]' : 'text-[#0F172A]/55'}`} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -402,7 +402,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenFeedbackModal}
-            className="text-[#2563EB] font-semibold inline-flex items-center gap-1 shrink-0"
+            className="text-[#0F52BA] font-semibold inline-flex items-center gap-1 shrink-0"
           >
             <MessageSquarePlus className="w-3.5 h-3.5" />
             <span>Feedback</span>
@@ -414,7 +414,7 @@ export const Header: React.FC<HeaderProps> = ({
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-[#0F172A]/15 shadow-lg px-4 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
           <div className="space-y-1.5">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#2563EB] block">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#0F52BA] block">
               Core Diagnostic Workflow
             </span>
             <div className="grid grid-cols-2 gap-1.5">
@@ -428,11 +428,11 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => handleSelectTab(tab.id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded border text-xs font-semibold text-left ${
                       active
-                        ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                        ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                         : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/10'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-[#60A5FA]' : 'text-[#2563EB]'}`} />
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-[#6495ED]' : 'text-[#0F52BA]'}`} />
                     <span className="truncate">{tab.label}</span>
                   </button>
                 );
@@ -455,11 +455,11 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => handleSelectTab(tool.id)}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded border text-xs font-semibold text-left ${
                       active
-                        ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                        ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                         : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/10'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-[#60A5FA]' : 'text-[#2563EB]'}`} />
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-[#6495ED]' : 'text-[#0F52BA]'}`} />
                     <span>{tool.label}</span>
                   </button>
                 );
@@ -482,11 +482,11 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => handleSelectTab(tab.id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded border text-xs font-semibold text-left ${
                       active
-                        ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                        ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                         : 'bg-[#F8FAFC] text-[#0F172A] border-[#0F172A]/10'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-[#60A5FA]' : 'text-[#2563EB]'}`} />
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-[#6495ED]' : 'text-[#0F52BA]'}`} />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -500,7 +500,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className="flex items-center gap-2 px-3 py-2 rounded border border-[#0F172A]/10 bg-[#F8FAFC] text-xs font-semibold text-[#0F172A]"
                 >
-                  <Crown className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <Crown className="w-3.5 h-3.5 text-[#0F52BA]" />
                   <span>{tierLabel}</span>
                 </button>
               )}

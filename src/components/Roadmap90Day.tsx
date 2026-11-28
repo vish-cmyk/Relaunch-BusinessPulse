@@ -155,7 +155,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
             onClick={() => setSubView('roadmap')}
             className={`px-4 py-1.5 rounded text-xs font-bold transition ${
               subView === 'roadmap'
-                ? 'bg-[#0F172A] text-white'
+                ? 'bg-[#0A2E6E] text-white'
                 : 'text-[#475569] hover:text-[#0F172A]'
             }`}
           >
@@ -166,7 +166,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
             onClick={() => setSubView('sprint')}
             className={`px-4 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition ${
               subView === 'sprint'
-                ? 'bg-[#2563EB] text-white'
+                ? 'bg-[#F5761A] text-[#0F172A]'
                 : 'text-[#475569] hover:text-[#0F172A]'
             }`}
           >
@@ -180,7 +180,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
             <button
               type="button"
               onClick={onOpenKpiTracker}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE] text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] text-[#0F52BA] border border-[#B7CEF7] text-xs font-semibold transition"
             >
               <Gauge className="w-3.5 h-3.5" />
               <span>Measure Outcomes: KPI Tracker</span>
@@ -189,9 +189,9 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
           <button
             type="button"
             onClick={handleImportFromDiagnostics}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold transition"
           >
-            <Download className="w-3.5 h-3.5 text-[#2563EB]" />
+            <Download className="w-3.5 h-3.5 text-[#0F52BA]" />
             <span>Import Priorities &amp; Recommendations</span>
           </button>
           <span className="text-xs text-[#475569] font-medium">
@@ -219,7 +219,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-2">
                 <div className="flex items-center space-x-2.5">
-                  <span className="bizpulse-label text-[#60A5FA]">
+                  <span className="bizpulse-label text-[#6495ED]">
                     30 / 60 / 90-Day Accountability Engine
                   </span>
                   <span className="text-[#94A3B8] text-xs font-medium">
@@ -235,7 +235,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
               </div>
 
               <div className="bg-white/10 border border-white/15 rounded p-4 min-w-[210px] text-center shrink-0">
-                <span className="text-[11px] font-mono text-[#60A5FA] uppercase tracking-wider font-bold block">
+                <span className="text-[11px] font-mono text-[#6495ED] uppercase tracking-wider font-bold block">
                   Completion (Active)
                 </span>
                 <div className="text-3xl font-bold text-white mt-1 font-mono tabular-nums">
@@ -243,7 +243,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                 </div>
                 <div className="w-full bg-white/15 rounded-full h-2 mt-2 overflow-hidden">
                   <div
-                    className="bg-[#2563EB] h-full rounded-full transition-all duration-300"
+                    className="bg-[#6495ED] h-full rounded-full transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -268,7 +268,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                     onClick={() => setSelectedHorizon(h.id)}
                     className={`px-3 py-1.5 rounded text-xs font-bold transition ${
                       selectedHorizon === h.id
-                        ? 'bg-[#2563EB] text-white'
+                        ? 'bg-[#0F52BA] text-white'
                         : 'bg-white/10 text-[#CBD5E1] hover:text-white'
                     }`}
                   >
@@ -316,21 +316,21 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                 value={newTaskIssue}
                 onChange={(e) => setNewTaskIssue(e.target.value)}
                 placeholder="1. Identified Issue / Opportunity (e.g., 60+ day debtors)"
-                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder={`2. Recommended Action for ${caseRecord.profile.name}...`}
-                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-semibold focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB]"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] font-semibold focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA]"
               />
               <input
                 type="text"
                 value={newTaskSuccessKpi}
                 onChange={(e) => setNewTaskSuccessKpi(e.target.value)}
                 placeholder="3. Success Measure / KPI (e.g., Recover $25k in 14 days)"
-                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
             </div>
 
@@ -340,33 +340,33 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                 value={newTaskRationale}
                 onChange={(e) => setNewTaskRationale(e.target.value)}
                 placeholder="Reason for action (commercial why)..."
-                className="flex-1 min-w-[200px] bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="flex-1 min-w-[200px] bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
               <input
                 type="text"
                 value={newTaskOwner}
                 onChange={(e) => setNewTaskOwner(e.target.value)}
                 placeholder="Responsible Person"
-                className="w-36 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-36 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
               <input
                 type="text"
                 value={newTaskCostEffort}
                 onChange={(e) => setNewTaskCostEffort(e.target.value)}
                 placeholder="Est. Cost / Effort"
-                className="w-32 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-32 bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
               <input
                 type="date"
                 value={newTaskDueDate}
                 onChange={(e) => setNewTaskDueDate(e.target.value)}
-                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-2.5 py-2 text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 title="Target completion date"
               />
               <select
                 value={newTaskHorizon}
                 onChange={(e) => setNewTaskHorizon(e.target.value as TurnaroundAction['horizon'])}
-                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#0F52BA]"
               >
                 <option value="30 Days (Quick Wins & Control)">30 Days</option>
                 <option value="60 Days (Systems & Margin Fixes)">60 Days</option>
@@ -375,7 +375,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
               <select
                 value={newTaskPriority}
                 onChange={(e) => setNewTaskPriority(e.target.value as TurnaroundAction['priority'])}
-                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#2563EB]"
+                className="bg-[#FCFCFC] border border-[#0F172A]/15 rounded px-3 py-2 text-[#0F172A] focus:outline-none focus:border-[#0F52BA]"
               >
                 <option value="Priority 1 (Urgent)">Priority 1 (Urgent)</option>
                 <option value="Priority 2 (High)">Priority 2 (High)</option>
@@ -384,9 +384,9 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
               <button
                 type="submit"
                 disabled={!newTaskTitle.trim()}
-                className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-50 text-white font-semibold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap"
+                className="px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] disabled:opacity-50 text-white font-semibold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap"
               >
-                <Plus className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <Plus className="w-3.5 h-3.5 text-white" />
                 <span>Add Action</span>
               </button>
             </div>
@@ -405,9 +405,9 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                 <button
                   type="button"
                   onClick={handleImportFromDiagnostics}
-                  className="px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5"
+                  className="px-4 py-2 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5 text-[#60A5FA]" />
+                  <Download className="w-3.5 h-3.5 text-[#6495ED]" />
                   <span>Import Priorities &amp; Recommendations</span>
                 </button>
                 {onSwitchTab && (
@@ -415,21 +415,21 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                     <button
                       type="button"
                       onClick={() => onSwitchTab('essentials')}
-                      className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A]"
+                      className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A]"
                     >
                       1. Business Essentials &rarr;
                     </button>
                     <button
                       type="button"
                       onClick={() => onSwitchTab('health')}
-                      className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A]"
+                      className="px-3.5 py-2 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] border border-[#0F172A]/15 text-xs font-semibold text-[#0F172A]"
                     >
                       2. 12-Capability Health &rarr;
                     </button>
                     <button
                       type="button"
                       onClick={() => onSwitchTab('recommendations')}
-                      className="px-3.5 py-2 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#BFDBFE] text-xs font-semibold text-[#1D4ED8]"
+                      className="px-3.5 py-2 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] border border-[#B7CEF7] text-xs font-semibold text-[#0F52BA]"
                     >
                       3. Generate Coaching Plan &rarr;
                     </button>
@@ -449,7 +449,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                         ? 'bg-[#F8FAFC] border-[#CBD5E1] opacity-65'
                         : task.completed
                         ? 'bg-[#F8FAFC] border-[#A7F3D0] opacity-90'
-                        : 'bg-white border-[#0F172A]/12 hover:border-[#2563EB] shadow-xs'
+                        : 'bg-white border-[#0F172A]/12 hover:border-[#0F52BA] shadow-xs'
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -463,12 +463,12 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                           {task.completed ? (
                             <CheckCircle2 className="w-5 h-5 text-[#15803D]" />
                           ) : (
-                            <Circle className="w-5 h-5 text-[#94A3B8] hover:text-[#2563EB]" />
+                            <Circle className="w-5 h-5 text-[#94A3B8] hover:text-[#0F52BA]" />
                           )}
                         </button>
                         <div className="flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F172A] text-[#60A5FA] font-mono">
+                            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0A2E6E] text-[#6495ED] font-mono">
                               {task.horizon}
                             </span>
                             <span
@@ -483,11 +483,11 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                               {task.priority}
                             </span>
                             <span className="text-[11px] px-2 py-0.5 rounded bg-[#F8FAFC] text-[#0F172A] border border-[#0F172A]/15 flex items-center gap-1 font-semibold">
-                              <UserCheck className="w-3 h-3 text-[#2563EB]" />
+                              <UserCheck className="w-3 h-3 text-[#0F52BA]" />
                               {task.accountableRole}
                             </span>
                             {task.sourceTag && (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1D4ED8] border border-[#BFDBFE]">
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EDF3FD] text-[#0F52BA] border border-[#B7CEF7]">
                                 Source: {task.sourceTag}
                               </span>
                             )}
@@ -511,7 +511,7 @@ export const Roadmap90Day: React.FC<Roadmap90DayProps> = ({
                               type="text"
                               value={task.action}
                               onChange={(e) => updateTask(task.id, { action: e.target.value })}
-                              className={`w-full bg-transparent border border-transparent hover:border-[#0F172A]/15 focus:bg-white focus:border-[#2563EB] rounded px-2 py-1 text-sm sm:text-base font-bold focus:outline-none ${
+                              className={`w-full bg-transparent border border-transparent hover:border-[#0F172A]/15 focus:bg-white focus:border-[#0F52BA] rounded px-2 py-1 text-sm sm:text-base font-bold focus:outline-none ${
                                 task.completed || dec === 'rejected'
                                   ? 'line-through text-[#475569]'
                                   : 'text-[#0F172A]'

@@ -82,10 +82,10 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
         }}
         aria-label={`More information about ${title}`}
         aria-expanded={isOpen}
-        className={`inline-flex items-center justify-center w-5 h-5 sm:w-4 sm:h-4 rounded-full transition focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+        className={`inline-flex items-center justify-center w-5 h-5 sm:w-4 sm:h-4 rounded-full transition focus:outline-none focus:ring-2 focus:ring-[#0F52BA] ${
           isOpen
-            ? 'bg-[#2563EB] text-white'
-            : 'bg-[#EFF6FF] text-[#1D4ED8] hover:bg-[#DBEAFE] border border-[#BFDBFE]'
+            ? 'bg-[#0F52BA] text-white'
+            : 'bg-[#EDF3FD] text-[#0F52BA] hover:bg-[#DCE8FC] border border-[#B7CEF7]'
         }`}
       >
         <HelpCircle className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
@@ -116,13 +116,13 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
 
           {whyItMatters && (
             <div className="p-2 rounded bg-[#F8FAFC] border border-[#0F172A]/10 text-[11px] text-[#0F172A] leading-relaxed">
-              <strong className="text-[#1D4ED8]">Why it matters: </strong>
+              <strong className="text-[#0F52BA]">Why it matters: </strong>
               {whyItMatters}
             </div>
           )}
 
           {actionOrCalculation && (
-            <div className="p-2 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[11px] text-[#1E3A8A] leading-relaxed">
+            <div className="p-2 rounded bg-[#EDF3FD] border border-[#B7CEF7] text-[11px] text-[#0A2E6E] leading-relaxed">
               <strong>How to use / act on this: </strong>
               {actionOrCalculation}
             </div>

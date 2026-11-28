@@ -130,7 +130,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
       : GROWTH_ROADMAP_PILLARS.filter((p) => p.id === selectedPillarId);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-[#2563EB]/20 selection:text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-[#0F52BA]/20 selection:text-[#0F172A]">
       {/* Top Bar (3-zone architectural header) */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xs border-b border-[#0F172A]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
@@ -142,7 +142,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             }}
             className="flex items-center gap-3 whitespace-nowrap shrink-0"
           >
-            <span className="w-8 h-8 rounded bg-[#0B1324] text-white font-bold text-sm inline-flex items-center justify-center border-b-2 border-[#2563EB]">
+            <span className="w-8 h-8 rounded bg-[#0A2E6E] text-white font-bold text-sm inline-flex items-center justify-center border-b-2 border-[#F5761A]">
               BP
             </span>
             <span
@@ -188,7 +188,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <button
               type="button"
               onClick={() => focusAuthPanel(mode === 'register' ? 'signin' : 'register')}
-              className="px-4 py-2 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+              className="px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
             >
               {mode === 'register' ? 'Sign In' : 'Start Free Trial'}
             </button>
@@ -204,7 +204,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <div className="lg:col-span-7 space-y-8">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-[#475569] font-mono uppercase tracking-widest">
-                  <Compass className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <Compass className="w-3.5 h-3.5 text-[#0F52BA]" />
                   <span>For Trades, Service Businesses &amp; Family SMEs (1–20 Staff)</span>
                 </div>
 
@@ -212,7 +212,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   Understand your business. Find hidden opportunities. Improve cash flow. Make better decisions. Keep moving forward.
                 </h1>
 
-                <p className="text-lg sm:text-xl font-bold text-[#2563EB]">
+                <p className="text-lg sm:text-xl font-bold text-[#0F52BA]">
                   Your Business. Your Opportunities. Your Next Move.
                 </p>
 
@@ -231,7 +231,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => focusAuthPanel('register', 'Free Trial')}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
                   <span>Start Free Trial</span>
                   <ArrowRight className="w-4 h-4" />
@@ -239,7 +239,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => scrollToSection('membership-plans')}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded bg-white hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded bg-white hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15 text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
                   <span>Compare Plans (From NZ$0)</span>
                 </button>
@@ -254,21 +254,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-white border border-[#0F172A]/12 rounded p-4 space-y-1.5">
-                    <span className="text-xs font-mono font-bold text-[#2563EB]">01</span>
+                    <span className="text-xs font-mono font-bold text-[#0F52BA]">01</span>
                     <h2 className="text-sm font-bold text-[#0F172A]">12-Capability Health &amp; Leakage Scan</h2>
                     <p className="text-xs text-[#475569] leading-relaxed">
                       Diagnose cash flow, pricing, debtors, concentration, staffing, and sustainability across 16 SME profit-leakage levers.
                     </p>
                   </div>
                   <div className="bg-white border border-[#0F172A]/12 rounded p-4 space-y-1.5">
-                    <span className="text-xs font-mono font-bold text-[#2563EB]">02</span>
+                    <span className="text-xs font-mono font-bold text-[#0F52BA]">02</span>
                     <h2 className="text-sm font-bold text-[#0F172A]">Connected CRM, ROI &amp; Docs</h2>
                     <p className="text-xs text-[#475569] leading-relaxed">
                       Upload P&amp;L/debtor files for verified fact extraction alongside CRM follow-ups, ROI payback modeling, and cash checks.
                     </p>
                   </div>
                   <div className="bg-white border border-[#0F172A]/12 rounded p-4 space-y-1.5">
-                    <span className="text-xs font-mono font-bold text-[#2563EB]">03</span>
+                    <span className="text-xs font-mono font-bold text-[#0F52BA]">03</span>
                     <h2 className="text-sm font-bold text-[#0F172A]">Weekly, Monthly &amp; Quarterly Continuity</h2>
                     <p className="text-xs text-[#475569] leading-relaxed">
                       Lock your joining baseline, track Weekly Business Pulses, run Monthly Reviews, Challenge Me sessions, and export Word/PDF/PPTX packs.
@@ -282,7 +282,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <div ref={authPanelRef} className="lg:col-span-5 w-full">
               <div className="bg-white border border-[#0F172A]/12 py-7 px-6 sm:px-8 rounded text-[17px] shadow-xs">
                 <div className="mb-5">
-                  <span className="font-mono uppercase tracking-[0.14em] block mb-1 text-[#2563EB] font-bold text-left text-[12px]">Private Business Vault</span>
+                  <span className="font-mono uppercase tracking-[0.14em] block mb-1 text-[#0F52BA] font-bold text-left text-[12px]">Private Business Vault</span>
                   <h2 className="text-lg font-bold text-[#0F172A]">
                     {mode === 'signin'
                       ? 'Sign In to Your Workspace'
@@ -299,7 +299,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     onClick={() => handleSwitchMode('signin')}
                     className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
                       mode === 'signin'
-                        ? 'border-[#2563EB] text-[#0F172A]'
+                        ? 'border-[#0F52BA] text-[#0F172A]'
                         : 'border-transparent text-[#475569] hover:text-[#0F172A]'
                     }`}
                   >
@@ -310,7 +310,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     onClick={() => handleSwitchMode('register')}
                     className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
                       mode === 'register'
-                        ? 'border-[#2563EB] text-[#0F172A]'
+                        ? 'border-[#0F52BA] text-[#0F172A]'
                         : 'border-transparent text-[#475569] hover:text-[#0F172A]'
                     }`}
                   >
@@ -321,7 +321,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     onClick={() => handleSwitchMode('forgot')}
                     className={`flex-1 text-center pb-2 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
                       mode === 'forgot'
-                        ? 'border-[#2563EB] text-[#0F172A]'
+                        ? 'border-[#0F52BA] text-[#0F172A]'
                         : 'border-transparent text-[#475569] hover:text-[#0F172A]'
                     }`}
                   >
@@ -385,7 +385,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                         placeholder="you@yourbusiness.co.nz"
-                        className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
+                        className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA] text-xs sm:text-sm transition"
                       />
                     </div>
                   </div>
@@ -400,7 +400,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                           <button
                             type="button"
                             onClick={() => handleSwitchMode('forgot')}
-                            className="text-[11px] text-[#2563EB] hover:text-[#1D4ED8] font-semibold transition"
+                            className="text-[11px] text-[#0F52BA] hover:text-[#0A3D8F] font-semibold transition"
                           >
                             Forgot password?
                           </button>
@@ -416,7 +416,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           placeholder="Enter password"
-                          className="block w-full pl-10 pr-10 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
+                          className="block w-full pl-10 pr-10 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA] text-xs sm:text-sm transition"
                         />
                         <button
                           type="button"
@@ -445,7 +445,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
                           placeholder="Repeat password"
-                          className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2563EB] focus:border-[#2563EB] text-xs sm:text-sm transition"
+                          className="block w-full pl-10 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#0F172A]/15 rounded text-[#0F172A] placeholder-[#64748B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F52BA] focus:border-[#0F52BA] text-xs sm:text-sm transition"
                         />
                       </div>
                       <p className="mt-1.5 text-[11px] text-[#475569]">
@@ -457,7 +457,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded bg-[#0B1324] hover:bg-[#172554] text-white text-xs font-semibold uppercase tracking-wider transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold uppercase tracking-wider transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
@@ -467,17 +467,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     ) : mode === 'signin' ? (
                       <>
                         <span>Sign In to Workspace</span>
-                        <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                        <ArrowRight className="w-4 h-4 text-[#6495ED]" />
                       </>
                     ) : mode === 'register' ? (
                       <>
                         <span>Create Free Account &amp; Start</span>
-                        <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                        <ArrowRight className="w-4 h-4 text-[#6495ED]" />
                       </>
                     ) : (
                       <>
                         <span>Send Reset Link</span>
-                        <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                        <ArrowRight className="w-4 h-4 text-[#6495ED]" />
                       </>
                     )}
                   </button>
@@ -491,7 +491,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       <button
                         type="button"
                         onClick={() => handleSwitchMode('register')}
-                        className="text-[#2563EB] hover:text-[#1D4ED8] font-bold transition"
+                        className="text-[#0F52BA] hover:text-[#0A3D8F] font-bold transition"
                       >
                         Start your Free Trial here
                       </button>
@@ -502,7 +502,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       <button
                         type="button"
                         onClick={() => handleSwitchMode('signin')}
-                        className="text-[#2563EB] hover:text-[#1D4ED8] font-bold transition"
+                        className="text-[#0F52BA] hover:text-[#0A3D8F] font-bold transition"
                       >
                         Sign in
                       </button>
@@ -525,7 +525,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-6 space-y-4">
                 <span className="bizpulse-label flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <Users className="w-3.5 h-3.5 text-[#0F52BA]" />
                   <span>Built for Real-World Small &amp; Family Businesses</span>
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">
@@ -546,8 +546,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 </div>
               </div>
 
-              <div className="lg:col-span-6 bg-[#0B1324] text-white rounded p-6 sm:p-8 space-y-4">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#60A5FA] block">
+              <div className="lg:col-span-6 bg-[#0A2E6E] text-white rounded p-6 sm:p-8 space-y-4 border border-[#0F52BA]/40">
+                <span className="text-xs font-mono uppercase tracking-wider text-[#6495ED] block">
                   Why BizPulse Differs from Generic ChatGPT
                 </span>
                 <h3 className="text-xl font-bold text-white">
@@ -555,15 +555,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 </h3>
                 <ul className="space-y-2.5 text-xs sm:text-sm text-[#CBD5E1]">
                   <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#60A5FA] shrink-0 mt-0.5" />
+                    <Check className="w-4 h-4 text-[#6495ED] shrink-0 mt-0.5" />
                     <span><strong className="text-white">Never starts from blank:</strong> Remembers your 12-Capability scores, ledger cash/AR/AP, CRM pipeline, ROI models, and prior monthly reviews.</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#60A5FA] shrink-0 mt-0.5" />
+                    <Check className="w-4 h-4 text-[#6495ED] shrink-0 mt-0.5" />
                     <span><strong className="text-white">Verified facts vs. assumptions:</strong> Never invents financial numbers — clearly marks missing figures as Insufficient Information.</span>
                   </li>
                   <li className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-[#60A5FA] shrink-0 mt-0.5" />
+                    <Check className="w-4 h-4 text-[#6495ED] shrink-0 mt-0.5" />
                     <span><strong className="text-white">Challenges blind spots:</strong> Interactive &ldquo;Challenge Me&rdquo; mode tests decisions against your cash and staff capacity before you spend money.</span>
                   </li>
                 </ul>
@@ -574,7 +574,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
             <div id="continuity-rhythm" className="pt-8 border-t border-[#0F172A]/10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-7 space-y-4">
                 <span className="bizpulse-label flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <TrendingUp className="w-3.5 h-3.5 text-[#0F52BA]" />
                   <span>Ongoing Membership Continuity</span>
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
@@ -582,22 +582,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
-                    <span className="font-mono font-bold text-[#2563EB] block">AT JOINING</span>
+                    <span className="font-mono font-bold text-[#0F52BA] block">AT JOINING</span>
                     <strong className="text-[#0F172A] block text-sm">Lock Your Baseline</strong>
                     <p className="text-[#475569]">Saves your starting health score, bank cash, overdue invoices, primary concern, and initial priorities.</p>
                   </div>
                   <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
-                    <span className="font-mono font-bold text-[#2563EB] block">WEEKLY</span>
+                    <span className="font-mono font-bold text-[#0F52BA] block">WEEKLY</span>
                     <strong className="text-[#0F172A] block text-sm">Weekly Business Pulse</strong>
                     <p className="text-[#475569]">10-minute Monday check-in tracking completed vs. stalled actions, cash alerts, and next week&apos;s top 3 priorities.</p>
                   </div>
                   <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
-                    <span className="font-mono font-bold text-[#2563EB] block">MONTHLY</span>
+                    <span className="font-mono font-bold text-[#0F52BA] block">MONTHLY</span>
                     <strong className="text-[#0F172A] block text-sm">Monthly Business Review</strong>
                     <p className="text-[#475569]">Compares current reality against both your joining baseline and last month — highlighting real gains and unresolved issues.</p>
                   </div>
                   <div className="p-4 rounded bg-[#F8FAFC] border border-[#0F172A]/12 space-y-1">
-                    <span className="font-mono font-bold text-[#2563EB] block">QUARTERLY</span>
+                    <span className="font-mono font-bold text-[#0F52BA] block">QUARTERLY</span>
                     <strong className="text-[#0F172A] block text-sm">Sustainability Review</strong>
                     <p className="text-[#475569]">Tracks whether resilience is Strengthening, Holding, or Under Strain and guides whether to Stabilise, Improve, or Expand.</p>
                   </div>
@@ -606,26 +606,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
 
               <div className="lg:col-span-5 bg-[#F8FAFC] border border-[#0F172A]/12 rounded p-6 space-y-4">
                 <span className="bizpulse-label flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <Layers className="w-3.5 h-3.5 text-[#0F52BA]" />
                   <span>What Happens After Registration</span>
                 </span>
                 <ol className="space-y-3 text-xs sm:text-sm text-[#0F172A]">
                   <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded bg-[#0B1324] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                    <span className="w-6 h-6 rounded bg-[#0A2E6E] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">1</span>
                     <div>
                       <strong className="block">Enter Your Business Profile &amp; 12 Health Checks</strong>
                       <span className="text-xs text-[#475569]">Takes ~10 minutes on a clean workspace (plus an optional Sample Demo Business to explore).</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded bg-[#0B1324] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                    <span className="w-6 h-6 rounded bg-[#0A2E6E] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">2</span>
                     <div>
                       <strong className="block">Generate Your Profit, Cash &amp; Sustainability Plan</strong>
                       <span className="text-xs text-[#475569]">Upload financials if available, review your 30/60/90-day plan, and lock your Joining Baseline.</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded bg-[#0B1324] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                    <span className="w-6 h-6 rounded bg-[#0A2E6E] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">3</span>
                     <div>
                       <strong className="block">Run Weekly Pulses, Coach Chats &amp; Monthly Reviews</strong>
                       <span className="text-xs text-[#475569]">Stay on Free Trial or upgrade to a monthly NZD plan whenever you need higher allowances or multiple businesses.</span>
@@ -658,16 +658,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   key={plan.id}
                   className={`rounded p-6 border flex flex-col justify-between space-y-5 ${
                     plan.id === 'business_plus_monthly'
-                      ? 'bg-[#0B1324] text-white border-[#0B1324]'
+                      ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                       : plan.highlight
-                      ? 'bg-white border-2 border-[#2563EB] text-[#0F172A]'
+                      ? 'bg-white border-2 border-[#0F52BA] text-[#0F172A]'
                       : 'bg-white border-[#0F172A]/12 text-[#0F172A]'
                   }`}
                 >
                   <div className="space-y-3">
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wider block ${
-                        plan.id === 'business_plus_monthly' ? 'text-[#60A5FA]' : 'text-[#2563EB]'
+                        plan.id === 'business_plus_monthly' ? 'text-[#6495ED]' : 'text-[#0F52BA]'
                       }`}
                     >
                       {plan.badge}
@@ -704,7 +704,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                         <li key={feat} className="flex items-start gap-2">
                           <Check
                             className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
-                              plan.id === 'business_plus_monthly' ? 'text-[#60A5FA]' : 'text-[#15803D]'
+                              plan.id === 'business_plus_monthly' ? 'text-[#6495ED]' : 'text-[#15803D]'
                             }`}
                           />
                           <span>{feat}</span>
@@ -718,10 +718,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     onClick={() => focusAuthPanel('register', plan.name)}
                     className={`w-full py-2.5 px-4 rounded text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap ${
                       plan.id === 'business_plus_monthly'
-                        ? 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
+                        ? 'bg-[#0F52BA] hover:bg-[#0A3D8F] text-white'
                         : plan.highlight
-                        ? 'bg-[#0B1324] hover:bg-[#172554] text-white'
-                        : 'bg-[#F8FAFC] hover:bg-[#EFF6FF] text-[#0F172A] border border-[#0F172A]/15'
+                        ? 'bg-[#0A2E6E] hover:bg-[#0F52BA] text-white'
+                        : 'bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] border border-[#0F172A]/15'
                     }`}
                   >
                     {plan.priceNzd === 0 ? 'Start Free Trial' : `Choose ${plan.name}`}
@@ -773,7 +773,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                   onClick={() => setSelectedPillarId('all')}
                   className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
                     selectedPillarId === 'all'
-                      ? 'bg-[#0B1324] text-white'
+                      ? 'bg-[#0A2E6E] text-white'
                       : 'text-[#475569] hover:text-[#0F172A]'
                   }`}
                 >
@@ -786,7 +786,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                     onClick={() => setSelectedPillarId(pillar.id)}
                     className={`px-3 py-1.5 text-xs font-semibold rounded transition whitespace-nowrap shrink-0 ${
                       selectedPillarId === pillar.id
-                        ? 'bg-[#0B1324] text-white'
+                        ? 'bg-[#0A2E6E] text-white'
                         : 'text-[#475569] hover:text-[#0F172A]'
                     }`}
                   >
@@ -808,7 +808,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-2 text-xs text-[#475569]">
-                      <span className="font-mono font-bold text-[#2563EB] tracking-wider">
+                      <span className="font-mono font-bold text-[#0F52BA] tracking-wider">
                         {pillar.number}.
                       </span>
                       <span>{pillar.releaseStatus}</span>
@@ -818,7 +818,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                       <h3 className="text-xl font-bold text-[#0F172A]">
                         {pillar.number}. {pillar.title}
                       </h3>
-                      <p className="text-sm font-semibold text-[#2563EB] mt-1">
+                      <p className="text-sm font-semibold text-[#0F52BA] mt-1">
                         {pillar.tagline}
                       </p>
                       <p className="text-sm text-[#475569] mt-3 leading-relaxed">
@@ -834,7 +834,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                             key={cap}
                             className="flex items-start gap-2.5 text-xs sm:text-sm text-[#0F172A]"
                           >
-                            <Check className="w-4 h-4 text-[#2563EB] shrink-0 mt-0.5" />
+                            <Check className="w-4 h-4 text-[#0F52BA] shrink-0 mt-0.5" />
                             <span>{cap}</span>
                           </li>
                         ))}
@@ -852,7 +852,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
           <div className="bizpulse-hero-gradient text-white rounded p-8 sm:p-10 lg:p-12 border border-[#0F172A]/15 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-7 space-y-4">
-                <span className="text-xs font-mono uppercase tracking-widest text-[#60A5FA] block">
+                <span className="text-xs font-mono uppercase tracking-widest text-[#6495ED] block">
                   Practical &amp; Progressive
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white">
@@ -866,7 +866,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
               </div>
 
               <div className="lg:col-span-5 bg-white/5 border border-white/15 rounded p-6 space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#60A5FA] block">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#6495ED] block">
                   {BIZPULSE_VISION.ambitionLead}
                 </span>
                 <p className="text-sm sm:text-base font-medium text-white leading-relaxed">
@@ -875,7 +875,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => focusAuthPanel('register', 'Free Trial')}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#F5761A] hover:bg-[#E0650D] text-[#0F172A] text-xs font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0"
                 >
                   <span>Start Your Free Diagnostic</span>
                   <ArrowRight className="w-4 h-4" />

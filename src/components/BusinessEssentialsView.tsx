@@ -292,7 +292,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               onChange={(e) => handleChange('name', e.target.value)}
               onBlur={() => persistIfDirty()}
               placeholder="e.g., Tasman Plumbing & Gas Ltd, Harbourside Cafe"
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
           </div>
         );
@@ -309,7 +309,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 handleChange('industry', e.target.value as IndustryType);
                 persistIfDirty({ ...latestFormRef.current, industry: e.target.value as IndustryType });
               }}
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             >
               {INDUSTRIES.map((ind) => (
                 <option key={ind} value={ind}>
@@ -339,8 +339,8 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                     }}
                     className={`p-3.5 rounded border text-left text-sm font-semibold transition ${
                       active
-                        ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                        : 'bg-[#FCFCFC] text-[#0F172A] border-[#0F172A]/15 hover:border-[#2563EB]'
+                        ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
+                        : 'bg-[#FCFCFC] text-[#0F172A] border-[#0F172A]/15 hover:border-[#0F52BA]'
                     }`}
                   >
                     {struct}
@@ -365,7 +365,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 onChange={(e) => handleChange('country', e.target.value)}
                 onBlur={() => persistIfDirty()}
                 placeholder="e.g., New Zealand, Australia"
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
             </div>
             <div className="space-y-1.5">
@@ -378,7 +378,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                   handleChange('currency', e.target.value);
                   persistIfDirty({ ...latestFormRef.current, currency: e.target.value });
                 }}
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -401,7 +401,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 value={formData.yearsOperating}
                 onChange={(e) => handleChange('yearsOperating', Math.max(0, Number(e.target.value) || 0))}
                 onBlur={() => persistIfDirty()}
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
             </div>
             <div className="space-y-1.5">
@@ -412,7 +412,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 value={formData.employeeCount}
                 onChange={(e) => handleChange('employeeCount', Math.max(0, Number(e.target.value) || 0))}
                 onBlur={() => persistIfDirty()}
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
             </div>
             <div className="space-y-1.5">
@@ -423,7 +423,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 value={formData.subcontractorCount}
                 onChange={(e) => handleChange('subcontractorCount', Math.max(0, Number(e.target.value) || 0))}
                 onBlur={() => persistIfDirty()}
-                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-3.5 py-2.5 text-sm text-[#0F172A] tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
               />
             </div>
           </div>
@@ -439,7 +439,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 handleChange('turnoverRange', e.target.value);
                 persistIfDirty({ ...latestFormRef.current, turnoverRange: e.target.value });
               }}
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             >
               <option value="">Select turnover band (optional)</option>
               <option value="< 250k">Under {formData.currency} 250k</option>
@@ -466,7 +466,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               onChange={(e) => handleChange('mainCustomerTypes', e.target.value)}
               onBlur={() => persistIfDirty()}
               placeholder="e.g., Commercial builders, residential property managers, regional SMEs"
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
           </div>
         );
@@ -484,7 +484,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               onChange={(e) => handleChange('mainProductsServices', e.target.value)}
               onBlur={() => persistIfDirty()}
               placeholder="Describe what your business sells, installs, services, or delivers..."
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
           </div>
         );
@@ -493,7 +493,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
         return (
           <div className="space-y-2">
             <label className="flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-[#2563EB]" />
+              <Target className="w-3.5 h-3.5 text-[#0F52BA]" />
               <span className="bizpulse-label">
                 Owner&apos;s Primary Objective (Next 6–12 Months){' '}
                 <span className="text-[#B91C1C]">* (Mandatory)</span>
@@ -506,7 +506,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               onChange={(e) => handleChange('primaryObjective', e.target.value)}
               onBlur={() => persistIfDirty()}
               placeholder="e.g., Stabilize cash flow, improve net margin, reduce owner reliance"
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
           </div>
         );
@@ -529,7 +529,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               onChange={(e) => handleChange('primaryConcern', e.target.value)}
               onBlur={() => persistIfDirty()}
               placeholder="What is the biggest operational, pricing, staffing, or cash flow pressure right now?"
-              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#2563EB]"
+              className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded-xs px-4 py-3 text-sm text-[#0F172A] focus:bg-white focus:outline-none focus:border-[#0F52BA]"
             />
           </div>
         );
@@ -561,7 +561,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
           <div className="text-xs font-mono font-bold text-[#0F172A] mt-1 truncate max-w-[200px]">
             {formData.caseId}
           </div>
-          <div className="text-[11px] text-[#2563EB] font-semibold mt-0.5">
+          <div className="text-[11px] text-[#0F52BA] font-semibold mt-0.5">
             {formData.isDemonstrationCase ? 'Benchmark Demo Case' : 'Private Client Assessment'}
           </div>
         </div>
@@ -571,7 +571,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
       <div className="bg-white border border-[#0F172A]/10 rounded p-4 sm:p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
-            <span className="px-2.5 py-1 rounded bg-[#0F172A] text-white font-mono font-bold">
+            <span className="px-2.5 py-1 rounded bg-[#0A2E6E] text-white font-mono font-bold">
               {showAllReview ? 'Review Summary' : `Question ${currentStep.stepNumber} of ${ESSENTIAL_STEPS.length}`}
             </span>
             <span className="text-[#475569] font-medium tabular-nums">
@@ -586,7 +586,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               persistIfDirty();
               setShowAllReview((v) => !v);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] font-semibold border border-[#BFDBFE] transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] text-[#0F52BA] font-semibold border border-[#B7CEF7] transition"
           >
             <ListChecks className="w-3.5 h-3.5" />
             <span>{showAllReview ? 'Return to Step-by-Step View' : 'Review & Edit All 10 Answers'}</span>
@@ -595,7 +595,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
 
         <div className="w-full bg-[#E2E8F0] rounded-full h-2 overflow-hidden">
           <div
-            className="bg-[#2563EB] h-full rounded-full transition-all duration-300"
+            className="bg-[#0F52BA] h-full rounded-full transition-all duration-300"
             style={{ width: `${showAllReview ? 100 : progressPct}%` }}
           />
         </div>
@@ -611,10 +611,10 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                 onClick={() => handleJumpToStep(idx)}
                 className={`px-2 py-2 rounded border text-left transition flex flex-col justify-between gap-0.5 ${
                   isCurrent
-                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    ? 'bg-[#0A2E6E] text-white border-[#0A2E6E]'
                     : done
                     ? 'bg-[#ECFDF5] text-[#15803D] border-[#A7F3D0] hover:border-[#15803D]'
-                    : 'bg-[#F8FAFC] text-[#475569] border-[#0F172A]/10 hover:border-[#2563EB]'
+                    : 'bg-[#F8FAFC] text-[#475569] border-[#0F172A]/10 hover:border-[#0F52BA]'
                 }`}
               >
                 <div className="flex items-center justify-between text-[10px] font-mono font-bold">
@@ -674,7 +674,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-[#0F172A] text-white font-mono font-bold text-[11px]">
+                    <span className="px-2 py-0.5 rounded bg-[#0A2E6E] text-white font-mono font-bold text-[11px]">
                       Q{step.stepNumber}
                     </span>
                     <span className="text-sm font-bold text-[#0F172A]">{step.questionTitle}</span>
@@ -682,7 +682,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleJumpToStep(idx)}
-                    className="text-xs font-semibold text-[#2563EB] hover:underline"
+                    className="text-xs font-semibold text-[#0F52BA] hover:underline"
                   >
                     Focus Step {step.stepNumber}
                   </button>
@@ -708,9 +708,9 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="submit"
-                className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold uppercase tracking-wider border border-[#0F172A]/15 transition"
+                className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#F8FAFC] hover:bg-[#EDF3FD] text-[#0F172A] text-xs font-semibold uppercase tracking-wider border border-[#0F172A]/15 transition"
               >
-                <Save className="w-4 h-4 text-[#2563EB]" />
+                <Save className="w-4 h-4 text-[#0F52BA]" />
                 <span>{isSaved ? 'Saved' : 'Save All Answers'}</span>
               </button>
 
@@ -721,7 +721,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                     persistIfDirty();
                     onProceedToDocuments();
                   }}
-                  className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] text-xs font-semibold uppercase tracking-wider border border-[#BFDBFE] transition"
+                  className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] text-[#0F52BA] text-xs font-semibold uppercase tracking-wider border border-[#B7CEF7] transition"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>Upload Documents</span>
@@ -734,10 +734,10 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                   persistIfDirty();
                   onProceedToHealth();
                 }}
-                className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition"
+                className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition"
               >
                 <span>Proceed to Health Assessment</span>
-                <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                <ArrowRight className="w-4 h-4 text-[#EDF3FD]" />
               </button>
               </div>
             </div>
@@ -753,7 +753,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
         >
           <div className="space-y-2 pb-4 border-b border-[#0F172A]/10">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
                 Question {currentStep.stepNumber} of {ESSENTIAL_STEPS.length} ·{' '}
                 {currentStep.required ? 'Mandatory' : 'Optional'}
               </span>
@@ -794,9 +794,9 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleSaveManual()}
-                className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-semibold uppercase tracking-wider border border-[#0F172A]/15 transition"
+                className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-white hover:bg-[#EDF3FD] text-[#0F172A] text-xs font-semibold uppercase tracking-wider border border-[#0F172A]/15 transition"
               >
-                <Save className="w-4 h-4 text-[#2563EB]" />
+                <Save className="w-4 h-4 text-[#0F52BA]" />
                 <span>{isSaved ? 'Saved' : 'Save Now'}</span>
               </button>
             </div>
@@ -805,10 +805,10 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
               {currentStepIdx < ESSENTIAL_STEPS.length - 1 ? (
                 <button
                   type="submit"
-                  className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold uppercase tracking-wider transition"
+                  className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#0A2E6E] hover:bg-[#0F52BA] text-white text-xs font-semibold uppercase tracking-wider transition"
                 >
                   <span>Save &amp; Next Question</span>
-                  <ArrowRight className="w-4 h-4 text-[#60A5FA]" />
+                  <ArrowRight className="w-4 h-4 text-[#6495ED]" />
                 </button>
               ) : (
                 <>
@@ -820,7 +820,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                         persistIfDirty();
                         onProceedToDocuments();
                       }}
-                      className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] text-xs font-semibold uppercase tracking-wider border border-[#BFDBFE] transition"
+                      className="flex items-center space-x-1.5 px-4 py-2.5 rounded bg-[#EDF3FD] hover:bg-[#DCE8FC] text-[#0F52BA] text-xs font-semibold uppercase tracking-wider border border-[#B7CEF7] transition"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
                       <span>Upload Documents</span>
@@ -833,7 +833,7 @@ export const BusinessEssentialsView: React.FC<BusinessEssentialsViewProps> = ({
                       persistIfDirty();
                       onProceedToHealth();
                     }}
-                    className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold uppercase tracking-wider transition"
+                    className="flex items-center space-x-2 px-5 py-2.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white text-xs font-semibold uppercase tracking-wider transition"
                   >
                     <span>Finish &amp; Go to Health Assessment</span>
                     <ArrowRight className="w-4 h-4" />

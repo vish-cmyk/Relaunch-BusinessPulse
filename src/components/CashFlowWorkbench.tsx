@@ -335,7 +335,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="bizpulse-label text-[#60A5FA]">
+              <span className="bizpulse-label text-[#6495ED]">
                 Cash Flow &amp; Financial Ledger Workbench
               </span>
               <span className="text-xs font-medium text-[#94A3B8]">
@@ -359,7 +359,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
           <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
             <div className="bg-white/10 border border-white/15 rounded p-4 min-w-[230px] text-center">
-              <span className="text-[11px] font-mono text-[#60A5FA] uppercase tracking-wider font-bold inline-flex items-center justify-center gap-1.5">
+              <span className="text-[11px] font-mono text-[#6495ED] uppercase tracking-wider font-bold inline-flex items-center justify-center gap-1.5">
                 <span>Remaining Facility Headroom</span>
                 <InfoTooltip
                   title="Remaining Facility Headroom"
@@ -382,7 +382,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               onClick={() => setIsEditingBaseline(!isEditingBaseline)}
               className="flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition whitespace-nowrap"
             >
-              <Edit3 className="w-3.5 h-3.5 text-[#60A5FA]" />
+              <Edit3 className="w-3.5 h-3.5 text-[#6495ED]" />
               <span>{isEditingBaseline ? 'Hide Financial Inputs' : 'Enter / Edit 16 Ledger Fields'}</span>
             </button>
           </div>
@@ -391,17 +391,17 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
       {/* Full 16-Field Editable Ledger Drawer */}
       {isEditingBaseline && (
-        <div className="bg-white border border-[#2563EB] rounded p-6 shadow-sm space-y-6">
+        <div className="bg-white border border-[#0F52BA] rounded p-6 shadow-sm space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#0F172A]/10">
             <div>
               <h3 className="font-bold text-[#0F172A] text-sm flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-[#2563EB]" />
+                <Edit3 className="w-4 h-4 text-[#0F52BA]" />
                 <span>
                   {profile?.name || 'Active Business'} — Complete 16-Field Financial Ledger ({currency})
                 </span>
               </h3>
               <p className="text-xs text-[#475569]">
-                Enter verified figures from your accounting system or bank balance. Tap or hover any <span className="font-semibold text-[#1D4ED8]">?</span> icon for plain-English explanations.
+                Enter verified figures from your accounting system or bank balance. Tap or hover any <span className="font-semibold text-[#0F52BA]">?</span> icon for plain-English explanations.
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -427,9 +427,9 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               <button
                 type="button"
                 onClick={handleSaveCustomBaseline}
-                className="flex items-center space-x-1.5 px-4 py-1.5 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold uppercase tracking-wider text-xs shadow-xs transition"
+                className="flex items-center space-x-1.5 px-4 py-1.5 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white font-semibold uppercase tracking-wider text-xs shadow-xs transition"
               >
-                <Save className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <Save className="w-3.5 h-3.5 text-white" />
                 <span>Save Financial Ledger</span>
               </button>
             </div>
@@ -437,7 +437,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
           {/* Group 1: Working Capital & Bank Liquidity */}
           <div className="space-y-2.5">
-            <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+            <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
               1. Working Capital &amp; Bank Liquidity (6 Fields)
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
@@ -457,7 +457,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0"
                   value={cashInput}
                   onChange={(e) => setCashInput(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
 
@@ -477,7 +477,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0"
                   value={overdraftUsedInput}
                   onChange={(e) => setOverdraftUsedInput(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
 
@@ -498,7 +498,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0"
                   value={overdraftLimitInput}
                   onChange={(e) => setOverdraftLimitInput(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
 
@@ -518,7 +518,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0"
                   value={payablesInput}
                   onChange={(e) => setPayablesInput(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
 
@@ -538,7 +538,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0"
                   value={totalARInput}
                   onChange={(e) => setTotalARInput(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
 
@@ -559,7 +559,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0"
                   value={overdue60Input}
                   onChange={(e) => setOverdue60Input(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
             </div>
@@ -567,7 +567,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
           {/* Group 2: P&L Revenue & Margin */}
           <div className="space-y-2.5 pt-3 border-t border-[#0F172A]/10">
-            <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+            <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
               2. Annual P&amp;L Revenue &amp; Profitability (4 Fields)
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
@@ -586,7 +586,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="Optional"
                   value={annualRevenue}
                   onChange={(e) => setAnnualRevenue(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -604,7 +604,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="Optional"
                   value={directCosts}
                   onChange={(e) => setDirectCosts(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -622,7 +622,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="Optional"
                   value={operatingExpenses}
                   onChange={(e) => setOperatingExpenses(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -641,7 +641,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="Optional"
                   value={operatingProfit}
                   onChange={(e) => setOperatingProfit(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
             </div>
@@ -649,7 +649,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
 
           {/* Group 3: Customer Portfolio, Terms & Pricing */}
           <div className="space-y-2.5 pt-3 border-t border-[#0F172A]/10">
-            <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#2563EB]">
+            <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0F52BA]">
               3. Customer Concentration, Debtor Terms &amp; Pricing Cadence (6 Fields)
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
@@ -668,7 +668,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="e.g. 48"
                   value={customerCount}
                   onChange={(e) => setCustomerCount(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -686,7 +686,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0–100%"
                   value={top5Conc}
                   onChange={(e) => setTop5Conc(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -705,7 +705,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="0–100%"
                   value={top12Conc}
                   onChange={(e) => setTop12Conc(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -723,7 +723,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="e.g. 20"
                   value={standardTermsDays}
                   onChange={(e) => setStandardTermsDays(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -741,7 +741,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="e.g. 45"
                   value={actualDelayDays}
                   onChange={(e) => setActualDelayDays(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
               <div>
@@ -761,7 +761,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                   placeholder="e.g. 2"
                   value={pricingReviewYears}
                   onChange={(e) => setPricingReviewYears(e.target.value)}
-                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#2563EB]"
+                  className="w-full bg-[#FCFCFC] border border-[#0F172A]/15 rounded p-2.5 text-[#0F172A] font-mono tabular-nums focus:bg-white focus:outline-none focus:border-[#0F52BA]"
                 />
               </div>
             </div>
@@ -801,9 +801,9 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               <button
                 type="button"
                 onClick={handleSaveCustomBaseline}
-                className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold uppercase tracking-wider text-xs shadow-xs transition"
+                className="flex items-center space-x-1.5 px-4 py-2 rounded bg-[#0F52BA] hover:bg-[#0A3D8F] text-white font-semibold uppercase tracking-wider text-xs shadow-xs transition"
               >
-                <Save className="w-3.5 h-3.5 text-[#60A5FA]" />
+                <Save className="w-3.5 h-3.5 text-white" />
                 <span>Save Financial Ledger</span>
               </button>
             </div>
@@ -897,7 +897,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 actionOrCalculation="Delinquent % = (Overdue >60d ÷ Total Unpaid Invoices) × 100. Chase >60d accounts weekly."
               />
             </span>
-            <div className="p-1.5 rounded bg-[#EFF6FF] text-[#2563EB]">
+            <div className="p-1.5 rounded bg-[#EDF3FD] text-[#0F52BA]">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -1028,7 +1028,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#0F172A]/10">
           <div>
             <div className="flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-[#2563EB]" />
+              <Zap className="w-5 h-5 text-[#0F52BA]" />
               <h3 className="text-lg font-bold text-[#0F172A]">
                 Debt Collection &amp; Upfront Billing Simulator
               </h3>
@@ -1054,7 +1054,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
               onClick={() => setHardwarePolicyEnforced(!hardwarePolicyEnforced)}
               className={`px-3 py-1 rounded text-xs font-bold transition ${
                 hardwarePolicyEnforced
-                  ? 'bg-[#0F172A] text-[#60A5FA]'
+                  ? 'bg-[#0A2E6E] text-[#6495ED]'
                   : 'bg-[#E2E8F0] text-[#475569] hover:bg-[#CBD5E1]'
               }`}
             >
@@ -1076,7 +1076,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                     actionOrCalculation="Slide to model recovering 25%–100% of overdue >60d receivables."
                   />
                 </label>
-                <span className="text-sm font-bold text-[#1D4ED8] font-mono tabular-nums bg-[#EFF6FF] px-2.5 py-0.5 rounded border border-[#BFDBFE]">
+                <span className="text-sm font-bold text-[#0F52BA] font-mono tabular-nums bg-[#EDF3FD] px-2.5 py-0.5 rounded border border-[#B7CEF7]">
                   {recoveredPercent}% ({currency} {recoveredAmount.toLocaleString()})
                 </span>
               </div>
@@ -1087,7 +1087,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 step="5"
                 value={recoveredPercent}
                 onChange={(e) => setRecoveredPercent(Number(e.target.value))}
-                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#0F52BA]"
               />
             </div>
 
@@ -1113,7 +1113,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
                 step="2500"
                 value={monthlyHardwareVolume}
                 onChange={(e) => setMonthlyHardwareVolume(Number(e.target.value))}
-                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                className="w-full h-2 bg-[#E2E8F0] rounded-lg appearance-none cursor-pointer accent-[#0F52BA]"
               />
             </div>
           </div>
@@ -1121,7 +1121,7 @@ export const CashFlowWorkbench: React.FC<CashFlowWorkbenchProps> = ({
           <div className="bg-[#F8FAFC] rounded p-5 border border-[#0F172A]/12 space-y-4 tabular-nums">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] flex items-center justify-between border-b border-[#0F172A]/10 pb-2">
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
+                <ShieldCheck className="w-4 h-4 text-[#0F52BA]" />
                 Projected Liquidity Impact
               </span>
               <span className="font-mono text-[#15803D] text-xs font-bold bg-[#ECFDF5] px-2 py-0.5 rounded border border-[#A7F3D0]">
